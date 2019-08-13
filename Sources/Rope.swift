@@ -4,7 +4,7 @@ public class Handle : Hashable {
 	var which: ObjectIdentifier {
 		return ObjectIdentifier(self)
 	}
-	init() {
+	public init() {
 	}
 	public static func ==(_ l: Handle, _ r: Handle) -> Bool {
 		return l.which == r.which
@@ -126,42 +126,47 @@ extension Substring : Content {
 	}
 }
 
-enum Step<C: Content> {
+public enum Step<C: Content> {
 case absent
 case step(Node<C>)
+case inchOut
 case stepOut
 }
 
 extension Node {
-	func inserting(index j: Handle, after i: Handle, sibling r: Node)
-	    -> Step<C> {
-		let result = inserting(index: j, after: i)
+	public func inserting(index j: Handle, oneStepAfter i: Handle,
+	    sibling r: Node) -> Step<C> {
+		let result = inserting(index: j, oneStepAfter: i)
 		switch result {
 		case .step(let newl):
 			return .step(Node(left: newl, right: r))
 		case .stepOut:
+			return .step(Node(left: self,
+			    right: Node(left: .index(j), right: r)))
+		case .inchOut:
 			if let newr = r.afterStepInserting(index: j) {
 				return .step(Node(left: self, right: newr))
 			}
-			return .stepOut
+			return .inchOut
 		case .absent:
 			return .absent
 		}
 	}
-	func afterStepInserting(index j: Handle) -> Node? {
+	/* XXX XXX XXX needs to be .inchOut, .stepOut, .step */
+	public func afterStepInserting(index j: Handle) -> Node? {
 		switch self {
-		/* A step over a cursor, index, or empty string is not
+		/* A step over a cursor, index, or empty string is NOT
 		 * a full step.
 		 */
 		case .cursor(_, _), .empty, .index(_):
 			return nil
+		/* A step into a container is a full step. */
 		case .container(let h, let n):
 			return .container(h, Node(left: .index(j), right: n))
 		case .leaf(let attrs, let content):
 			switch content.headAndTail {
 			case (let head, let tail)? where tail.isEmpty:
-				return Node(left: .leaf(attrs, head),
-				            right: .index(j))
+				return nil
 			case (let head, let tail)?:
 				let jtail = Node(left: .index(j),
 				                 right: .leaf(attrs, tail))
@@ -171,6 +176,7 @@ extension Node {
 				/* XXX Empty leaves shouldn't exist. */
 				return nil
 			}
+		/* A step into a concatenation is NOT a full step. */
 		case .concat(let l, _, _, _, let r, _):
 			if let newl = l.afterStepInserting(index: j) {
 				return Node(left: newl, right: r)
@@ -181,17 +187,19 @@ extension Node {
 			return nil
 		}
 	}
-	func inserting(index j: Handle, after i: Handle) -> Step<C> {
+	public func inserting(index j: Handle, oneStepAfter i: Handle)
+	    -> Step<C> {
 		switch self {
 		case .index(i):
-			return .stepOut
+			return .inchOut
 		case .cursor(_, _), .index(_), .leaf(_, _), .empty:
 			return .absent
 		case .container(let h, let n):
-			switch n.inserting(index: j, after: i) {
+			switch n.inserting(index: j, oneStepAfter: i) {
+			case .inchOut:
+				return .stepOut
 			case .stepOut:
-				return .step(Node(left: self,
-				                      right: .index(j)))
+				return .step(.container(h, Node(left: n, right: .index(j))))
 			case .step(let newn):
 				return .step(.container(h, newn))
 			case .absent:
@@ -201,7 +209,7 @@ extension Node {
 			if let newr = r.afterStepInserting(index: j) {
 				return .step(Node(left: .index(i), right: newr))
 			}
-			return .stepOut
+			return .inchOut
 		case .concat(let l, _, _, _, let r, _):
 			switch (l.handles.contains(i), r.handles.contains(i)) {
 			case (false, false):
@@ -209,12 +217,13 @@ extension Node {
 			case (true, true):
 				assert(l.handles.contains(i) !=
 				       r.handles.contains(i))
-				return .stepOut
+				return .inchOut
 			case (true, false):
-				return l.inserting(index: j, after: i,
+				return l.inserting(index: j, oneStepAfter: i,
 				    sibling: r)
 			case (false, true):
-				let result = r.inserting(index: j, after: i)
+				let result = r.inserting(index: j,
+				    oneStepAfter: i)
 				if case .step(let newr) = result {
 					return .step(Node(left: l, right: newr))
 				}
@@ -224,6 +233,40 @@ extension Node {
 	}
 }
 
+public enum RopeIndex : Comparable {
+case start
+case end
+case interior(UInt64, Handle)
+}
+
+public func ==(_ l: RopeIndex, _ r: RopeIndex) -> Bool {
+	switch (l, r) {
+	case (.start, .start), (.end, .end):
+		return true
+	case (.interior(let m, let h), .interior(let n, let j))
+	    where m == n || h == j:
+		return true
+	default:
+		return false
+	}
+}
+
+public func <(_ l: RopeIndex, _ r: RopeIndex) -> Bool {
+	switch (l, r) {
+	case (.start, .start):
+		return false
+	case (.start, _):
+		return true
+	case (.end, .end):
+		return false
+	case (_, .end):
+		return true
+	case (.interior(let m, _), .interior(let n, _)) where m < n:
+		return true
+	default:
+		return false
+	}
+}
 /* Use cases:
  *
  * Get/set/add/remove attributes on characters.
@@ -249,45 +292,62 @@ extension Node {
  * Insert some text left of a cursor; apply the cursor's attributes
  * to the text.
  */
-class Rope<C : Content> {
-	public typealias Content = C
+public class Rope<C : Content> : Collection {
+	typealias Content = C
+	public typealias Element = C
+	public typealias Index = RopeIndex
 	var top: Node<C>
-	typealias Index = Handle
-	public var startIndex: Handle
-	public var endIndex: Handle
+	public var startIndex: Index {
+		if top.startIndex == top.endIndex {
+			return .end
+		}
+		return .start
+	}
+	public var endIndex: Index { return .end }
 
-	init() {
-		startIndex = Handle()
-		endIndex = Handle()
-		top = Node(left: .index(startIndex),
-			       right: .index(endIndex))
+	public init() {
+		top = .empty
 	}
-	func index(after i: Index) -> Index {
-		return i	// XXXXXXXXXXXXXXXXXXXXXX
-	}
-}
-
-extension Node {
-/*
-	public func inserting(cursor: Handle, at: NodeIndex) -> Node {
-	}
-	public func setting(attributes: Attributes, on: Handle) -> Node {
-	}
-	public func removing(cursor: Handle) -> Node {
-	}
-	public scootLeft(cursor: Handle) throws {
-		// TBD
-	}
-	public stepLeft(cursor: Handle) throws {
-		switch self {
-		// [l, |[r]]
-		case .concat(let l, _, _, leftCursor(cursor, let r)):
-			
-		case .concat(let l, 
-		case .leaf(let s)
+	public var node: Node<C> {
+		get {
+			return top
+		}
+		set {
+			top = newValue
 		}
 	}
-*/
+	public init<T>(text t: T) where C : Initializable, C.Initializer == T, T : Collection {
+		top = Node(text: t)
+	}
+	public func index(after i: Index) -> Index {
+		switch i {
+		case .start:
+			let h = Handle()
+			guard let n = top.afterStepInserting(index: h) else {
+				return .end
+			}
+			top = n
+			return .interior(0, h)
+		case .end:
+			fatalError("No index after .endIndex")
+		case .interior(let m, let h):
+			let j = Handle()
+			switch top.inserting(index: j, oneStepAfter: h) {
+			case .inchOut:
+				fatalError("Index .interior(\(m), \(h)) already at end?")
+			case .absent:
+				fatalError("Index .interior(\(m), \(h)) is absent")
+			case .stepOut:
+				return .end
+			case .step(let node):
+				top = node
+				return .interior(m + 1, j)
+			}
+		}
+	}
+	public subscript(i: Index) -> Iterator.Element {
+		get { return C.empty }
+	}
 }
 
 extension Node {
@@ -330,6 +390,9 @@ extension Substring : Initializable {
 }
 
 extension Node {
+	public init(handle h: Handle, node n: Node<C>) {
+		self = .container(h, n)
+	}
 	public init(left: Node<C>, right: Node<C>) {
 		self = .concat(left, left.endIndex,
 		               1 + max(left.depth, right.depth),
@@ -386,9 +449,9 @@ extension Node : CustomDebugStringConvertible {
 		case .cursor(_, _):
 			return "|"
 		case .container(_, let rope):
-			return rope.debugDescription
+			return "(\(rope.debugDescription))"
 		case .concat(let l, _, _, _, let r, _):
-			return "[\(l), \(r)]"
+			return "[\(l) \(r)]"
 		case .leaf(_, let s):
 			return "\"\(s)\""
 		case .empty:
@@ -396,19 +459,6 @@ extension Node : CustomDebugStringConvertible {
 		}
 	}
 }
-
-/*
-protocol TextContainer {
-	associatedtype Index
-	var startIndex: Index { get }
-	var endIndex: Index { get }
-	func element(at i: Index) -> Character
-	func substring(from: Index, to: Index, depth: Int) -> Self
-	func appending(_: Self) -> Self
-	func deleting(from start: Index, to end: Index) -> Self
-	func inserting(text: Self, at insertionPt: Index) -> Self
-}
-*/
 
 func +(_ l: NodeIndex, _ r: NodeIndex) -> NodeIndex {
 	return NodeIndex(characters: l.characters + r.characters, opened: l.opened + r.opened, closed: l.closed + r.closed, cursors: l.cursors + r.cursors)
