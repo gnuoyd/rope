@@ -144,47 +144,57 @@ extension Node {
 			return .step(Node(left: self,
 			    right: Node(left: .index(j), right: r)))
 		case .inchOut:
-			if let newr = r.afterStepInserting(index: j) {
+			switch r.afterStepInserting(index: j) {
+			case .step(let newr):
 				return .step(Node(left: self, right: newr))
+			case let result:
+				return result
 			}
-			return .inchOut
 		case .absent:
 			return .absent
 		}
 	}
 	/* XXX XXX XXX needs to be .inchOut, .stepOut, .step */
-	public func afterStepInserting(index j: Handle) -> Node? {
+	public func afterStepInserting(index j: Handle) -> Step<C> {
 		switch self {
 		/* A step over a cursor, index, or empty string is NOT
 		 * a full step.
 		 */
 		case .cursor(_, _), .empty, .index(_):
-			return nil
+			return .inchOut
 		/* A step into a container is a full step. */
 		case .container(let h, let n):
-			return .container(h, Node(left: .index(j), right: n))
+			return .step(.container(h, Node(left: .index(j), right: n)))
 		case .leaf(let attrs, let content):
 			switch content.headAndTail {
-			case (let head, let tail)? where tail.isEmpty:
-				return nil
+			case (_, let tail)? where tail.isEmpty:
+				return .stepOut
 			case (let head, let tail)?:
 				let jtail = Node(left: .index(j),
 				                 right: .leaf(attrs, tail))
-				return Node(left: .leaf(attrs, head),
-				            right: jtail)
+				return .step(Node(left: .leaf(attrs, head),
+				            right: jtail))
 			default:
 				/* XXX Empty leaves shouldn't exist. */
-				return nil
+				return .inchOut
 			}
 		/* A step into a concatenation is NOT a full step. */
 		case .concat(let l, _, _, _, let r, _):
-			if let newl = l.afterStepInserting(index: j) {
-				return Node(left: newl, right: r)
+			switch l.afterStepInserting(index: j) {
+			case .step(let newl):
+				return .step(Node(left: newl, right: r))
+			case .stepOut:
+				return .step(Node(left: l,
+				    right: Node(left: .index(j), right: r)))
+			case .inchOut, .absent:
+				break
 			}
-			if let newr = r.afterStepInserting(index: j) {
-				return Node(left: l, right: newr)
+			switch r.afterStepInserting(index: j) {
+			case .step(let newr):
+				return .step(Node(left: l, right: newr))
+			case let result:
+				return result
 			}
-			return nil
 		}
 	}
 	public func inserting(index j: Handle, oneStepAfter i: Handle)
@@ -206,10 +216,12 @@ extension Node {
 				return .absent
 			}
 		case .concat(.index(i), _, _, _, let r, _):
-			if let newr = r.afterStepInserting(index: j) {
+			switch r.afterStepInserting(index: j) {
+			case .step(let newr):
 				return .step(Node(left: .index(i), right: newr))
+			case let result:
+				return result
 			}
-			return .inchOut
 		case .concat(let l, _, _, _, let r, _):
 			switch (l.handles.contains(i), r.handles.contains(i)) {
 			case (false, false):
@@ -323,7 +335,7 @@ public class Rope<C : Content> : Collection {
 		switch i {
 		case .start:
 			let h = Handle()
-			guard let n = top.afterStepInserting(index: h) else {
+			guard case .step(let n) = top.afterStepInserting(index: h) else {
 				return .end
 			}
 			top = n
@@ -474,6 +486,17 @@ public protocol RopeIndexish : Comparable {
 	static func adapt<T>(range: Range<Self>, for: T) -> Range<Int> where T : Content
 }                                                                               
 
+public struct Weak<O : AnyObject> {
+	public typealias Element = O
+	private weak var _object: O?
+	public var object: O? {
+		return _object
+	}
+	public init(_ r: O) {
+		_object = r
+	}
+}
+
 public extension Node {
 	typealias Index = NodeIndex
 	public var leaves: LeafSequence<Content> {
@@ -565,6 +588,40 @@ public extension Node {
 	public var balanced: Bool {
 		return endIndex.characters >= fibonacci(index: depth + 2)
 	}
+	/*
+	public func clean(orphaned: Bool) -> Node<C>? {
+		var handles: [
+		var stack: [Node<C>] = self
+		while let node = stack.popLast() {
+			switch node {
+			case .empty, .cursor(_, _), .leaf(_, _):
+				continue
+			case .container(let h, var n):
+				
+				continue
+				guard let nn = n.clean() else {
+					return nil
+				}
+				return .container(h, nn)
+			case .index(var h):
+				self = .empty
+				if isKnownUniquelyReferenced(&h) {
+					return nil
+				}
+				return .index(h)
+			case .concat(var l, _, _, _, var r, _):
+				guard let nl = l.clean() else {
+					return r.clean()
+				}
+				guard let nr = r.clean() else {
+					return nl
+				}
+				self = Node(left: nl, right: nr)
+				return self
+			}
+		}
+	}
+	*/
 	public func rebalanced() -> Node<C> {
 		switch self {
 		case .empty, .cursor(_, _), .leaf(_, _):
