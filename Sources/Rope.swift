@@ -12,6 +12,9 @@ public class Handle : Hashable {
 	public func hash(into hasher: inout Hasher) {
 		hasher.combine(which)
 	}
+	deinit {
+		// print("b-bye")
+	}
 }
 
 public typealias Attributes = [NSAttributedString.Key : Any]
@@ -89,7 +92,7 @@ public indirect enum Node<C : Content> {
 public typealias Content = C
 public typealias Element = C.Element
 case cursor(Handle, Attributes)
-case index(Handle)
+case index(() -> Handle?)
 case container(Handle, Node)
 case concat(Node, NodeIndex, UInt, Set<Handle>, Node,
     NodeIndex)
@@ -142,7 +145,7 @@ extension Node {
 			return .step(Node(left: newl, right: r))
 		case .stepOut:
 			return .step(Node(left: self,
-			    right: Node(left: .index(j), right: r)))
+			    right: Node(left: Node(holder: j), right: r)))
 		case .inchOut:
 			switch r.afterStepInserting(index: j) {
 			case .step(let newr):
@@ -164,13 +167,13 @@ extension Node {
 			return .inchOut
 		/* A step into a container is a full step. */
 		case .container(let h, let n):
-			return .step(.container(h, Node(left: .index(j), right: n)))
+			return .step(.container(h, Node(left: Node(holder: j), right: n)))
 		case .leaf(let attrs, let content):
 			switch content.headAndTail {
 			case (_, let tail)? where tail.isEmpty:
 				return .stepOut
 			case (let head, let tail)?:
-				let jtail = Node(left: .index(j),
+				let jtail = Node(left: Node(holder: j),
 				                 right: .leaf(attrs, tail))
 				return .step(Node(left: .leaf(attrs, head),
 				            right: jtail))
@@ -185,7 +188,7 @@ extension Node {
 				return .step(Node(left: newl, right: r))
 			case .stepOut:
 				return .step(Node(left: l,
-				    right: Node(left: .index(j), right: r)))
+				    right: Node(left: Node(holder: j), right: r)))
 			case .inchOut, .absent:
 				break
 			}
@@ -200,7 +203,7 @@ extension Node {
 	public func inserting(index j: Handle, oneStepAfter i: Handle)
 	    -> Step<C> {
 		switch self {
-		case .index(i):
+		case .index(let w) where w() == i:
 			return .inchOut
 		case .cursor(_, _), .index(_), .leaf(_, _), .empty:
 			return .absent
@@ -209,16 +212,16 @@ extension Node {
 			case .inchOut:
 				return .stepOut
 			case .stepOut:
-				return .step(.container(h, Node(left: n, right: .index(j))))
+				return .step(.container(h, Node(left: n, right: Node(holder: j))))
 			case .step(let newn):
 				return .step(.container(h, newn))
 			case .absent:
 				return .absent
 			}
-		case .concat(.index(i), _, _, _, let r, _):
+		case .concat(.index(let w), _, _, _, let r, _) where w() == i:
 			switch r.afterStepInserting(index: j) {
 			case .step(let newr):
-				return .step(Node(left: .index(i), right: newr))
+				return .step(Node(left: Node(holder: i), right: newr))
 			case let result:
 				return result
 			}
@@ -308,7 +311,7 @@ public class Rope<C : Content> : Collection {
 	typealias Content = C
 	public typealias Element = C
 	public typealias Index = RopeIndex
-	var top: Node<C>
+	public var top: Node<C>
 	public var startIndex: Index {
 		if top.startIndex == top.endIndex {
 			return .end
@@ -367,8 +370,8 @@ extension Node {
 	// index Handles?
 	public var handles: Set<Handle> {
 		switch self {
-		case .index(var handle):
-			if isKnownUniquelyReferenced(&handle) {
+		case .index(let w):
+			guard let handle = w() else {
 				return []
 			}
 			return [handle]
@@ -404,6 +407,9 @@ extension Substring : Initializable {
 extension Node {
 	public init(handle h: Handle, node n: Node<C>) {
 		self = .container(h, n)
+	}
+	public init(holder: Handle) {
+		self = .index(Weak(holder))
 	}
 	public init(left: Node<C>, right: Node<C>) {
 		self = .concat(left, left.endIndex,
@@ -486,15 +492,8 @@ public protocol RopeIndexish : Comparable {
 	static func adapt<T>(range: Range<Self>, for: T) -> Range<Int> where T : Content
 }                                                                               
 
-public struct Weak<O : AnyObject> {
-	public typealias Element = O
-	private weak var _object: O?
-	public var object: O? {
-		return _object
-	}
-	public init(_ r: O) {
-		_object = r
-	}
+public func Weak<O : AnyObject>(_ o: O) -> () -> O? {
+	return { [weak o] in o }
 }
 
 public extension Node {
@@ -588,40 +587,31 @@ public extension Node {
 	public var balanced: Bool {
 		return endIndex.characters >= fibonacci(index: depth + 2)
 	}
-	/*
-	public func clean(orphaned: Bool) -> Node<C>? {
-		var handles: [
-		var stack: [Node<C>] = self
-		while let node = stack.popLast() {
-			switch node {
-			case .empty, .cursor(_, _), .leaf(_, _):
-				continue
-			case .container(let h, var n):
-				
-				continue
-				guard let nn = n.clean() else {
-					return nil
-				}
-				return .container(h, nn)
-			case .index(var h):
-				self = .empty
-				if isKnownUniquelyReferenced(&h) {
-					return nil
-				}
-				return .index(h)
-			case .concat(var l, _, _, _, var r, _):
-				guard let nl = l.clean() else {
-					return r.clean()
-				}
-				guard let nr = r.clean() else {
-					return nl
-				}
-				self = Node(left: nl, right: nr)
-				return self
+	public func cleaned() -> Node<C>? {
+		switch self {
+		case .empty, .cursor(_, _), .leaf(_, _):
+			return self
+		case .container(let h, let n):
+			guard let nn = n.cleaned() else {
+				return nil
 			}
+			return .container(h, nn)
+		case .index(let w):
+			guard let handle = w() else {
+				print("went b-bye")
+				return nil
+			}
+			return Node(holder: handle)
+		case .concat(let l, _, _, _, let r, _):
+			guard let nl = l.cleaned() else {
+				return r.cleaned()
+			}
+			guard let nr = r.cleaned() else {
+				return nil
+			}
+			return Node(left: nl, right: nr)
 		}
 	}
-	*/
 	public func rebalanced() -> Node<C> {
 		switch self {
 		case .empty, .cursor(_, _), .leaf(_, _):
