@@ -1,16 +1,19 @@
 import Foundation
 
 public class Handle : Hashable {
-	var which: ObjectIdentifier {
-		return ObjectIdentifier(self)
-	}
+	public typealias Id = UInt64
+	static var nextId: Id = 0
+	private var _id: Id
+	public var id: Id { return _id }
 	public init() {
+		_id = Handle.nextId
+		Handle.nextId = Handle.nextId + 1
 	}
 	public static func ==(_ l: Handle, _ r: Handle) -> Bool {
-		return l.which == r.which
+		return l._id == r._id
 	}
 	public func hash(into hasher: inout Hasher) {
-		hasher.combine(which)
+		hasher.combine(_id)
 	}
 	deinit {
 		// print("b-bye")
@@ -30,10 +33,6 @@ public protocol Content : RangeReplaceableCollection {
 	static func +<Other>(_ l: Self, _ r: Other) -> Self where Other : Sequence, Character == Other.Element
 	init(_: SubSequence)
 	init(repeating: Element, count: Int)
-/*
-	var startIndex: Int { get }
-	var endIndex: Int { get }
-*/
 }
 
 extension Content {
@@ -92,9 +91,9 @@ public indirect enum Node<C : Content> {
 public typealias Content = C
 public typealias Element = C.Element
 case cursor(Handle, Attributes)
-case index(() -> Handle?)
+case index(Weak<Handle>)
 case container(Handle, Node)
-case concat(Node, NodeIndex, UInt, Set<Handle>, Node,
+case concat(Node, NodeIndex, UInt, Set<Handle.Id>, Node,
     NodeIndex)
 case leaf(Attributes, C)
 case empty
@@ -202,8 +201,9 @@ extension Node {
 	}
 	public func inserting(index j: Handle, oneStepAfter i: Handle)
 	    -> Step<C> {
+		let id = i.id
 		switch self {
-		case .index(let w) where w() == i:
+		case .index(let w) where w.get() == i:
 			return .inchOut
 		case .cursor(_, _), .index(_), .leaf(_, _), .empty:
 			return .absent
@@ -218,7 +218,7 @@ extension Node {
 			case .absent:
 				return .absent
 			}
-		case .concat(.index(let w), _, _, _, let r, _) where w() == i:
+		case .concat(.index(let w), _, _, _, let r, _) where w.get() == i:
 			switch r.afterStepInserting(index: j) {
 			case .step(let newr):
 				return .step(Node(left: Node(holder: i), right: newr))
@@ -226,12 +226,12 @@ extension Node {
 				return result
 			}
 		case .concat(let l, _, _, _, let r, _):
-			switch (l.handles.contains(i), r.handles.contains(i)) {
+			switch (l.hids.contains(id), r.hids.contains(id)) {
 			case (false, false):
 				return .absent
 			case (true, true):
-				assert(l.handles.contains(i) !=
-				       r.handles.contains(i))
+				assert(l.hids.contains(id) !=
+				       r.hids.contains(id))
 				return .inchOut
 			case (true, false):
 				return l.inserting(index: j, oneStepAfter: i,
@@ -368,20 +368,20 @@ public class Rope<C : Content> : Collection {
 extension Node {
 	// TBD introduce a property for all Handles but the
 	// index Handles?
-	public var handles: Set<Handle> {
+	public var hids: Set<Handle.Id> {
 		switch self {
 		case .index(let w):
-			guard let handle = w() else {
+			guard let handle = w.get() else {
 				return []
 			}
-			return [handle]
+			return [handle.id]
 		case .cursor(let handle, _):
-			return [handle]
+			return [handle.id]
 		case .container(let handle, let rope):
-			let handles: Set<Handle> = [handle]
-			return handles.union(rope.handles)
-		case .concat(_, _, _, let handles, _, _):
-			return handles
+			let hids: Set<Handle.Id> = [handle.id]
+			return hids.union(rope.hids)
+		case .concat(_, _, _, let hids, _, _):
+			return hids
 		case .leaf(_, _), .empty:
 			return []
 		}
@@ -414,7 +414,7 @@ extension Node {
 	public init(left: Node<C>, right: Node<C>) {
 		self = .concat(left, left.endIndex,
 		               1 + max(left.depth, right.depth),
-			       left.handles.union(right.handles), right, left.endIndex + right.endIndex)
+			       left.hids.union(right.hids), right, left.endIndex + right.endIndex)
 	}
 	public init<T>(text t: T) where C : Initializable, C.Initializer == T, T : Collection {
 		if t.isEmpty {
@@ -462,8 +462,10 @@ public struct LeafSequence<C : Content> : Sequence {
 extension Node : CustomDebugStringConvertible {
 	public var debugDescription: String {
 		switch self {
-		case .index(_):
+		case .index(let w) where w.get() != nil:
 			return "⬦"
+		case .index(_):
+			return "."
 		case .cursor(_, _):
 			return "|"
 		case .container(_, let rope):
@@ -492,9 +494,20 @@ public protocol RopeIndexish : Comparable {
 	static func adapt<T>(range: Range<Self>, for: T) -> Range<Int> where T : Content
 }                                                                               
 
+public struct Weak<O : AnyObject> {
+	typealias Reference = O
+	private var _f: () -> O?
+	public var get: () -> O? { return _f }
+	init(_ o: O) {
+		_f = { [weak o] in o }
+	}
+}
+
+/*
 public func Weak<O : AnyObject>(_ o: O) -> () -> O? {
 	return { [weak o] in o }
 }
+*/
 
 public extension Node {
 	typealias Index = NodeIndex
@@ -597,8 +610,7 @@ public extension Node {
 			}
 			return .container(h, nn)
 		case .index(let w):
-			guard let handle = w() else {
-				print("went b-bye")
+			guard let handle = w.get() else {
 				return nil
 			}
 			return Node(holder: handle)
