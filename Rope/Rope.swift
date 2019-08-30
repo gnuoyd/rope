@@ -511,10 +511,10 @@ public func Weak<O : AnyObject>(_ o: O) -> () -> O? {
 
 public extension Node {
 	typealias Index = NodeIndex
-	public var leaves: LeafSequence<Content> {
+	var leaves: LeafSequence<Content> {
 		return LeafSequence(of: self)
 	}
-	public var depth: UInt {
+	var depth: UInt {
 		switch self {
 		case .leaf(_), .cursor(_, _), .empty, .index(_):
 			return 0
@@ -524,7 +524,7 @@ public extension Node {
 			return depth
 		}
 	}
-	public var content: C {
+	var content: C {
 		switch self {
 		case .cursor(_, _), .empty, .index(_):
 			return C.empty
@@ -536,10 +536,10 @@ public extension Node {
 			return l.content + r.content
 		}
 	}
-	public var startIndex: NodeIndex {
+	var startIndex: NodeIndex {
 		return NodeIndex.zero
 	}
-	public var midIndex: Index {
+	var midIndex: Index {
 		switch self {
 		case .container(_, let rope):
 			return rope.midIndex
@@ -549,7 +549,7 @@ public extension Node {
 			return self.endIndex
 		}
 	}
-	public var endIndex: NodeIndex {
+	var endIndex: NodeIndex {
 		switch self {
 		case Node<C>.concat(_, _, _, _, _, let idx):
 			return idx
@@ -563,7 +563,7 @@ public extension Node {
 			return NodeIndex(cursors: 1)
 		}
 	}
-	public func element(at i: NodeIndex) -> Element {
+	func element(at i: NodeIndex) -> Element {
 		switch self {
 		case .leaf(_, let s):
 			let c: Element = s[s.index(s.startIndex, offsetBy: i.characters)]
@@ -580,7 +580,7 @@ public extension Node {
 			return rope.element(at: i)
 		}
 	}
-	public func appending(_ rope: Node) -> Node {
+	func appending(_ rope: Node) -> Node {
 		switch (self, rope) {
 		case (.empty, _):
 			return rope
@@ -597,10 +597,10 @@ public extension Node {
 			return Node(left: self, right: rope)
 		}
 	}
-	public var balanced: Bool {
+	var balanced: Bool {
 		return endIndex.characters >= fibonacci(index: depth + 2)
 	}
-	public func cleaned() -> Node<C>? {
+	func cleaned() -> Node<C>? {
 		switch self {
 		case .empty, .cursor(_, _), .leaf(_, _):
 			return self
@@ -624,7 +624,7 @@ public extension Node {
 			return Node(left: nl, right: nr)
 		}
 	}
-	public func rebalanced() -> Node<C> {
+	func rebalanced() -> Node<C> {
 		switch self {
 		case .empty, .cursor(_, _), .leaf(_, _):
 			return self
@@ -669,7 +669,7 @@ public extension Node {
 			}
 		})
 	}
-	public func subrope<T : RopeIndexish>(from: T, to: T, depth: Int = 0) -> Node<C> {
+	func subrope<T : RopeIndexish>(from: T, to: T, depth: Int = 0) -> Node<C> {
 		assert(T.zero <= from)
 		let endIndex = T.indexish(for: self.endIndex)
 		assert(to <= endIndex)
@@ -740,7 +740,7 @@ public extension Node {
 			return .leaf(attrs, subs)
 		}
 	}
-	public func subrope(from: NodeIndex, to: NodeIndex, depth: Int = 0) -> Node<C> {
+	func subrope(from: NodeIndex, to: NodeIndex, depth: Int = 0) -> Node<C> {
 		assert(NodeIndex.zero <= from)
 		let endIndex = self.endIndex
 		assert(to <= endIndex)
@@ -790,16 +790,16 @@ public extension Node {
 			return .leaf(attrs, subs)
 		}
 	}
-	public func deleting(from start: Index, to end: Index) -> Node {
+	func deleting(from start: Index, to end: Index) -> Node {
 		return subrope(from: NodeIndex.zero, to: start).appending(
 		    subrope(from: end, to: endIndex))
 	}
-	public func inserting(cursor handle: Handle, attributes: Attributes, at i: Index) -> Node {
+	func inserting(cursor handle: Handle, attributes: Attributes, at i: Index) -> Node {
 		let cursor: Node = .cursor(handle, attributes)
 		return subrope(from: NodeIndex.zero, to: i).appending(cursor).appending(
 		    subrope(from: i, to: endIndex))
 	}
-	public func inserting(text rope: Node, at insertionPt: Index) -> Node {
+	func inserting(text rope: Node, at insertionPt: Index) -> Node {
 		return subrope(from: NodeIndex.zero, to: insertionPt).appending(rope).appending(
 		    subrope(from: insertionPt, to: endIndex))
 	}
