@@ -31,7 +31,7 @@
 		EE4F4BAE230B70FE00F21B13 /* RopeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RopeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		EE4F4BB3230B70FE00F21B13 /* RopeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RopeTests.swift; sourceTree = "<group>"; };
 		EE4F4BB5230B70FE00F21B13 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		EE4F4BBF230B721200F21B13 /* Rope.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Rope.swift; sourceTree = SOURCE_ROOT; };
+		EE4F4BBF230B721200F21B13 /* Rope.swift */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 8; lastKnownFileType = sourcecode.swift; path = Rope.swift; sourceTree = SOURCE_ROOT; tabWidth = 8; };
 		EE4F4BC0230B721200F21B13 /* Fibonacci.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Fibonacci.swift; sourceTree = SOURCE_ROOT; };
 		EE4F4BC5230B765A00F21B13 /* MyPlayground.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; path = MyPlayground.playground; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
 /* End PBXFileReference section */
