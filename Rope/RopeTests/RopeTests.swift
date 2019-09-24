@@ -1,125 +1,185 @@
 //
-//  RopeTests.swift
-//  RopeTests
+//	RopeTests.swift
+//	RopeTests
 //
-//  Created by David Young on 19 Aug 19.
-//  Copyright © 2019 White Coral Islands. All rights reserved.
+//	Created by David Young on 19 Aug 19.
+//	Copyright © 2019 White Coral Islands. All rights reserved.
 //
 
 import XCTest
 @testable import Rope
 
-class RopeTests: XCTestCase {
+infix operator ⨯: MultiplicationPrecedence
 
-    override func setUp() {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
-    }
+func ⨯<L, R, Lseq : Sequence, Rseq : Sequence>(_ l: Lseq, _ r: Rseq) -> LazySequence<FlattenSequence<LazyMapSequence<Lseq, LazyMapSequence<Rseq, (L, R)>>>>  where Lseq.Element == L, Rseq.Element == R {
+	return l.lazy.flatMap({ lelt in r.lazy.map({ relt in (lelt, relt) })})
+}
 
-    override func tearDown() {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
-    }
+class IndexOrder: XCTestCase {
+	func testComparingIndicesSequentially() {
+		let rope = Rope<Substring>(content: "pqrstuvwxyz")
+		var previous: Rope<Substring>.Index? = nil
+		for current in rope.indices {
+			guard let p = previous else {
+				previous = current
+				continue
+			}
+			XCTAssert(p < current)
+			XCTAssert(!(current < p))
+			XCTAssert(!(current == p))
+		}
+	}
 
-    func testFibonacciByIndex() {
-        XCTAssert([0, 1, 2, 3, 4, 5].map({ i in fibonacci(index: i)}) == [0, 1, 1, 2, 3, 5])
-    }
-    
-    func testFibonacciGenerator() {
-        // Produce the Fibonacci sequence, 0th through 5th element.
-        let arr = Fibonacci(through: 5).reduce([], { (arr: [UInt], elt: UInt) -> [UInt] in arr + [elt]})
+	func testComparingIndicesPairwise() {
+		let rope = Rope<Substring>(content: "pqrstuvwxyz")
+		for (l, r) in rope.indices.enumerated() ⨯ rope.indices.enumerated() {
+			XCTAssert((l.offset < r.offset) == (l.element < r.element))
+		}
+	}
+}
 
-        XCTAssert(arr == [0, 1, 1, 2, 3, 5])
-    }
-    func testReleaseHandle() {
-        var h = Handle()
-        let w = Weak(h)
-        h = Handle()
-        XCTAssert(w.get() == nil)
-    }
-    
-    func testHoldHandle() {
-        let h = Handle()
-        let w = Weak(h)
-        XCTAssert(w.get() == h)
-    }
-    
-    func testStepAndHoldIndex() {
-        let first = Node<Substring>(text: "abc")
-        let handle = Handle()
-        guard case .step(let second) = first.afterStepInserting(index: handle) else {
-            XCTFail("afterStepInserting failed")
-            return
-        }
-        XCTAssert(second.leaves.map({ (x: Node<Substring>) -> Bool in if case .index(let w) = x { return w.get() == handle } else {return false } })[1])
-    }
-    
-    func testStepAndReleaseIndex() {
-        let first = Node<Substring>(text: "abc")
-        var handle = Handle()
-        guard case .step(let second) = first.afterStepInserting(index: handle) else {
-            XCTFail("afterStepInserting failed")
-            return
-        }
-        handle = Handle()
-        XCTAssert(!second.leaves.map({ (x: Node<Substring>) -> Bool in if case .index(let w) = x { return w.get() == handle } else {return false } })[1])
-    }
+class CompareDisparateRopeIndices: XCTestCase {
+	func testStartIndices() {
+		let rope1 = Rope<Substring>(content: "abc")
+		let rope2 = Rope<Substring>(content: "def")
+		let idx1 = rope1.startIndex
+		let idx2 = rope2.startIndex
+		XCTAssertThrowsError(try idx1.isLessThan(idx2))
+		XCTAssertThrowsError(try idx1.equals(idx2))
+	}
+	func testSecondIndices() {
+		let rope1 = Rope<Substring>(content: "abc")
+		let rope2 = Rope<Substring>(content: "def")
+		let idx1 = rope1.index(after: rope1.startIndex)
+		let idx2 = rope2.index(after: rope2.startIndex)
+		XCTAssertThrowsError(try idx1.isLessThan(idx2))
+		XCTAssertThrowsError(try idx1.equals(idx2))
+	}
+	func testEndIndices() {
+		let rope1 = Rope<Substring>(content: "abc")
+		let rope2 = Rope<Substring>(content: "def")
+		let idx1 = rope1.endIndex
+		let idx2 = rope2.endIndex
+		XCTAssertThrowsError(try idx1.isLessThan(idx2))
+		XCTAssertThrowsError(try idx1.equals(idx2))
+	}
+}
 
-    static func isIndex(_ n: Node<Substring>) -> Bool {
-        if case .index(_) = n {
-            return true
-        }
-        return false
-    }
+class FibonacciTests : XCTestCase {
+	func testFibonacciByIndex() {
+		XCTAssert([0, 1, 2, 3, 4, 5].map({ i in fibonacci(index: i)}) == [0, 1, 1, 2, 3, 5])
+	}
+	
+	func testFibonacciGenerator() {
+		// Produce the Fibonacci sequence, 0th through 5th element.
+		let arr = Fibonacci(through: 5).reduce([], { (arr: [UInt], elt: UInt) -> [UInt] in arr + [elt]})
 
-    static func isNilIndex(_ n: Node<Substring>) -> Bool {
-        if case .index(let w) = n {
-            return w.get() == nil
-        }
-        return false
-    }
-    
-    func testCleanedHoldingIndices() {
-        let emptyRope = Rope<Substring>(text: "abcdefghijkl")
-        var indices: [Rope<Substring>.Index]? = []
-        
-        for i in emptyRope.indices {
-            indices?.append(i)
-        }
-        print(emptyRope.node)
-        XCTAssert(emptyRope.node.cleaned()?.leaves.filter(RopeTests.isIndex).count == 11)
-    }
+		XCTAssert(arr == [0, 1, 1, 2, 3, 5])
+	}
+}
 
-    func testCleanedReleasingIndices() {
-        let emptyRope = Rope<Substring>(text: "abcdefghijkl")
-        var indices: [Rope<Substring>.Index]? = []
+class HandleHolding : XCTestCase {
 
-        for i in emptyRope.indices {
-            indices?.append(i)
-        }
-        print(emptyRope.node)
-        indices = nil
-        XCTAssert(emptyRope.node.cleaned()?.leaves.filter(RopeTests.isIndex).count == 0)
-    }
-    
-    func testReleasingIndices() {
-        let emptyRope = Rope<Substring>(text: "abcdefghijkl")
-        var indices: [Rope<Substring>.Index]? = []
-        
-        for i in emptyRope.indices {
-            indices?.append(i)
-        }
+/*
+	override func setUp() {
+		// Put setup code here. This method is called before the invocation of each test method in the class.
+	}
 
-        indices = nil
-        print(emptyRope.node.leaves)
-        print(emptyRope.node.leaves.filter(RopeTests.isNilIndex))
+	override func tearDown() {
+		// Put teardown code here. This method is called after the invocation of each test method in the class.
+	}
+*/
 
-        XCTAssert(emptyRope.node.leaves.filter(RopeTests.isNilIndex).count == 11)
-    }
+	func testReleaseHandle() {
+		var h = Handle()
+		let w = Weak(h)
+		h = Handle()
+		XCTAssert(w.get() == nil)
+	}
+	
+	func testHoldHandle() {
+		let h = Handle()
+		let w = Weak(h)
+		XCTAssert(w.get() == h)
+	}
+	
+	func testStepAndHoldIndex() {
+		let first = Node<Substring>(content: "abc")
+		let handle = Handle()
+		guard case .step(let second) = first.afterStepInserting(index: handle) else {
+			XCTFail("afterStepInserting failed")
+			return
+		}
+		XCTAssert(second.leaves.map({ (x: Node<Substring>) -> Bool in if case .index(let w) = x { return w.get() == handle } else {return false } })[1])
+	}
+	
+	func testStepAndReleaseIndex() {
+		let first = Node<Substring>(content: "abc")
+		var handle = Handle()
+		guard case .step(let second) = first.afterStepInserting(index: handle) else {
+			XCTFail("afterStepInserting failed")
+			return
+		}
+		handle = Handle()
+		XCTAssert(!second.leaves.map({ (x: Node<Substring>) -> Bool in if case .index(let w) = x { return w.get() == handle } else {return false } })[1])
+	}
 
-    func testPerformanceExample() {
-        // This is an example of a performance test case.
-        self.measure {
-            // Put the code you want to measure the time of here.
-        }
-    }
+	static func isIndex(_ n: Node<Substring>) -> Bool {
+		if case .index(_) = n {
+			return true
+		}
+		return false
+	}
 
+	static func isNilIndex(_ n: Node<Substring>) -> Bool {
+		if case .index(let w) = n {
+			return w.get() == nil
+		}
+		return false
+	}
+	
+	func testCleanedHoldingIndices() {
+		let emptyRope = Rope<Substring>(content: "abcdefghijkl")
+		var indices: [Rope<Substring>.Index]? = []
+		
+		for i in emptyRope.indices {
+			indices?.append(i)
+		}
+		print(emptyRope.node)
+		XCTAssert(emptyRope.node.cleaned()?.leaves.filter(HandleHolding.isIndex).count == 11)
+	}
+
+	func testCleanedReleasingIndices() {
+		let emptyRope = Rope<Substring>(content: "abcdefghijkl")
+		var indices: [Rope<Substring>.Index]? = []
+
+		for i in emptyRope.indices {
+			indices?.append(i)
+		}
+		print(emptyRope.node)
+		indices = nil
+		XCTAssert(emptyRope.node.cleaned()?.leaves.filter(HandleHolding.isIndex).count == 0)
+	}
+	
+	func testReleasingIndices() {
+		let rope = Rope<Substring>(content: "abcdefghijkl")
+		var indices: [Rope<Substring>.Index]? = []
+		
+		for i in rope.indices {
+			indices?.append(i)
+		}
+
+		indices = nil
+		print(rope.node.leaves)
+		print(rope.node.leaves.filter(HandleHolding.isNilIndex))
+
+		XCTAssert(rope.node.leaves.filter(HandleHolding.isNilIndex).count == 11)
+	}
+
+	func testPerformanceExample() {
+		// This is an example of a performance test case.
+		self.measure {
+			// Put the code you want to measure the time of here.
+		}
+	}
 }
