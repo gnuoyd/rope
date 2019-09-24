@@ -22,17 +22,24 @@ public class Handle : Hashable {
 
 public typealias Attributes = [NSAttributedString.Key : Any]
 
-public protocol Content : RangeReplaceableCollection {
+public protocol Initializable {
+	associatedtype Initializer
+	init(_ initial: Initializer)
+}
+
+public protocol Content : RangeReplaceableCollection, Initializable {
 	associatedtype SubSequence
 	associatedtype Element
 	subscript(_ range: Range<Int>) -> Self? { get }
 	subscript(_ i: Int) -> Element { get }
 	var isEmpty: Bool { get }
 	static var empty: Self { get }
+	static var unit: Element { get }
 	var length: Int { get }
 	static func +<Other>(_ l: Self, _ r: Other) -> Self where Other : Sequence, Character == Other.Element
 	init(_: SubSequence)
 	init(repeating: Element, count: Int)
+	init(unit: Element)
 }
 
 extension Content {
@@ -100,6 +107,10 @@ case empty
 }
 
 extension Substring : Content {
+        public init(unit: Character) {
+                self.init(repeating: unit, count: 1)
+        }
+        
 	public typealias Element = Character
 	public subscript(_ range: Range<Int>) -> Substring? {
 		let clampedStartOffset: Int = (range.startIndex > self.length)
@@ -122,6 +133,7 @@ extension Substring : Content {
 		let i = self.index(startIndex, offsetBy: offset)
 		return self[i]
 	}
+	public static var unit: Character { return Character("U") }
 	public static var empty: Substring { return "" }
 	public var length: Int {
 		return distance(from: startIndex, to: endIndex)
@@ -248,40 +260,79 @@ extension Node {
 	}
 }
 
-public enum RopeIndex : Comparable {
-case start
-case end
-case interior(UInt64, Handle)
-}
-
-public func ==(_ l: RopeIndex, _ r: RopeIndex) -> Bool {
-	switch (l, r) {
-	case (.start, .start), (.end, .end):
-		return true
-	case (.interior(let m, let h), .interior(let n, let j))
-	    where m == n || h == j:
-		return true
-	default:
-		return false
+public enum RopeIndex<C : Content> : Comparable {
+case start(Rope<C>)
+case end(Rope<C>)
+case interior(Rope<C>, UInt64, UInt64, Handle)
+        public var owner: Rope<C> {
+		switch self {
+		case .start(let r), .end(let r), .interior(let r, _, _, _):
+			return r
+		}
 	}
 }
 
-public func <(_ l: RopeIndex, _ r: RopeIndex) -> Bool {
-	switch (l, r) {
-	case (.start, .start):
-		return false
-	case (.start, _):
-		return true
-	case (.end, .end):
-		return false
-	case (_, .end):
-		return true
-	case (.interior(let m, _), .interior(let n, _)) where m < n:
-		return true
-	default:
-		return false
+enum RopeIndexComparisonError : Error {
+case MismatchedOwners
+}
+
+public func == <C>(_ l: RopeIndex<C>, _ r: RopeIndex<C>) -> Bool {
+	do {
+		return try l.equals(r)
+	} catch {
+		fatalError("Not comparable")
 	}
 }
+
+public func < <C>(_ l: RopeIndex<C>, _ r: RopeIndex<C>) -> Bool {
+	do {
+		return try l.isLessThan(r)
+	} catch {
+		fatalError("Not comparable")
+	}
+}
+
+extension RopeIndex {
+        public func equals <C>(_ other: RopeIndex<C>) throws -> Bool {
+		guard self.owner === other.owner else {
+			throw RopeIndexComparisonError.MismatchedOwners
+		}
+		switch (self, other) {
+		case (.start(_), .start(_)), (.end(_), .end(_)):
+			return true
+		case (.interior(_, _, _, let h), .interior(_, _, _, let j))
+		    where h == j:
+			return true
+		default:
+			return false
+		}
+	}
+	public func isLessThan<C>( _ other: RopeIndex<C>) throws -> Bool {
+		guard self.owner === other.owner else {
+			throw RopeIndexComparisonError.MismatchedOwners
+		}
+		switch (self, other) {
+		case (.start(_), .start(_)):
+			return false
+		case (.start(_), _):
+			return true
+		case (.end(_), .end(_)):
+			return false
+		case (_, .end(_)):
+			return true
+		case (.interior(_, let g1, _, let h1),
+		      .interior(_, let g2, _, let h2)) where g1 != g2:
+			return self.owner.contains(index: h1, before: h2)
+		case (.interior(_, _, let m, _), .interior(_, _, let n, _))
+		    where m < n:
+			return true
+		default:
+			return false
+		}
+	}
+}
+
+
 /* Use cases:
  *
  * Get/set/add/remove attributes on characters.
@@ -308,17 +359,18 @@ public func <(_ l: RopeIndex, _ r: RopeIndex) -> Bool {
  * to the text.
  */
 public class Rope<C : Content> : Collection {
-	typealias Content = C
-	public typealias Element = C
-	public typealias Index = RopeIndex
+	public typealias Content = C
+	public typealias Element = C.Element
+	public typealias Index = RopeIndex<C>
 	public var top: Node<C>
+	public var generation: UInt64 = 0
 	public var startIndex: Index {
 		if top.startIndex == top.endIndex {
-			return .end
+			return .end(self)
 		}
-		return .start
+		return .start(self)
 	}
-	public var endIndex: Index { return .end }
+	public var endIndex: Index { return .end(self) }
 
 	public init() {
 		top = .empty
@@ -331,21 +383,27 @@ public class Rope<C : Content> : Collection {
 			top = newValue
 		}
 	}
-	public init<T>(text t: T) where C : Initializable, C.Initializer == T, T : Collection {
-		top = Node(text: t)
+	public func contains(index h1: Handle, before h2: Handle) -> Bool {
+		return top.contains(index: h1, before: h2)
+	}
+	public init<T>(content t: T) where C : Initializable, C.Initializer == T, T : Collection {
+		top = Node(content: t)
 	}
 	public func index(after i: Index) -> Index {
+		guard i.owner === self else {
+			fatalError("Mismatched owner")
+		}
 		switch i {
-		case .start:
+		case .start(_):
 			let h = Handle()
 			guard case .step(let n) = top.afterStepInserting(index: h) else {
-				return .end
+				return .end(self)
 			}
 			top = n
-			return .interior(0, h)
-		case .end:
+			return .interior(self, generation, 0, h)
+		case .end(_):
 			fatalError("No index after .endIndex")
-		case .interior(let m, let h):
+                case .interior(_, _, let m, let h):
 			let j = Handle()
 			switch top.inserting(index: j, oneStepAfter: h) {
 			case .inchOut:
@@ -353,15 +411,57 @@ public class Rope<C : Content> : Collection {
 			case .absent:
 				fatalError("Index .interior(\(m), \(h)) is absent")
 			case .stepOut:
-				return .end
+				return .end(self)
 			case .step(let node):
 				top = node
-				return .interior(m + 1, j)
+				return .interior(self, generation, m + 1, j)
 			}
 		}
 	}
 	public subscript(i: Index) -> Iterator.Element {
-		get { return C.empty }
+		get { return C.unit }
+        }
+	public func insert(_ elt: Element, at i: Index) {
+		guard self === i.owner else {
+			fatalError("Invalid index")
+		}
+		switch i {
+		case .start(_):
+                        let c: Content = C.init(unit: elt)
+                        top = Node<C>(left: Node<C>(content: c), right: top)
+		case .end(_):
+                        let c = Content.init(repeating: elt, count: 1)
+                        top = Node(left: top, right: Node<Content>(content: c))
+		case .interior(_, _, _, let h):
+			top = top.inserting(elt, at: h)
+		}
+	}
+}
+
+extension Node {
+	public func inserting(_ elt: Element, at target: Handle) -> Node {
+		switch self {
+		case .index(let w):
+			guard let handle = w.get(), handle == target else {
+				fatalError("Invalid index")
+			}
+                        let c: Content = Content.init(repeating: elt, count: 1)
+                        return Node<Content>(content: c)
+		case .cursor(_, _):
+			fatalError("Invalid index")
+		case .container(let h, let r):
+			return Node(handle: h, node: r.inserting(elt, at: target))
+		case .concat(let l, _, _, _, let r, _):
+			if l.contains(index: target) {
+				return Node(left: l.inserting(elt, at: target), right: r)
+			} else if r.contains(index: target) {
+				return Node(left: l, right: r.inserting(elt, at: target))
+			} else {
+				fatalError("Invalid index")
+			}
+		case .leaf(_, _), .empty:
+			fatalError("Invalid index")
+		}
 	}
 }
 
@@ -386,19 +486,54 @@ extension Node {
 			return []
 		}
 	}
+	public func contains(index target: Handle) -> Bool {
+		switch self {
+		case .index(let w):
+			guard let handle = w.get() else {
+				return false
+			}
+			return handle == target
+		case .cursor(target, _):
+			return true
+		case .container(_, let rope):
+			return rope.contains(index: target)
+		case .concat(_, _, _, let hids, _, _):
+			return hids.contains(target.id)
+		case .leaf(_, _), .empty:
+			return false
+                case .cursor(_, _):
+                        return false
+                }
+	}
+	public func contains(index h1: Handle, before h2: Handle) -> Bool {
+		switch self {
+		case .index(_):
+			fatalError("Cannot order handles on an .index(_)")
+		case .cursor(_, _):
+			fatalError("Cannot order handles on a .cursor(_)")
+		case .container(_, let rope):
+			return rope.contains(index: h1, before: h2)
+		case .concat(let l, _, _, let hids, let r, _):
+                        guard hids.contains(h1.id) && hids.contains(h2.id) else {
+                                return false
+                        }
+			return l.contains(index: h1, before: h2) ||
+			    (l.contains(index: h1) && r.contains(index: h2)) ||
+			    r.contains(index: h1, before: h2)
+		case .leaf(_, _):
+			fatalError("Cannot order handles on a .leaf(_, _)")
+		case .empty:
+			fatalError("Cannot order handles on an .empty")
+		}
+	}
 }
 /*
 extension Rope : ExpressibleByStringLiteral, ExpressibleByExtendedGraphemeClusterLiteral where Rope.Content : ExpressibleByStringLiteral {
 	public init(stringLiteral s: S) {
-		top = Node<Content>(text: s)
+		top = Node<Content>(content: s)
 	}
 }
 */
-
-public protocol Initializable {
-	associatedtype Initializer
-	init(_ initial: Initializer)
-}
 
 extension Substring : Initializable {
 	public typealias Initializer = String
@@ -416,12 +551,15 @@ extension Node {
 		               1 + max(left.depth, right.depth),
 			       left.hids.union(right.hids), right, left.endIndex + right.endIndex)
 	}
-	public init<T>(text t: T) where C : Initializable, C.Initializer == T, T : Collection {
-		if t.isEmpty {
+	public init(content c: C) {
+		if c.isEmpty {
 			self = Node<C>.empty
 		} else {
-			self = Node<C>.leaf([:], C(t))
+			self = Node<C>.leaf([:], c)
 		}
+	}
+	public init<I>(content i: I) where C : Initializable, C.Initializer == I, I : Collection {
+		self.init(content: C(i))
 	}
 }
 
@@ -502,12 +640,6 @@ public struct Weak<O : AnyObject> {
 		_f = { [weak o] in o }
 	}
 }
-
-/*
-public func Weak<O : AnyObject>(_ o: O) -> () -> O? {
-	return { [weak o] in o }
-}
-*/
 
 public extension Node {
 	typealias Index = NodeIndex
@@ -799,7 +931,7 @@ public extension Node {
 		return subrope(from: NodeIndex.zero, to: i).appending(cursor).appending(
 		    subrope(from: i, to: endIndex))
 	}
-	func inserting(text rope: Node, at insertionPt: Index) -> Node {
+	func inserting(content rope: Node, at insertionPt: Index) -> Node {
 		return subrope(from: NodeIndex.zero, to: insertionPt).appending(rope).appending(
 		    subrope(from: insertionPt, to: endIndex))
 	}
