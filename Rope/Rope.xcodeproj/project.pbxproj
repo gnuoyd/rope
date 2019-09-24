@@ -29,11 +29,12 @@
 		EE4F4BA8230B70FE00F21B13 /* Rope.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Rope.h; sourceTree = "<group>"; };
 		EE4F4BA9230B70FE00F21B13 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		EE4F4BAE230B70FE00F21B13 /* RopeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RopeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		EE4F4BB3230B70FE00F21B13 /* RopeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RopeTests.swift; sourceTree = "<group>"; };
+		EE4F4BB3230B70FE00F21B13 /* RopeTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 8; lastKnownFileType = sourcecode.swift; path = RopeTests.swift; sourceTree = "<group>"; tabWidth = 8; usesTabs = 1; };
 		EE4F4BB5230B70FE00F21B13 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		EE4F4BBF230B721200F21B13 /* Rope.swift */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 8; lastKnownFileType = sourcecode.swift; path = Rope.swift; sourceTree = SOURCE_ROOT; tabWidth = 8; };
 		EE4F4BC0230B721200F21B13 /* Fibonacci.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Fibonacci.swift; sourceTree = SOURCE_ROOT; };
-		EE4F4BC5230B765A00F21B13 /* MyPlayground.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; path = MyPlayground.playground; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
+		EEA72FFB231F4EF600C38F26 /* TimingPlayground.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; path = TimingPlayground.playground; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
+		EEA72FFC23305D8000C38F26 /* IndexPlayground.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; path = IndexPlayground.playground; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -58,7 +59,8 @@
 		EE4F4B9B230B70FE00F21B13 = {
 			isa = PBXGroup;
 			children = (
-				EE4F4BC5230B765A00F21B13 /* MyPlayground.playground */,
+				EEA72FFC23305D8000C38F26 /* IndexPlayground.playground */,
+				EEA72FFB231F4EF600C38F26 /* TimingPlayground.playground */,
 				EE4F4BA7230B70FE00F21B13 /* Rope */,
 				EE4F4BB2230B70FE00F21B13 /* RopeTests */,
 				EE4F4BA6230B70FE00F21B13 /* Products */,
