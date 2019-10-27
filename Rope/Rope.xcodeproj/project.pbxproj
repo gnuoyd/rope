@@ -158,10 +158,11 @@
 				TargetAttributes = {
 					EE4F4BA4230B70FE00F21B13 = {
 						CreatedOnToolsVersion = 10.1;
-						LastSwiftMigration = 1010;
+						LastSwiftMigration = 1030;
 					};
 					EE4F4BAD230B70FE00F21B13 = {
 						CreatedOnToolsVersion = 10.1;
+						LastSwiftMigration = 1030;
 					};
 				};
 			};
@@ -171,6 +172,7 @@
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
+				Base,
 			);
 			mainGroup = EE4F4B9B230B70FE00F21B13;
 			productRefGroup = EE4F4BA6230B70FE00F21B13 /* Products */;
@@ -373,7 +375,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_VERSION = 4.2;
+				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
 		};
@@ -399,7 +401,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.whitecoralislands.Rope;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
-				SWIFT_VERSION = 4.2;
+				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
 		};
@@ -417,7 +419,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.whitecoralislands.RopeTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 4.2;
+				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
 		};
@@ -435,7 +437,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.whitecoralislands.RopeTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 4.2;
+				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
 		};
