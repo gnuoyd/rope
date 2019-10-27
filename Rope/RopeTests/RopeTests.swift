@@ -32,7 +32,8 @@ class IndexOrder: XCTestCase {
 
 	func testComparingIndicesPairwise() {
 		let rope = Rope<Substring>(content: "pqrstuvwxyz")
-		for (l, r) in rope.indices.enumerated() ⨯ rope.indices.enumerated() {
+		let indices = rope.indices.enumerated()
+		for (l, r) in indices ⨯ indices {
 			XCTAssert((l.offset < r.offset) == (l.element < r.element))
 		}
 	}
@@ -182,4 +183,7 @@ class HandleHolding : XCTestCase {
 			// Put the code you want to measure the time of here.
 		}
 	}
+}
+
+class RopeTextStorage : XCTestCase {
 }
