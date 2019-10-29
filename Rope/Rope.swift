@@ -72,8 +72,7 @@ public typealias Element = C.Element
 case cursor(Handle, Attributes)
 case index(Weak<Handle>)
 case container(Handle, Node)
-case concat(Node, NodeIndex, UInt, Set<Handle.Id>, Node,
-    NodeIndex)
+case concat(Node, NodeIndex, UInt, Set<Handle.Id>, Node, NodeIndex)
 case leaf(Attributes, C)
 case empty
 }
