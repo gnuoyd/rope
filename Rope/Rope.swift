@@ -27,7 +27,7 @@ public protocol Initializable {
 	init(_ initial: Initializer)
 }
 
-public protocol Content : RangeReplaceableCollection, Initializable {
+public protocol Content : Initializable, StringProtocol {
 	associatedtype SubSequence
 	associatedtype Element
 	subscript(_ range: Range<Int>) -> Self? { get }
@@ -52,39 +52,11 @@ extension Content {
 }
 
 public struct NodeIndex : Comparable {
-	public let characters: Int
-	let opened: Int
-	let closed: Int
-	let cursors: Int
+	public let utf16Offset: Int
 }
 
 extension NodeIndex {
-	public init(characters: Int, cursors: Int = 0) {
-		self.characters = characters
-		self.opened = 0
-		self.closed = 0
-		self.cursors = cursors
-	}
-	public init(cursors: Int) {
-		self.characters = 0
-		self.opened = 0
-		self.closed = 0
-		self.cursors = cursors
-	}
-	public init(opened: Int, closed: Int) {
-		self.characters = 0
-		self.opened = opened
-		self.closed = closed
-		self.cursors = 0
-	}
-	public init(containers: Int) {
-		self.characters = 0
-		self.opened = containers
-		self.closed = containers
-		self.cursors = 0
-	}
-	public static let zero: NodeIndex =
-	    NodeIndex(characters: 0, opened: 0, closed: 0, cursors: 0)
+	public static let start: NodeIndex = NodeIndex(utf16Offset: 0)
 }
 
 /* A Node directly encodes the presence of cursors because it is
@@ -261,9 +233,9 @@ extension Node {
 }
 
 public enum RopeIndex<C : Content> : Comparable {
-case start(Rope<C>)
-case end(Rope<C>)
-case interior(Rope<C>, UInt64, UInt64, Handle)
+case start(of: Rope<C>)
+case end(of: Rope<C>)
+case interior(of: Rope<C>, at: UInt64, index: UInt64, handle: Handle)
         public var owner: Rope<C> {
 		switch self {
 		case .start(let r), .end(let r), .interior(let r, _, _, _):
@@ -366,11 +338,11 @@ public class Rope<C : Content> : Collection {
 	public var generation: UInt64 = 0
 	public var startIndex: Index {
 		if top.startIndex == top.endIndex {
-			return .end(self)
+                        return .end(of: self)
 		}
-		return .start(self)
+                return .start(of: self)
 	}
-	public var endIndex: Index { return .end(self) }
+        public var endIndex: Index { return .end(of: self) }
 
 	public init() {
 		top = .empty
@@ -397,10 +369,10 @@ public class Rope<C : Content> : Collection {
 		case .start(_):
 			let h = Handle()
 			guard case .step(let n) = top.afterStepInserting(index: h) else {
-				return .end(self)
+                                return .end(of: self)
 			}
 			top = n
-			return .interior(self, generation, 0, h)
+                        return .interior(of: self, at: generation, index: 0, handle: h)
 		case .end(_):
 			fatalError("No index after .endIndex")
                 case .interior(_, _, let m, let h):
@@ -411,10 +383,10 @@ public class Rope<C : Content> : Collection {
 			case .absent:
 				fatalError("Index .interior(\(m), \(h)) is absent")
 			case .stepOut:
-				return .end(self)
+                                return .end(of: self)
 			case .step(let node):
 				top = node
-				return .interior(self, generation, m + 1, j)
+                                return .interior(of: self, at: generation, index: m + 1, handle: j)
 			}
 		}
 	}
@@ -619,12 +591,12 @@ extension Node : CustomDebugStringConvertible {
 }
 
 func +(_ l: NodeIndex, _ r: NodeIndex) -> NodeIndex {
-	return NodeIndex(characters: l.characters + r.characters, opened: l.opened + r.opened, closed: l.closed + r.closed, cursors: l.cursors + r.cursors)
+	return NodeIndex(utf16Offset: l.utf16Offset + r.utf16Offset)
 }
 
 public protocol RopeIndexish : Comparable {                          
 	static func indexish(for: NodeIndex) -> Self                            
-	static var zero: Self { get }
+	static var start: Self { get }
 	static var stepIn: Self { get }
 	static var stepOut: Self { get }
 	static func -(_ l: Self, _ r: Self) -> Self
@@ -669,7 +641,7 @@ public extension Node {
 		}
 	}
 	var startIndex: NodeIndex {
-		return NodeIndex.zero
+		return NodeIndex.start
 	}
 	var midIndex: Index {
 		switch self {
@@ -686,19 +658,23 @@ public extension Node {
 		case Node<C>.concat(_, _, _, _, _, let idx):
 			return idx
 		case .container(_, let rope):
-			return rope.endIndex + NodeIndex(containers: 1)
+			return rope.endIndex
 		case .leaf(_, let s):
-			return NodeIndex(characters: s.distance(from: s.startIndex, to: s.endIndex))
+			let endOffset = s.endIndex.utf16Offset(in: s)
+			let startOffset = s.startIndex.utf16Offset(in: s)
+			return NodeIndex(utf16Offset: endOffset - startOffset)
 		case .empty, .index(_):
-			return NodeIndex.zero
+			return NodeIndex.start
 		case .cursor(_, _):
-			return NodeIndex(cursors: 1)
+			return NodeIndex.start
 		}
 	}
 	func element(at i: NodeIndex) -> Element {
 		switch self {
 		case .leaf(_, let s):
-			let c: Element = s[s.index(s.startIndex, offsetBy: i.characters)]
+			let idx =
+			    String.Index(utf16Offset: i.utf16Offset, in: s)
+			let c: Element = s[idx]
 			return c
 		case .concat(let ropel, let idx, _, _, let roper, _):
 			if i < idx {
@@ -730,7 +706,7 @@ public extension Node {
 		}
 	}
 	var balanced: Bool {
-		return endIndex.characters >= fibonacci(index: depth + 2)
+		return endIndex.utf16Offset >= fibonacci(index: depth + 2)
 	}
 	func cleaned() -> Node<C>? {
 		switch self {
@@ -768,7 +744,7 @@ public extension Node {
 		var slot: [Node?] = []
 		let totlen = endIndex
 		for fn in Fibonacci(from: 2) {
-			if fn > totlen.characters {
+			if fn > totlen.utf16Offset {
 				break
 			}
 			slot.append(nil)
@@ -782,7 +758,7 @@ public extension Node {
 					                right: rope)
 					slot[slot.count - i - 1] = nil
 				}
-				if fip3 >= rope.endIndex.characters {
+				if fip3 >= rope.endIndex.utf16Offset {
 					n = i
 					break
 				}
@@ -801,8 +777,9 @@ public extension Node {
 			}
 		})
 	}
-	func subrope<T : RopeIndexish>(from: T, to: T, depth: Int = 0) -> Node<C> {
-		assert(T.zero <= from)
+	func subrope<T : RopeIndexish>(from: T, to: T, depth: Int = 0)
+	    -> Node<C> {
+		assert(T.start <= from)
 		let endIndex = T.indexish(for: self.endIndex)
 		assert(to <= endIndex)
 		// print("enter\(" " * depth) substring \(from):\(to) " +
@@ -815,7 +792,7 @@ public extension Node {
 			assert(from == to)
 			return self
 		case .cursor(_, _):
-			if T.zero == from && to == endIndex {
+			if T.start == from && to == endIndex {
 				return self
 			}
 			return .empty
@@ -833,7 +810,7 @@ public extension Node {
 				return .empty
 			}
 			return .container(handle, rope.subrope(
-			    from: max(T.zero, from - T.stepIn),
+			    from: max(T.start, from - T.stepIn),
 			    to: min(endIndex - T.stepIn, to - T.stepIn),
 			    depth: depth + 1))
 		case .concat(let ropel, let _idx, _, _, let roper, _):
@@ -842,7 +819,7 @@ public extension Node {
 				return .empty
 			}
 			var l, r: Node
-			if from == T.zero && idx <= to {
+			if from == T.start && idx <= to {
 				l = ropel
 			} else if idx <= from {
 				l = .empty
@@ -859,7 +836,7 @@ public extension Node {
 				r = .empty
 			} else {
 				r = roper.subrope(
-					from: max(T.zero, from - idx),
+					from: max(T.start, from - idx),
 					to: min(endIndex - idx, to - idx),
 					depth: depth + 1)
 			}
@@ -873,7 +850,7 @@ public extension Node {
 		}
 	}
 	func subrope(from: NodeIndex, to: NodeIndex, depth: Int = 0) -> Node<C> {
-		assert(NodeIndex.zero <= from)
+		assert(NodeIndex.start <= from)
 		let endIndex = self.endIndex
 		assert(to <= endIndex)
 		// print("enter\(" " * depth) substring \(from):\(to) " +
@@ -892,7 +869,7 @@ public extension Node {
 				return .empty
 			}
 			var l, r: Node
-			if from == NodeIndex.zero && idx <= to {
+			if from == NodeIndex.start && idx <= to {
 				l = ropel
 			} else if idx <= from {
 				l = .empty
@@ -909,13 +886,13 @@ public extension Node {
 				r = .empty
 			} else {
 				r = roper.subrope(
-					from: max(NodeIndex.zero, from - idx),
+					from: max(NodeIndex.start, from - idx),
 					to: min(endIndex - idx, to - idx),
 					depth: depth + 1)
 			}
 			return l.appending(r)
 		case let .leaf(attrs, s):
-			guard let subs = s[from.characters..<to.characters]
+			guard let subs = s[from.utf16Offset..<to.utf16Offset]
 			    else {
 				return .empty
 			}
@@ -923,56 +900,33 @@ public extension Node {
 		}
 	}
 	func deleting(from start: Index, to end: Index) -> Node {
-		return subrope(from: NodeIndex.zero, to: start).appending(
+		return subrope(from: NodeIndex.start, to: start).appending(
 		    subrope(from: end, to: endIndex))
 	}
 	func inserting(cursor handle: Handle, attributes: Attributes, at i: Index) -> Node {
 		let cursor: Node = .cursor(handle, attributes)
-		return subrope(from: NodeIndex.zero, to: i).appending(cursor).appending(
+		return subrope(from: NodeIndex.start, to: i).appending(cursor).appending(
 		    subrope(from: i, to: endIndex))
 	}
 	func inserting(content rope: Node, at insertionPt: Index) -> Node {
-		return subrope(from: NodeIndex.zero, to: insertionPt).appending(rope).appending(
+		return subrope(from: NodeIndex.start, to: insertionPt).appending(rope).appending(
 		    subrope(from: insertionPt, to: endIndex))
 	}
 }
 
 public func ==(_ l: NodeIndex, _ r: NodeIndex) -> Bool {
-	return l.characters == r.characters && l.opened == r.opened && r.closed == l.closed && l.cursors == r.cursors
+	return l.utf16Offset == r.utf16Offset
 }
 
 public func <(_ l: NodeIndex, _ r: NodeIndex) -> Bool {
-	if l.characters < r.characters {
-		return true
-	} else if l.characters > r.characters {
-		return false
-	}
-	if l.opened < r.opened {
-		return true
-	} else if l.opened > r.opened {
-		return false
-	}
-	if l.closed < r.closed {
-		return true
-	} else if l.closed > r.closed {
-		return false
-	}
-	return l.cursors < r.cursors
+	return l.utf16Offset < r.utf16Offset
 }
 
 func -(_ l: NodeIndex, _ r: NodeIndex) -> NodeIndex {
 	if l <= r {
-		return NodeIndex.zero
+		return NodeIndex.start
 	}
-	if l.characters > r.characters {
-		return NodeIndex(characters: l.characters - r.characters,
-		    cursors: l.cursors)
-	}
-	if l.opened > r.opened {
-		return NodeIndex(opened: l.opened - r.opened,
-		    closed: l.closed - min(l.closed, r.opened))
-	}
-	return NodeIndex(characters: l.characters - r.characters)
+	return NodeIndex(utf16Offset: l.utf16Offset - r.utf16Offset)
 }
 
 func max(_ l: NodeIndex, _ r: NodeIndex) -> NodeIndex {
