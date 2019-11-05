@@ -1,6 +1,8 @@
 import Cocoa
 import Rope
 
-let r: Rope<Substring> = Rope(content: "abcdefghijkl")
+typealias RSS = Rope<Substring>
+
+let r: RSS = Rope(content: "abcdefghijkl")
 
 r.index(after: r.startIndex)
