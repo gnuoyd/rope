@@ -121,9 +121,9 @@ case stepOut
 }
 
 extension Node {
-	public func inserting(index j: Handle, oneStepAfter i: Handle,
+	public func insertingIndex(_ j: Handle, oneStepAfter i: Handle,
 	    sibling r: Node) -> Step<C> {
-		let result = inserting(index: j, oneStepAfter: i)
+		let result = insertingIndex(j, oneStepAfter: i)
 		switch result {
 		case .step(let newl):
 			return .step(Node(left: newl, right: r))
@@ -131,7 +131,7 @@ extension Node {
 			return .step(Node(left: self,
 			    right: Node(left: Node(holder: j), right: r)))
 		case .inchOut:
-			switch r.afterStepInserting(index: j) {
+			switch r.afterStepInsertingIndex(j) {
 			case .step(let newr):
 				return .step(Node(left: self, right: newr))
 			case let result:
@@ -142,7 +142,7 @@ extension Node {
 		}
 	}
 	/* XXX XXX XXX needs to be .inchOut, .stepOut, .step */
-	public func afterStepInserting(index j: Handle) -> Step<C> {
+	public func afterStepInsertingIndex(_ j: Handle) -> Step<C> {
 		switch self {
 		/* A step over a cursor, index, or empty string is NOT
 		 * a full step.
@@ -167,7 +167,7 @@ extension Node {
 			}
 		/* A step into a concatenation is NOT a full step. */
 		case .concat(let l, _, _, _, let r, _):
-			switch l.afterStepInserting(index: j) {
+			switch l.afterStepInsertingIndex(j) {
 			case .step(let newl):
 				return .step(Node(left: newl, right: r))
 			case .stepOut:
@@ -176,7 +176,7 @@ extension Node {
 			case .inchOut, .absent:
 				break
 			}
-			switch r.afterStepInserting(index: j) {
+			switch r.afterStepInsertingIndex(j) {
 			case .step(let newr):
 				return .step(Node(left: l, right: newr))
 			case let result:
@@ -184,7 +184,7 @@ extension Node {
 			}
 		}
 	}
-	public func inserting(index j: Handle, oneStepAfter i: Handle)
+	public func insertingIndex(_ j: Handle, oneStepAfter i: Handle)
 	    -> Step<C> {
 		let id = i.id
 		switch self {
@@ -193,7 +193,7 @@ extension Node {
 		case .cursor(_, _), .index(_), .leaf(_, _), .empty:
 			return .absent
 		case .container(let h, let n):
-			switch n.inserting(index: j, oneStepAfter: i) {
+			switch n.insertingIndex(j, oneStepAfter: i) {
 			case .inchOut:
 				return .stepOut
 			case .stepOut:
@@ -204,7 +204,7 @@ extension Node {
 				return .absent
 			}
 		case .concat(.index(let w), _, _, _, let r, _) where w.get() == i:
-			switch r.afterStepInserting(index: j) {
+			switch r.afterStepInsertingIndex(j) {
 			case .step(let newr):
 				return .step(Node(left: Node(holder: i), right: newr))
 			case let result:
@@ -219,10 +219,10 @@ extension Node {
 				       r.hids.contains(id))
 				return .inchOut
 			case (true, false):
-				return l.inserting(index: j, oneStepAfter: i,
+				return l.insertingIndex(j, oneStepAfter: i,
 				    sibling: r)
 			case (false, true):
-				let result = r.inserting(index: j,
+				let result = r.insertingIndex(j,
 				    oneStepAfter: i)
 				if case .step(let newr) = result {
 					return .step(Node(left: l, right: newr))
@@ -369,7 +369,7 @@ public class Rope<C : Content> : Collection {
 		switch i {
 		case .start(_):
 			let h = Handle()
-			guard case .step(let n) = top.afterStepInserting(index: h) else {
+			guard case .step(let n) = top.afterStepInsertingIndex(h) else {
                                 return .end(of: self)
 			}
 			top = n
@@ -378,7 +378,7 @@ public class Rope<C : Content> : Collection {
 			fatalError("No index after .endIndex")
                 case .interior(_, _, let m, let h):
 			let j = Handle()
-			switch top.inserting(index: j, oneStepAfter: h) {
+			switch top.insertingIndex(j, oneStepAfter: h) {
 			case .inchOut:
 				fatalError("Index .interior(\(m), \(h)) already at end?")
 			case .absent:

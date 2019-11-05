@@ -107,7 +107,7 @@ class HandleHolding : XCTestCase {
 	func testStepAndHoldIndex() {
 		let first = Node<Substring>(content: "abc")
 		let handle = Handle()
-		guard case .step(let second) = first.afterStepInserting(index: handle) else {
+		guard case .step(let second) = first.afterStepInsertingIndex(handle) else {
 			XCTFail("afterStepInserting failed")
 			return
 		}
@@ -117,7 +117,7 @@ class HandleHolding : XCTestCase {
 	func testStepAndReleaseIndex() {
 		let first = Node<Substring>(content: "abc")
 		var handle = Handle()
-		guard case .step(let second) = first.afterStepInserting(index: handle) else {
+		guard case .step(let second) = first.afterStepInsertingIndex(handle) else {
 			XCTFail("afterStepInserting failed")
 			return
 		}
