@@ -185,5 +185,35 @@ class HandleHolding : XCTestCase {
 	}
 }
 
+class NodeSubropes : XCTestCase {
+	typealias NSS = Node<Substring>
+
+	let n: NSS = Node(left: Node(content: "abc"), right: Node(left: Node(content: "defgh"), right: Node(content: "ijkl")))
+
+	func testFullContent() {
+		XCTAssert(n.content == "abcdefghijkl")
+	}
+	
+	func testLeadingSubnode() {
+		XCTAssert(n.subrope(from: NodeIndex(utf16Offset: 0), to: NodeIndex(utf16Offset: 3)).content == "abc")
+	}
+
+	func testCrossingFirstTwoSubnodes() {
+		XCTAssert(n.subrope(from: NodeIndex(utf16Offset: 0), to: NodeIndex(utf16Offset: 5)).content == "abcde")
+	}
+
+	func testSecondSubnode() {
+		XCTAssert(n.subrope(from: NodeIndex(utf16Offset: 3), to: NodeIndex(utf16Offset: 8)).content == "defgh")
+	}
+
+	func testTrailingTwoSubnodes() {
+		XCTAssert(n.subrope(from: NodeIndex(utf16Offset: 3), to: NodeIndex(utf16Offset: 12)).content == "defghijkl")
+	}
+
+	func testCrossingLastTwoSubnodes() {
+		XCTAssert(n.subrope(from: NodeIndex(utf16Offset: 4), to: NodeIndex(utf16Offset: 9)).content == "efghi")
+	}
+}
+
 class RopeTextStorage : XCTestCase {
 }
