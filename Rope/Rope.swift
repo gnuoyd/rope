@@ -30,8 +30,7 @@ public protocol Initializable {
 public protocol Content : Initializable, StringProtocol {
 	associatedtype SubSequence
 	associatedtype Element
-	subscript(_ range: Range<Int>) -> Self? { get }
-	subscript(_ i: Int) -> Element { get }
+	subscript(r: Range<String.Index>) -> Self { get }
 	var isEmpty: Bool { get }
 	static var empty: Self { get }
 	static var unit: Element { get }
@@ -52,6 +51,9 @@ extension Content {
 }
 
 public struct NodeIndex : Comparable {
+	public init(utf16Offset offset: Int) {
+		self.utf16Offset = offset
+	}
 	public let utf16Offset: Int
 }
 
@@ -600,7 +602,7 @@ public protocol RopeIndexish : Comparable {
 	static var stepOut: Self { get }
 	static func -(_ l: Self, _ r: Self) -> Self
 	static func +(_ l: Self, _ r: Self) -> Self
-	static func adapt<T>(range: Range<Self>, for: T) -> Range<Int> where T : Content
+	static func adapt<T>(range: Range<Self>, for: T) -> Range<String.Index> where T : Content
 }                                                                               
 
 public struct Weak<O : AnyObject> {
@@ -840,12 +842,12 @@ public extension Node {
 					depth: depth + 1)
 			}
 			return l.appending(r)
-		case .leaf(let attrs, let s):
-			guard let subs = s[T.adapt(range: from..<to, for: s)]
-			    else {
+		case let .leaf(attrs, s):
+			let range = T.adapt(range: from..<to, for: s)
+			if range.isEmpty {
 				return .empty
 			}
-			return .leaf(attrs, subs)
+			return Node<C>.leaf(attrs, s[range])
 		}
 	}
 	func subrope(from: NodeIndex, to: NodeIndex, depth: Int = 0) -> Node<C> {
@@ -891,11 +893,12 @@ public extension Node {
 			}
 			return l.appending(r)
 		case let .leaf(attrs, s):
-			guard let subs = s[from.utf16Offset..<to.utf16Offset]
-			    else {
+			let i = String.Index(utf16Offset: from.utf16Offset, in: s)
+			let j = String.Index(utf16Offset: to.utf16Offset, in: s)
+			if i >= j {
 				return .empty
 			}
-			return .leaf(attrs, subs)
+			return .leaf(attrs, s[i..<j])
 		}
 	}
 	func deleting(from start: Index, to end: Index) -> Node {
