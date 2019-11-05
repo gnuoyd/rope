@@ -595,16 +595,6 @@ func +(_ l: NodeIndex, _ r: NodeIndex) -> NodeIndex {
 	return NodeIndex(utf16Offset: l.utf16Offset + r.utf16Offset)
 }
 
-public protocol RopeIndexish : Comparable {                          
-	static func indexish(for: NodeIndex) -> Self                            
-	static var start: Self { get }
-	static var stepIn: Self { get }
-	static var stepOut: Self { get }
-	static func -(_ l: Self, _ r: Self) -> Self
-	static func +(_ l: Self, _ r: Self) -> Self
-	static func adapt<T>(range: Range<Self>, for: T) -> Range<String.Index> where T : Content
-}                                                                               
-
 public struct Weak<O : AnyObject> {
 	typealias Reference = O
 	private var _f: () -> O?
@@ -777,78 +767,6 @@ public extension Node {
 				return Node(left: accum, right: next)
 			}
 		})
-	}
-	func subrope<T : RopeIndexish>(from: T, to: T, depth: Int = 0)
-	    -> Node<C> {
-		assert(T.start <= from)
-		let endIndex = T.indexish(for: self.endIndex)
-		assert(to <= endIndex)
-		// print("enter\(" " * depth) substring \(from):\(to) " +
-		//  "on \(self)")
-		switch self {
-		case .index(_):
-			assert(from == to)
-			return .empty
-		case .empty:
-			assert(from == to)
-			return self
-		case .cursor(_, _):
-			if T.start == from && to == endIndex {
-				return self
-			}
-			return .empty
-		case .container(let handle, let rope):
-			/* Position left of the container's
-			 * "left parenthesis."
-			 */
-			if to < T.stepIn {
-				return .empty
-			}
-			/* Position right of the container's
-			 * "right parenthesis."
-			 */
-			if T.stepIn + T.stepOut + endIndex < from {
-				return .empty
-			}
-			return .container(handle, rope.subrope(
-			    from: max(T.start, from - T.stepIn),
-			    to: min(endIndex - T.stepIn, to - T.stepIn),
-			    depth: depth + 1))
-		case .concat(let ropel, let _idx, _, _, let roper, _):
-			let idx = T.indexish(for: _idx)
-			if from == to {
-				return .empty
-			}
-			var l, r: Node
-			if from == T.start && idx <= to {
-				l = ropel
-			} else if idx <= from {
-				l = .empty
-			} else {
-				l = ropel.subrope(
-					from: from,
-					to: min(idx, to),
-					depth: depth + 1)
-			}
-
-			if from <= idx && endIndex <= to {
-				r = roper
-			} else if to <= idx {
-				r = .empty
-			} else {
-				r = roper.subrope(
-					from: max(T.start, from - idx),
-					to: min(endIndex - idx, to - idx),
-					depth: depth + 1)
-			}
-			return l.appending(r)
-		case let .leaf(attrs, s):
-			let range = T.adapt(range: from..<to, for: s)
-			if range.isEmpty {
-				return .empty
-			}
-			return Node<C>.leaf(attrs, s[range])
-		}
 	}
 	func subrope(from: NodeIndex, to: NodeIndex, depth: Int = 0) -> Node<C> {
 		assert(NodeIndex.start <= from)
