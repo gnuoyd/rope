@@ -130,7 +130,9 @@ extension Node {
 			return .inchOut
 		/* A step into a container is a full step. */
 		case .container(let h, let n):
-			return .step(.container(h, Node(left: Node(holder: j), right: n)))
+			return .step(.container(h,
+			                        Node(left: Node(holder: j),
+						     right: n)))
 		case .leaf(let attrs, let content):
 			switch content.headAndTail {
 			case (_, let tail)? where tail.isEmpty:
@@ -150,8 +152,10 @@ extension Node {
 			case .step(let newl):
 				return .step(Node(left: newl, right: r))
 			case .stepOut:
-				return .step(Node(left: l,
-				    right: Node(left: Node(holder: j), right: r)))
+				return .step(
+				    Node(left: l,
+				         right: Node(left: Node(holder: j),
+				                     right: r)))
 			case .inchOut, .absent:
 				break
 			}
@@ -176,16 +180,19 @@ extension Node {
 			case .inchOut:
 				return .stepOut
 			case .stepOut:
-				return .step(.container(h, Node(left: n, right: Node(holder: j))))
+				return .step(.container(h,
+				    Node(left: n, right: Node(holder: j))))
 			case .step(let newn):
 				return .step(.container(h, newn))
 			case .absent:
 				return .absent
 			}
-		case .concat(.index(let w), _, _, _, let r, _) where w.get() == i:
+		case .concat(.index(let w), _, _, _, let r, _) where
+		    w.get() == i:
 			switch r.afterStepInsertingIndex(j) {
 			case .step(let newr):
-				return .step(Node(left: Node(holder: i), right: newr))
+				return .step(Node(left: Node(holder: i),
+				                  right: newr))
 			case let result:
 				return result
 			}
@@ -338,7 +345,8 @@ public class Rope<C : Content> : Collection {
 	public func contains(index h1: Handle, before h2: Handle) -> Bool {
 		return top.contains(index: h1, before: h2)
 	}
-	public init<T>(content t: T) where C : Initializable, C.Initializer == T, T : Collection {
+	public init<T>(content t: T) where C : Initializable,
+	    C.Initializer == T, T : Collection {
 		top = Node(content: t)
 	}
 	public func index(after i: Index) -> Index {
@@ -348,25 +356,32 @@ public class Rope<C : Content> : Collection {
 		switch i {
 		case .start(_):
 			let h = Handle()
-			guard case .step(let n) = top.afterStepInsertingIndex(h) else {
+			guard case
+			    .step(let n) = top.afterStepInsertingIndex(h) else {
                                 return .end(of: self)
 			}
 			top = n
-                        return .interior(of: self, at: generation, index: 0, handle: h)
+                        return .interior(of: self, at: generation,
+			                 index: 0, handle: h)
 		case .end(_):
 			fatalError("No index after .endIndex")
                 case .interior(_, _, let m, let h):
 			let j = Handle()
 			switch top.insertingIndex(j, oneStepAfter: h) {
 			case .inchOut:
-				fatalError("Index .interior(\(m), \(h)) already at end?")
+				fatalError(
+				    ".interior(\(m), \(h)) already at end?")
 			case .absent:
-				fatalError("Index .interior(\(m), \(h)) is absent")
+				fatalError(
+				    ".interior(\(m), \(h)) is absent")
 			case .stepOut:
                                 return .end(of: self)
 			case .step(let node):
 				top = node
-                                return .interior(of: self, at: generation, index: m + 1, handle: j)
+                                return .interior(of: self,
+				                 at: generation,
+						 index: m + 1,
+						 handle: j)
 			}
 		}
 	}
@@ -479,8 +494,11 @@ extension Node {
 		}
 	}
 }
+
 /*
-extension Rope : ExpressibleByStringLiteral, ExpressibleByExtendedGraphemeClusterLiteral where Rope.Content : ExpressibleByStringLiteral {
+extension Rope : ExpressibleByStringLiteral,
+    ExpressibleByExtendedGraphemeClusterLiteral where
+    Rope.Content : ExpressibleByStringLiteral {
 	public init(stringLiteral s: S) {
 		top = Node<Content>(content: s)
 	}
@@ -501,7 +519,8 @@ extension Node {
 	public init(left: Node<C>, right: Node<C>) {
 		self = .concat(left, left.endIndex,
 		               1 + max(left.depth, right.depth),
-			       left.hids.union(right.hids), right, left.endIndex + right.endIndex)
+			       left.hids.union(right.hids), right,
+			       left.endIndex + right.endIndex)
 	}
 	public init(content c: C) {
 		if c.isEmpty {
@@ -510,7 +529,8 @@ extension Node {
 			self = Node<C>.leaf([:], c)
 		}
 	}
-	public init<I>(content i: I) where C : Initializable, C.Initializer == I, I : Collection {
+	public init<I>(content i: I) where C : Initializable,
+	    C.Initializer == I, I : Collection {
 		self.init(content: C(i))
 	}
 }
@@ -747,7 +767,8 @@ public extension Node {
 			}
 		})
 	}
-	func subrope(from: NodeIndex, to: NodeIndex, depth: Int = 0) -> Node<C> {
+	func subrope(from: NodeIndex, to: NodeIndex, depth: Int = 0)
+	    -> Node<C> {
 		assert(NodeIndex.start <= from)
 		let endIndex = self.endIndex
 		assert(to <= endIndex)
@@ -790,7 +811,8 @@ public extension Node {
 			}
 			return l.appending(r)
 		case let .leaf(attrs, s):
-			let i = String.Index(utf16Offset: from.utf16Offset, in: s)
+			let i = String.Index(utf16Offset: from.utf16Offset,
+			    in: s)
 			let j = String.Index(utf16Offset: to.utf16Offset, in: s)
 			if i >= j {
 				return .empty
@@ -802,14 +824,15 @@ public extension Node {
 		return subrope(from: NodeIndex.start, to: start).appending(
 		    subrope(from: end, to: endIndex))
 	}
-	func inserting(cursor handle: Handle, attributes: Attributes, at i: Index) -> Node {
+	func inserting(cursor handle: Handle, attributes: Attributes,
+	    at i: Index) -> Node {
 		let cursor: Node = .cursor(handle, attributes)
-		return subrope(from: NodeIndex.start, to: i).appending(cursor).appending(
-		    subrope(from: i, to: endIndex))
+		return subrope(from: NodeIndex.start, to: i).appending(
+		    cursor).appending(subrope(from: i, to: endIndex))
 	}
-	func inserting(content rope: Node, at insertionPt: Index) -> Node {
-		return subrope(from: NodeIndex.start, to: insertionPt).appending(rope).appending(
-		    subrope(from: insertionPt, to: endIndex))
+	func inserting(content rope: Node, at i: Index) -> Node {
+		return subrope(from: NodeIndex.start, to: i).appending(
+		    rope).appending(subrope(from: i, to: endIndex))
 	}
 }
 
