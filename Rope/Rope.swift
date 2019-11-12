@@ -826,13 +826,13 @@ public extension Node {
 		return subrope(from: NodeIndex.start, to: start).appending(
 		    subrope(from: end, to: endIndex))
 	}
-	func inserting(cursor handle: Handle, attributes: Attributes,
+	func insertingCursor(_ handle: Handle, attributes: Attributes,
 	    at i: Index) -> Node {
 		let cursor: Node = .cursor(handle, attributes)
 		return subrope(from: NodeIndex.start, to: i).appending(
 		    cursor).appending(subrope(from: i, to: endIndex))
 	}
-	func inserting(content rope: Node, at i: Index) -> Node {
+	func insertingContent(_ rope: Node, at i: Index) -> Node {
 		return subrope(from: NodeIndex.start, to: i).appending(
 		    rope).appending(subrope(from: i, to: endIndex))
 	}
