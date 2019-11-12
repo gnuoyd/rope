@@ -92,11 +92,23 @@ extension Substring : Content {
 	}
 }
 
+/*
+ * Result of taking a step in a Node
+ */
 public enum Step<C: Content> {
-case absent
-case step(Node<C>)
-case inchOut
-case stepOut
+case absent		/* The location to step from could not be
+			 * found.  TBD: throw an Error, instead?
+			 */
+case step(Node<C>)	/* A full step occurred, resulting in the
+			 * associated Node
+			 */
+case inchOut	/* A partial step occurred: stepping over a
+		 * content-free Node case cursor, empty, or index
+		 */
+case stepOut	/* A full upward step occurred: stepping over
+		 * a container boundary, or stepping over the last
+		 * UTF-16 element of a leaf
+		 */
 }
 
 extension Node {
