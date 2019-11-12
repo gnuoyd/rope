@@ -85,27 +85,6 @@ extension Substring : Content {
         }
         
 	public typealias Element = Character
-	public subscript(_ range: Range<Int>) -> Substring? {
-		let clampedStartOffset: Int = (range.startIndex > self.length)
-		    ? self.length
-		    : range.startIndex
-		let startOffset: Int = (clampedStartOffset < 0)
-		    ? 0
-		    : clampedStartOffset
-		let start = self.index(startIndex, offsetBy: startOffset)
-		let clampedEndOffset: Int = (range.endIndex < 0)
-		    ? 0
-		    : range.endIndex
-		let endOffset: Int = (clampedEndOffset > self.length)
-		    ? self.length
-		    : clampedEndOffset
-		let end = self.index(startIndex, offsetBy: endOffset)
-		return self[start..<end]
-	}
-	public subscript(_ offset: Int) -> Element {
-		let i = self.index(startIndex, offsetBy: offset)
-		return self[i]
-	}
 	public static var unit: Character { return Character("U") }
 	public static var empty: Substring { return "" }
 	public var length: Int {
