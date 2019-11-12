@@ -223,6 +223,9 @@ public enum RopeIndex<C : Content> : Comparable {
 case start(of: Rope<C>)
 case end(of: Rope<C>)
 case interior(of: Rope<C>, at: UInt64, index: UInt64, handle: Handle)
+}
+
+extension RopeIndex {
         public var owner: Rope<C> {
 		switch self {
 		case .start(let r), .end(let r), .interior(let r, _, _, _):
