@@ -281,7 +281,7 @@ extension RopeIndex {
 			return true
 		case (.interior(_, let g1, _, let h1),
 		      .interior(_, let g2, _, let h2)) where g1 != g2:
-			return self.owner.contains(index: h1, before: h2)
+			return self.owner.containsIndex(h1, before: h2)
 		case (.interior(_, _, let m, _), .interior(_, _, let n, _))
 		    where m < n:
 			return true
@@ -342,8 +342,8 @@ public class Rope<C : Content> : Collection {
 			top = newValue
 		}
 	}
-	public func contains(index h1: Handle, before h2: Handle) -> Bool {
-		return top.contains(index: h1, before: h2)
+	public func containsIndex(_ h1: Handle, before h2: Handle) -> Bool {
+		return top.containsIndex(h1, before: h2)
 	}
 	public init<T>(content t: T) where C : Initializable,
 	    C.Initializer == T, T : Collection {
@@ -419,10 +419,12 @@ extension Node {
 		case .container(let h, let r):
 			return Node(handle: h, node: r.inserting(elt, at: target))
 		case .concat(let l, _, _, _, let r, _):
-			if l.contains(index: target) {
-				return Node(left: l.inserting(elt, at: target), right: r)
-			} else if r.contains(index: target) {
-				return Node(left: l, right: r.inserting(elt, at: target))
+			if l.containsIndex(target) {
+				return Node(left: l.inserting(elt, at: target),
+				            right: r)
+			} else if r.containsIndex(target) {
+				return Node(left: l,
+				            right: r.inserting(elt, at: target))
 			} else {
 				fatalError("Invalid index")
 			}
@@ -453,7 +455,7 @@ extension Node {
 			return []
 		}
 	}
-	public func contains(index target: Handle) -> Bool {
+	public func containsIndex(_ target: Handle) -> Bool {
 		switch self {
 		case .index(let w):
 			guard let handle = w.get() else {
@@ -463,7 +465,7 @@ extension Node {
 		case .cursor(target, _):
 			return true
 		case .container(_, let rope):
-			return rope.contains(index: target)
+			return rope.containsIndex(target)
 		case .concat(_, _, _, let hids, _, _):
 			return hids.contains(target.id)
 		case .leaf(_, _), .empty:
@@ -472,21 +474,21 @@ extension Node {
                         return false
                 }
 	}
-	public func contains(index h1: Handle, before h2: Handle) -> Bool {
+	public func containsIndex(_ h1: Handle, before h2: Handle) -> Bool {
 		switch self {
 		case .index(_):
 			fatalError("Cannot order handles on an .index(_)")
 		case .cursor(_, _):
 			fatalError("Cannot order handles on a .cursor(_)")
 		case .container(_, let rope):
-			return rope.contains(index: h1, before: h2)
+			return rope.containsIndex(h1, before: h2)
 		case .concat(let l, _, _, let hids, let r, _):
                         guard hids.contains(h1.id) && hids.contains(h2.id) else {
                                 return false
                         }
-			return l.contains(index: h1, before: h2) ||
-			    (l.contains(index: h1) && r.contains(index: h2)) ||
-			    r.contains(index: h1, before: h2)
+			return l.containsIndex(h1, before: h2) ||
+			    (l.containsIndex(h1) && r.containsIndex(h2)) ||
+			    r.containsIndex(h1, before: h2)
 		case .leaf(_, _):
 			fatalError("Cannot order handles on a .leaf(_, _)")
 		case .empty:
