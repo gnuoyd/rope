@@ -132,7 +132,6 @@ extension Node {
 			return .absent
 		}
 	}
-	/* XXX XXX XXX needs to be .inchOut, .stepOut, .step */
 	public func afterStepInsertingIndex(_ j: Handle) -> Step<C> {
 		switch self {
 		/* A step over a cursor, index, or empty string is NOT
