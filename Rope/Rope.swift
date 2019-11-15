@@ -333,7 +333,7 @@ extension RopeIndex {
  */
 public class Rope<C : Content> : Collection {
 	public typealias Content = C
-	public typealias Element = C.Element
+	public typealias Element = Node<C>
 	public typealias Index = RopeIndex<C>
 	public var top: Node<C>
 	public var generation: UInt64 = 0
@@ -400,19 +400,20 @@ public class Rope<C : Content> : Collection {
 		}
 	}
 	public subscript(i: Index) -> Iterator.Element {
-		get { return C.unit }
+		get { return .leaf([:], Content.init(unit: C.unit)) }
         }
 	public func insert(_ elt: Element, at i: Index) {
 		guard self === i.owner else {
 			fatalError("Invalid index")
 		}
+		if case .empty = elt {
+			fatalError("You may not insert .empty")
+		}
 		switch i {
 		case .start(_):
-                        let c: Content = C.init(unit: elt)
-                        top = Node<C>(left: Node<C>(content: c), right: top)
+                        top = Node<C>(left: elt, right: top)
 		case .end(_):
-                        let c = Content.init(repeating: elt, count: 1)
-                        top = Node(left: top, right: Node<Content>(content: c))
+                        top = Node(left: top, right: elt)
 		case .interior(_, _, _, let h):
 			top = top.inserting(elt, at: h)
 		}
@@ -420,14 +421,13 @@ public class Rope<C : Content> : Collection {
 }
 
 extension Node {
-	public func inserting(_ elt: Element, at target: Handle) -> Node {
+	public func inserting(_ elt: Node, at target: Handle) -> Node {
 		switch self {
 		case .index(let w):
 			guard let handle = w.get(), handle == target else {
 				fatalError("Invalid index")
 			}
-                        let c: Content = Content.init(repeating: elt, count: 1)
-                        return Node<Content>(content: c)
+                        return elt
 		case .cursor(_, _):
 			fatalError("Invalid index")
 		case .container(let h, let r):
