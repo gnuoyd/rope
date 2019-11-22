@@ -15,9 +15,9 @@ public class Handle : Hashable {
 	public func hash(into hasher: inout Hasher) {
 		hasher.combine(_id)
 	}
-	deinit {
-		// print("b-bye")
-	}
+//	deinit {
+//		print("b-bye")
+//	}
 }
 
 public typealias Attributes = [NSAttributedString.Key : Any]
@@ -266,7 +266,7 @@ public func < <C>(_ l: RopeIndex<C>, _ r: RopeIndex<C>) -> Bool {
 }
 
 extension RopeIndex {
-        public func equals <C>(_ other: RopeIndex<C>) throws -> Bool {
+        public func equals<C>(_ other: RopeIndex<C>) throws -> Bool {
 		guard self.owner === other.owner else {
 			throw RopeIndexComparisonError.MismatchedOwners
 		}
