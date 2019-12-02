@@ -79,6 +79,30 @@ case leaf(Attributes, C)
 case empty
 }
 
+public func == <C>(_ l: Node<C>, _ r: Node<C>) -> Bool {
+	switch (l, r) {
+	case (.cursor(let lHandle, _),
+	      .cursor(let rHandle, _)):
+		// XXX doesn't match attributes
+		return lHandle == rHandle
+	case (.index(let lWeakHandle), .index(let rWeakHandle)):
+		return lWeakHandle.get() == rWeakHandle.get()
+	case (.container(let lHandle, let lNode),
+	      .container(let rHandle, let rNode)):
+		return lHandle == rHandle && lNode == rNode
+	case (.concat(let lNode1, _, _, _, let lNode2, _),
+	      .concat(let rNode1, _, _, _, let rNode2, _)):
+		return lNode1 == rNode1 && lNode2 == rNode2
+	case (.leaf(_, let lContent), .leaf(_, let rContent)):
+		// XXX doesn't match attributes
+		return lContent == rContent
+	case (.empty, .empty):
+		return true
+	default:
+		return false
+	}
+}
+
 extension Substring : Content {
         public init(unit: Character) {
                 self.init(repeating: unit, count: 1)
@@ -90,6 +114,15 @@ extension Substring : Content {
 	public var length: Int {
 		return distance(from: startIndex, to: endIndex)
 	}
+}
+
+/*
+ * Result of looking up an element of a Node
+ */
+public enum ElementResult<C : Content> {
+case absent
+case inchOut
+case step(Node<C>)
 }
 
 /*
@@ -180,7 +213,6 @@ extension Node {
 	}
 	public func insertingIndex(_ j: Handle, oneStepAfter i: Handle)
 	    -> Step<C> {
-		let id = i.id
 		switch self {
 		case .index(let w) where w.get() == i:
 			return .inchOut
@@ -208,6 +240,7 @@ extension Node {
 				return result
 			}
 		case .concat(let l, _, _, _, let r, _):
+			let id = i.id
 			switch (l.hids.contains(id), r.hids.contains(id)) {
 			case (false, false):
 				return .absent
@@ -228,6 +261,89 @@ extension Node {
 			}
 		}
 	}
+	/* TBD extract `performing` from `insertingIndex(_:,oneStepAfter:)`
+	 * and element(at:) ?
+	 */
+	public func firstElement() -> ElementResult<C> {
+		switch self {
+		case .cursor(_, _), .index(_), .empty:
+			/* No match: the element is not on this span. */
+			return .absent
+		case .leaf(let attrs, let content):
+			switch content.headAndTail {
+			case (let head, _)?:
+                                return .step(.leaf(attrs, head))
+			default:
+				return .inchOut
+			}
+		case .container(let h, _):
+			return .step(.empty)
+		case .concat(let l, _, _, _, let r, _):
+			return l.firstElementUsingSibling(r)
+		}
+	}
+	public func firstElementUsingSibling(_ r: Node) ->
+	    ElementResult<C> {
+		switch firstElement() {
+		case .inchOut:
+			switch r.firstElement() {
+			case .step(let newr):
+				return .step(newr)
+			case let result:
+				return result
+			}
+		case let result:
+			return result
+		}
+	}
+	public func element(at i: Handle, sibling r: Node) ->
+	    ElementResult<C> {
+		switch element(at: i) {
+		case .inchOut:
+			return r.firstElement()
+		case let result:
+			return result
+		}
+	}
+	/* TBD extract `performing` from `insertingIndex(_:,oneStepAfter:)`
+	 * and element(at:) ?
+	 */
+	public func element(at i: Handle) -> ElementResult<C> {
+		switch self {
+		case .index(let w) where w.get() == i:
+			/* The index matches: inch out so that the caller
+			 * returns some element right of the index.
+			 */
+			return .inchOut
+		case .cursor(_, _), .empty, .index(_), .leaf(_, _):
+			/* No match: the element is not on this span. */
+			return .absent
+		case .container(let h, let n):
+			switch n.element(at: i) {
+			case .inchOut:
+				return .step(.container(h, .empty))
+			case .step(let newn):
+				return .step(.container(h, newn))
+			case .absent:
+				return .absent
+			}
+		case .concat(.index(let w), _, _, _, let r, _) where
+		    w.get() == i:
+			return r.firstElement()
+		case .concat(let l, _, _, _, let r, _):
+			let id = i.id
+			switch (l.hids.contains(id), r.hids.contains(id)) {
+			case (false, false):
+				return .absent
+			case (true, true):
+				fatalError("No index can be in two spans")
+			case (true, false):
+				return l.element(at: i, sibling: r)
+			case (false, true):
+				return r.element(at: i)
+			}
+		}
+	}
 }
 
 public enum RopeIndex<C : Content> : Comparable {
@@ -243,6 +359,12 @@ extension RopeIndex {
 			return r
 		}
 	}
+}
+
+enum RopeNoSuchElement : Error {
+case onInterior
+case atStart
+case atEnd
 }
 
 enum RopeIndexComparisonError : Error {
@@ -399,8 +521,34 @@ public class Rope<C : Content> : Collection {
 			}
 		}
 	}
+
 	public subscript(i: Index) -> Iterator.Element {
-		get { return .leaf([:], Content.init(unit: C.unit)) }
+//		get { return .leaf([:], Content.init(unit: C.unit)) }
+		get {
+			do {
+				return try element(at: i)
+			} catch {
+				fatalError("No such element")
+			}
+		}
+        }
+        public func element(at i: Index) throws -> Iterator.Element {
+		switch i {
+		case .start(_):
+			guard case .step(let node) = top.firstElement()
+			    else {
+				throw RopeNoSuchElement.atStart
+			}
+			return node
+		case .interior(_, _, _, let h):
+			let result = top.element(at: h)
+			guard case .step(let node) = result else {
+				throw RopeNoSuchElement.onInterior
+			}
+			return node
+		case .end(_):
+			throw RopeNoSuchElement.atEnd
+		}
         }
 	public func insert(_ elt: Element, at i: Index) {
 		guard self === i.owner else {

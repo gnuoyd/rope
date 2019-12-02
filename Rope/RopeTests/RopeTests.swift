@@ -9,6 +9,9 @@
 import XCTest
 @testable import Rope
 
+typealias NSS = Node<Substring>
+typealias RSS = Rope<Substring>
+
 infix operator ⨯: MultiplicationPrecedence
 
 func ⨯<L, R, Lseq : Sequence, Rseq : Sequence>(_ l: Lseq, _ r: Rseq) -> LazySequence<FlattenSequence<LazyMapSequence<Lseq, LazyMapSequence<Rseq, (L, R)>>>>  where Lseq.Element == L, Rseq.Element == R {
@@ -36,6 +39,82 @@ class IndexOrder: XCTestCase {
 		for (l, r) in indices ⨯ indices {
 			XCTAssert((l.offset < r.offset) == (l.element < r.element))
 		}
+	}
+}
+
+class ContainerElementLookupUsingRopeIndices: XCTestCase {
+	func testStartIndices() {
+		let h = Handle() // , j = Handle(), k = Handle()
+		let nodel: NSS = Node(content: "abc")
+		let noder: NSS = Node(content: "def")
+		let expected: NSS = .empty
+		let r: RSS = Rope()
+		r.node = Node(left: Node(handle: h, node: nodel), right: noder)
+		let idx = r.startIndex
+		print(r[idx])
+		XCTAssert(r[idx] == expected)
+	}
+	func testSecondIndices() {
+		let h = Handle() // , j = Handle(), k = Handle()
+		let nodel: NSS = Node(content: "abc")
+		let noder: NSS = Node(content: "def")
+		let expected: NSS = Node(handle: h, node: Node(content: "a"))
+		let r: RSS = Rope()
+		r.node = Node(left: Node(handle: h, node: nodel), right: noder)
+		let idx = r.index(after: r.startIndex)
+		print(r[idx])
+		XCTAssert(r[idx] == expected)
+	}
+	func testThirdIndices() {
+		let rope1 = Rope<Substring>(content: "abc")
+		let rope2 = Rope<Substring>(content: "def")
+		let idx1 = rope1.index(after: rope1.index(after: rope1.startIndex))
+		let idx2 = rope2.index(after: rope2.index(after: rope2.startIndex))
+		XCTAssert(rope1[idx1].content == "c")
+		XCTAssert(rope2[idx2].content == "f")
+	}
+	func testEndIndices() {
+		let rope1 = Rope<Substring>(content: "abc")
+		let rope2 = Rope<Substring>(content: "def")
+		let idx1 = rope1.endIndex
+		let idx2 = rope2.endIndex
+		XCTAssertThrowsError(try rope1.element(at: idx1))
+		XCTAssertThrowsError(try rope2.element(at: idx2))
+	}
+}
+
+class BasicElementLookupUsingRopeIndices: XCTestCase {
+	func testStartIndices() {
+		let rope1 = Rope<Substring>(content: "abc")
+		let rope2 = Rope<Substring>(content: "def")
+		let idx1 = rope1.startIndex
+		let idx2 = rope2.startIndex
+		XCTAssert(rope1[idx1].content == "a")
+		XCTAssert(rope2[idx2].content == "d")
+	}
+	func testSecondIndices() {
+		let rope1 = Rope<Substring>(content: "abc")
+		let rope2 = Rope<Substring>(content: "def")
+		let idx1 = rope1.index(after: rope1.startIndex)
+		let idx2 = rope2.index(after: rope2.startIndex)
+		XCTAssert(rope1[idx1].content == "b")
+		XCTAssert(rope2[idx2].content == "e")
+	}
+	func testThirdIndices() {
+		let rope1 = Rope<Substring>(content: "abc")
+		let rope2 = Rope<Substring>(content: "def")
+		let idx1 = rope1.index(after: rope1.index(after: rope1.startIndex))
+		let idx2 = rope2.index(after: rope2.index(after: rope2.startIndex))
+		XCTAssert(rope1[idx1].content == "c")
+		XCTAssert(rope2[idx2].content == "f")
+	}
+	func testEndIndices() {
+		let rope1 = Rope<Substring>(content: "abc")
+		let rope2 = Rope<Substring>(content: "def")
+		let idx1 = rope1.endIndex
+		let idx2 = rope2.endIndex
+		XCTAssertThrowsError(try rope1.element(at: idx1))
+		XCTAssertThrowsError(try rope2.element(at: idx2))
 	}
 }
 
@@ -186,8 +265,6 @@ class HandleHolding : XCTestCase {
 }
 
 class NodeSubropes : XCTestCase {
-	typealias NSS = Node<Substring>
-
 	let n: NSS = Node(left: Node(content: "abc"), right: Node(left: Node(content: "defgh"), right: Node(content: "ijkl")))
 
 	func testFullContent() {
