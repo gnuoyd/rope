@@ -20,6 +20,12 @@ public class Handle : Hashable {
 //	}
 }
 
+extension Handle : CustomDebugStringConvertible {
+	public var debugDescription: String {
+		return "Handle(id: \(id))"
+	}
+}
+
 public typealias Attributes = [NSAttributedString.Key : Any]
 
 public protocol Initializable {
@@ -254,10 +260,12 @@ extension Node {
 			case (false, true):
 				let result = r.insertingIndex(j,
 				    oneStepAfter: i)
-				if case .step(let newr) = result {
+				switch result {
+				case .step(let newr):
 					return .step(Node(left: l, right: newr))
+				default:
+					return result
 				}
-				return result
 			}
 		}
 	}
@@ -268,7 +276,7 @@ extension Node {
 		switch self {
 		case .cursor(_, _), .index(_), .empty:
 			/* No match: the element is not on this span. */
-			return .absent
+			return .inchOut
 		case .leaf(let attrs, let content):
 			switch content.headAndTail {
 			case (let head, _)?:
@@ -285,13 +293,8 @@ extension Node {
 	public func firstElementUsingSibling(_ r: Node) ->
 	    ElementResult<C> {
 		switch firstElement() {
-		case .inchOut:
-			switch r.firstElement() {
-			case .step(let newr):
-				return .step(newr)
-			case let result:
-				return result
-			}
+                case .inchOut:
+			return r.firstElement()
 		case let result:
 			return result
 		}
@@ -759,11 +762,20 @@ func +(_ l: NodeIndex, _ r: NodeIndex) -> NodeIndex {
 }
 
 public struct Weak<O : AnyObject> {
-	typealias Reference = O
+	public typealias Reference = O
 	private var _f: () -> O?
 	public var get: () -> O? { return _f }
 	init(_ o: O) {
 		_f = { [weak o] in o }
+	}
+}
+
+extension Weak : CustomDebugStringConvertible where Reference : CustomDebugStringConvertible {
+        public var debugDescription: String {
+		guard let referent = get() else {
+			return "Weak(nil)"
+		}
+		return "Weak(\(referent.debugDescription))"
 	}
 }
 
