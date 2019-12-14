@@ -43,43 +43,72 @@ class IndexOrder: XCTestCase {
 }
 
 class ContainerElementLookupUsingRopeIndices: XCTestCase {
-	func testStartIndices() {
-		let h = Handle() // , j = Handle(), k = Handle()
-		let nodel: NSS = Node(content: "abc")
-		let noder: NSS = Node(content: "def")
-		let expected: NSS = .empty
-		let r: RSS = Rope()
-		r.node = Node(left: Node(handle: h, node: nodel), right: noder)
-		let idx = r.startIndex
-		print(r[idx])
-		XCTAssert(r[idx] == expected)
+	let h = Handle()
+	let nodel: NSS = Node(content: "abc")
+	let noder: NSS = Node(content: "def")
+	var _expectations: [NSS]? = nil
+	var _r: RSS? = nil
+	var expectations: [NSS] {
+		get {
+			if let olde = _expectations {
+				return olde
+			}
+			let newe: [NSS] = [.empty,
+			    Node(handle: h, node: Node(content: "a")),
+			    Node(handle: h, node: Node(content: "b")),
+			    Node(handle: h, node: Node(content: "c")),
+			    Node(handle: h, node: .empty),
+			    Node(content: "d"),
+			    Node(content: "e"),
+			    Node(content: "f")]
+			_expectations = newe
+			return newe
+		}
 	}
-	func testSecondIndices() {
-		let h = Handle() // , j = Handle(), k = Handle()
-		let nodel: NSS = Node(content: "abc")
-		let noder: NSS = Node(content: "def")
-		let expected: NSS = Node(handle: h, node: Node(content: "a"))
-		let r: RSS = Rope()
-		r.node = Node(left: Node(handle: h, node: nodel), right: noder)
-		let idx = r.index(after: r.startIndex)
-		print(r[idx])
-		XCTAssert(r[idx] == expected)
+	var r: RSS {
+		get {
+			if let oldr = _r {
+				return oldr
+			}
+			let newr: RSS = Rope()
+			newr.node = Node(left: Node(handle: h, node: nodel),
+			                 right: noder)
+			_r = newr
+			return newr
+		}
 	}
-	func testThirdIndices() {
-		let rope1 = Rope<Substring>(content: "abc")
-		let rope2 = Rope<Substring>(content: "def")
-		let idx1 = rope1.index(after: rope1.index(after: rope1.startIndex))
-		let idx2 = rope2.index(after: rope2.index(after: rope2.startIndex))
-		XCTAssert(rope1[idx1].content == "c")
-		XCTAssert(rope2[idx2].content == "f")
+	func testElementsCount() {
+		XCTAssert(r.count == expectations.count)
+	}
+	func testIterateElements() {
+		for (found, expected) in zip(r, expectations) {
+			XCTAssert(found == expected)
+		}
+	}
+	func testIndicesCount() {
+		XCTAssert(r.indices.count == expectations.count)
+	}
+	func testLookupByIndices() {
+		for (idx, expected) in zip(r.indices, expectations) {
+			let found = r[idx]
+			XCTAssert(found == expected)
+		}
+	}
+	func testStepIndices() {
+		var idx = r.startIndex
+		idx = r.index(after: idx)
+		idx = r.index(after: idx)
+		idx = r.index(after: idx)
+		idx = r.index(after: idx)
+		idx = r.index(after: idx)
+		idx = r.index(after: idx)
+		idx = r.index(after: idx)
+		idx = r.index(after: idx)
+		print(idx)
 	}
 	func testEndIndices() {
-		let rope1 = Rope<Substring>(content: "abc")
-		let rope2 = Rope<Substring>(content: "def")
-		let idx1 = rope1.endIndex
-		let idx2 = rope2.endIndex
-		XCTAssertThrowsError(try rope1.element(at: idx1))
-		XCTAssertThrowsError(try rope2.element(at: idx2))
+		let idx = r.endIndex
+		XCTAssertThrowsError(try r.element(at: idx))
 	}
 }
 
