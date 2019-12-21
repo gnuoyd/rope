@@ -39,12 +39,10 @@ public protocol Content : Initializable, StringProtocol {
 	subscript(r: Range<String.Index>) -> Self { get }
 	var isEmpty: Bool { get }
 	static var empty: Self { get }
-	static var unit: Element { get }
 	var length: Int { get }
 	static func +<Other>(_ l: Self, _ r: Other) -> Self where Other : Sequence, Character == Other.Element
 	init(_: SubSequence)
 	init(repeating: Element, count: Int)
-	init(unit: Element)
 }
 
 extension Content {
@@ -110,12 +108,7 @@ public func == <C>(_ l: Node<C>, _ r: Node<C>) -> Bool {
 }
 
 extension Substring : Content {
-        public init(unit: Character) {
-                self.init(repeating: unit, count: 1)
-        }
-        
 	public typealias Element = Character
-	public static var unit: Character { return Character("U") }
 	public static var empty: Substring { return "" }
 	public var length: Int {
 		return distance(from: startIndex, to: endIndex)
@@ -526,7 +519,6 @@ public class Rope<C : Content> : Collection {
 	}
 
 	public subscript(i: Index) -> Iterator.Element {
-//		get { return .leaf([:], Content.init(unit: C.unit)) }
 		get {
 			do {
 				return try element(at: i)
