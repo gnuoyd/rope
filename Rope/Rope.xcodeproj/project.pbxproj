@@ -12,6 +12,28 @@
 		EE4F4BB6230B70FE00F21B13 /* Rope.h in Headers */ = {isa = PBXBuildFile; fileRef = EE4F4BA8230B70FE00F21B13 /* Rope.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		EE4F4BC1230B721200F21B13 /* Rope.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE4F4BBF230B721200F21B13 /* Rope.swift */; };
 		EE4F4BC3230B721200F21B13 /* Fibonacci.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE4F4BC0230B721200F21B13 /* Fibonacci.swift */; };
+		EE66B2CE23E90A46004D9F57 /* Weak.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE66B2CD23E90A46004D9F57 /* Weak.swift */; };
+		EE66B2CF23E90A46004D9F57 /* Weak.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE66B2CD23E90A46004D9F57 /* Weak.swift */; };
+		EE66B2D123E90AA5004D9F57 /* Handle.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE66B2D023E90AA5004D9F57 /* Handle.swift */; };
+		EE66B2D223E90AA5004D9F57 /* Handle.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE66B2D023E90AA5004D9F57 /* Handle.swift */; };
+		EE66B2D523E90B55004D9F57 /* Content.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE66B2D323E90B55004D9F57 /* Content.swift */; };
+		EE66B2D623E90B55004D9F57 /* Content.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE66B2D323E90B55004D9F57 /* Content.swift */; };
+		EE66B2D723E90B55004D9F57 /* Initializable.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE66B2D423E90B55004D9F57 /* Initializable.swift */; };
+		EE66B2D823E90B55004D9F57 /* Initializable.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE66B2D423E90B55004D9F57 /* Initializable.swift */; };
+		EE66B2DB23E90BA0004D9F57 /* Substring+Content.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE66B2D923E90BA0004D9F57 /* Substring+Content.swift */; };
+		EE66B2DC23E90BA0004D9F57 /* Substring+Content.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE66B2D923E90BA0004D9F57 /* Substring+Content.swift */; };
+		EE66B2DD23E90BA0004D9F57 /* Substring+Initializable.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE66B2DA23E90BA0004D9F57 /* Substring+Initializable.swift */; };
+		EE66B2DE23E90BA0004D9F57 /* Substring+Initializable.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE66B2DA23E90BA0004D9F57 /* Substring+Initializable.swift */; };
+		EE66B2E023E90BCC004D9F57 /* NodeIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE66B2DF23E90BCC004D9F57 /* NodeIndex.swift */; };
+		EE66B2E123E90BCC004D9F57 /* NodeIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE66B2DF23E90BCC004D9F57 /* NodeIndex.swift */; };
+		EE66B2E423E90C14004D9F57 /* RopeString.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE66B2E223E90C13004D9F57 /* RopeString.swift */; };
+		EE66B2E523E90C14004D9F57 /* RopeString.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE66B2E223E90C13004D9F57 /* RopeString.swift */; };
+		EE66B2E623E90C14004D9F57 /* RopeTextStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE66B2E323E90C13004D9F57 /* RopeTextStorage.swift */; };
+		EE66B2E723E90C14004D9F57 /* RopeTextStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE66B2E323E90C13004D9F57 /* RopeTextStorage.swift */; };
+		EE66B2E923E90C99004D9F57 /* Node.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE66B2E823E90C99004D9F57 /* Node.swift */; };
+		EE66B2EA23E90C99004D9F57 /* Node.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE66B2E823E90C99004D9F57 /* Node.swift */; };
+		EE66B2EC23E90DC5004D9F57 /* RopeIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE66B2EB23E90DC5004D9F57 /* RopeIndex.swift */; };
+		EE66B2ED23E90DC5004D9F57 /* RopeIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE66B2EB23E90DC5004D9F57 /* RopeIndex.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -25,6 +47,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		EE449D6E23DFC58C00769D36 /* TextView.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; path = TextView.playground; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
 		EE4F4BA5230B70FE00F21B13 /* Rope.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Rope.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		EE4F4BA8230B70FE00F21B13 /* Rope.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Rope.h; sourceTree = "<group>"; };
 		EE4F4BA9230B70FE00F21B13 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -33,6 +56,17 @@
 		EE4F4BB5230B70FE00F21B13 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		EE4F4BBF230B721200F21B13 /* Rope.swift */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 8; lastKnownFileType = sourcecode.swift; path = Rope.swift; sourceTree = SOURCE_ROOT; tabWidth = 8; };
 		EE4F4BC0230B721200F21B13 /* Fibonacci.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Fibonacci.swift; sourceTree = SOURCE_ROOT; };
+		EE66B2CD23E90A46004D9F57 /* Weak.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Weak.swift; sourceTree = SOURCE_ROOT; };
+		EE66B2D023E90AA5004D9F57 /* Handle.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Handle.swift; sourceTree = SOURCE_ROOT; };
+		EE66B2D323E90B55004D9F57 /* Content.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Content.swift; sourceTree = SOURCE_ROOT; };
+		EE66B2D423E90B55004D9F57 /* Initializable.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Initializable.swift; sourceTree = SOURCE_ROOT; };
+		EE66B2D923E90BA0004D9F57 /* Substring+Content.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Substring+Content.swift"; sourceTree = SOURCE_ROOT; };
+		EE66B2DA23E90BA0004D9F57 /* Substring+Initializable.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Substring+Initializable.swift"; sourceTree = SOURCE_ROOT; };
+		EE66B2DF23E90BCC004D9F57 /* NodeIndex.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NodeIndex.swift; sourceTree = SOURCE_ROOT; };
+		EE66B2E223E90C13004D9F57 /* RopeString.swift */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 8; lastKnownFileType = sourcecode.swift; path = RopeString.swift; sourceTree = SOURCE_ROOT; tabWidth = 8; usesTabs = 1; };
+		EE66B2E323E90C13004D9F57 /* RopeTextStorage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RopeTextStorage.swift; sourceTree = SOURCE_ROOT; };
+		EE66B2E823E90C99004D9F57 /* Node.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Node.swift; sourceTree = SOURCE_ROOT; };
+		EE66B2EB23E90DC5004D9F57 /* RopeIndex.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RopeIndex.swift; sourceTree = SOURCE_ROOT; };
 		EEA72FFB231F4EF600C38F26 /* TimingPlayground.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; path = TimingPlayground.playground; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
 		EEA72FFC23305D8000C38F26 /* IndexPlayground.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; path = IndexPlayground.playground; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
 /* End PBXFileReference section */
@@ -59,6 +93,7 @@
 		EE4F4B9B230B70FE00F21B13 = {
 			isa = PBXGroup;
 			children = (
+				EE449D6E23DFC58C00769D36 /* TextView.playground */,
 				EEA72FFC23305D8000C38F26 /* IndexPlayground.playground */,
 				EEA72FFB231F4EF600C38F26 /* TimingPlayground.playground */,
 				EE4F4BA7230B70FE00F21B13 /* Rope */,
@@ -79,6 +114,17 @@
 		EE4F4BA7230B70FE00F21B13 /* Rope */ = {
 			isa = PBXGroup;
 			children = (
+				EE66B2EB23E90DC5004D9F57 /* RopeIndex.swift */,
+				EE66B2E823E90C99004D9F57 /* Node.swift */,
+				EE66B2E223E90C13004D9F57 /* RopeString.swift */,
+				EE66B2E323E90C13004D9F57 /* RopeTextStorage.swift */,
+				EE66B2DF23E90BCC004D9F57 /* NodeIndex.swift */,
+				EE66B2D923E90BA0004D9F57 /* Substring+Content.swift */,
+				EE66B2DA23E90BA0004D9F57 /* Substring+Initializable.swift */,
+				EE66B2D323E90B55004D9F57 /* Content.swift */,
+				EE66B2D423E90B55004D9F57 /* Initializable.swift */,
+				EE66B2D023E90AA5004D9F57 /* Handle.swift */,
+				EE66B2CD23E90A46004D9F57 /* Weak.swift */,
 				EE4F4BC0230B721200F21B13 /* Fibonacci.swift */,
 				EE4F4BBF230B721200F21B13 /* Rope.swift */,
 				EE4F4BA8230B70FE00F21B13 /* Rope.h */,
@@ -207,8 +253,19 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EE66B2E023E90BCC004D9F57 /* NodeIndex.swift in Sources */,
 				EE4F4BC3230B721200F21B13 /* Fibonacci.swift in Sources */,
+				EE66B2D723E90B55004D9F57 /* Initializable.swift in Sources */,
+				EE66B2E923E90C99004D9F57 /* Node.swift in Sources */,
+				EE66B2E623E90C14004D9F57 /* RopeTextStorage.swift in Sources */,
 				EE4F4BC1230B721200F21B13 /* Rope.swift in Sources */,
+				EE66B2E423E90C14004D9F57 /* RopeString.swift in Sources */,
+				EE66B2DB23E90BA0004D9F57 /* Substring+Content.swift in Sources */,
+				EE66B2CE23E90A46004D9F57 /* Weak.swift in Sources */,
+				EE66B2EC23E90DC5004D9F57 /* RopeIndex.swift in Sources */,
+				EE66B2DD23E90BA0004D9F57 /* Substring+Initializable.swift in Sources */,
+				EE66B2D523E90B55004D9F57 /* Content.swift in Sources */,
+				EE66B2D123E90AA5004D9F57 /* Handle.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -216,7 +273,18 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EE66B2E723E90C14004D9F57 /* RopeTextStorage.swift in Sources */,
+				EE66B2E123E90BCC004D9F57 /* NodeIndex.swift in Sources */,
+				EE66B2E523E90C14004D9F57 /* RopeString.swift in Sources */,
+				EE66B2EA23E90C99004D9F57 /* Node.swift in Sources */,
 				EE4F4BB4230B70FE00F21B13 /* RopeTests.swift in Sources */,
+				EE66B2DE23E90BA0004D9F57 /* Substring+Initializable.swift in Sources */,
+				EE66B2D823E90B55004D9F57 /* Initializable.swift in Sources */,
+				EE66B2CF23E90A46004D9F57 /* Weak.swift in Sources */,
+				EE66B2ED23E90DC5004D9F57 /* RopeIndex.swift in Sources */,
+				EE66B2D223E90AA5004D9F57 /* Handle.swift in Sources */,
+				EE66B2D623E90B55004D9F57 /* Content.swift in Sources */,
+				EE66B2DC23E90BA0004D9F57 /* Substring+Content.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
