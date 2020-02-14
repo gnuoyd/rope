@@ -1,3 +1,5 @@
+import AppKit
+
 class RopeString : NSString {
 	let rope: Rope<Substring>
 	init(rope r: Rope<Substring>) {
@@ -16,9 +18,9 @@ class RopeString : NSString {
 		fatalError()
 	}
 	public override var length: Int {
-		return 0
+		return rope.utf16.length
 	}
 	override func character(at i: Int) -> unichar {
-		return 0 // rope[NodeIndex(utf16Offset: i)]
+		return rope.utf16[NodeIndex(utf16Offset: i)]
 	}
 }
