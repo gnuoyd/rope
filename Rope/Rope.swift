@@ -103,7 +103,7 @@ public class Rope<C : Content> : Collection {
 	public subscript(i: NodeIndex) -> Content.Element {
 		return top.element(at: i)
 	}
-	public subscript(i: Index) -> Iterator.Element {
+	public subscript(i: Index) -> Element {
 		get {
 			do {
 				return try element(at: i)
@@ -111,8 +111,8 @@ public class Rope<C : Content> : Collection {
 				fatalError("No such element")
 			}
 		}
-        }
-        public func element(at i: Index) throws -> Iterator.Element {
+	}
+	public func element(at i: Index) throws -> Element {
 		switch i {
 		case .start(_):
 			guard case .step(let node) = top.firstElement()
