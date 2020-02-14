@@ -9,6 +9,18 @@ extension NodeIndex {
 	public static let start: NodeIndex = NodeIndex(utf16Offset: 0)
 }
 
+extension NodeIndex {
+	static func utf16Range(_ range: Range<Int>) -> Range<NodeIndex> {
+		let lower = NodeIndex(utf16Offset: range.lowerBound)
+		let upper = NodeIndex(utf16Offset: range.upperBound)
+		return lower..<upper
+	}
+	static func utf16RangeTo(_ upperBound: Int) -> Range<NodeIndex> {
+		let upper = NodeIndex(utf16Offset: upperBound)
+		return NodeIndex.start..<upper
+	}
+}
+
 func +(_ l: NodeIndex, _ r: NodeIndex) -> NodeIndex {
 	return NodeIndex(utf16Offset: l.utf16Offset + r.utf16Offset)
 }
