@@ -1,14 +1,5 @@
 import Foundation
 
-/*
- * Result of looking up an element of a Node
- */
-public enum ElementResult<C : Content> {
-case absent
-case inchOut
-case step(Node<C>)
-}
-
 enum RopeNoSuchElement : Error {
 case onInterior
 case atStart

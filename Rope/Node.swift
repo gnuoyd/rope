@@ -37,6 +37,15 @@ case stepOut		/* A full upward step occurred: stepping over
 			 */
 }
 
+/*
+ * Result of looking up an element of a Node
+ */
+public enum ElementResult<C : Content> {
+case absent
+case inchOut
+case step(Node<C>)
+}
+
 public func == <C>(_ l: Node<C>, _ r: Node<C>) -> Bool {
 	switch (l, r) {
 	case (.cursor(let lHandle, _),
