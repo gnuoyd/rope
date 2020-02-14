@@ -146,6 +146,36 @@ public class Rope<C : Content> : Collection {
 			top = top.inserting(elt, at: h)
 		}
 	}
+	public func attributes(at i: NodeIndex)
+	    -> (Attributes, Range<NodeIndex>) {
+		return top.attributes(at: i)
+	}
+	public func setAttributes(_ attrs: Attributes, range: Range<NodeIndex>){
+		top = top.settingAttributes(attrs, range: range)
+	}
+	public func clearAttributesOnRange(_ range: Range<NodeIndex>) {
+		top = top.clearingAttributes(range: range)
+	}
+}
+
+extension Rope {
+        public struct UTF16View {
+		let rope: Rope<C>
+		init(rope r: Rope<C>) {
+			rope = r
+		}
+                public subscript(i: NodeIndex) -> Unicode.UTF16.CodeUnit {
+                        get {
+                                return rope.top.utf16(at: i)
+                        }
+                }
+		public var length: Int {
+			return rope.top.length
+		}
+	}
+	public var utf16: UTF16View {
+                return UTF16View(rope: self)
+	}
 }
 
 /*
