@@ -1,3 +1,5 @@
+import Foundation
+
 public typealias Attributes = [NSAttributedString.Key : Any]
 
 /* A Node directly encodes the presence of cursors because it is
@@ -269,8 +271,24 @@ public extension Node {
 	}
 }
 
-extension Node {
-	public func settingAttributes(_ attrs: Attributes) -> Node {
+public extension Node {
+	func attributes(at i: NodeIndex, base: NodeIndex)
+	    -> (Attributes, Range<NodeIndex>) {
+		guard case .leaf(let attrs, _) = self, i < endIndex else {
+			fatalError("Index out of bounds")
+		}
+		return (attrs, base..<base + endIndex)
+	}
+	func attributes(at i: NodeIndex) -> (Attributes, Range<NodeIndex>) {
+		return apply({ (node: Node, i: NodeIndex, base: NodeIndex) in node.attributes(at: i, base: base) }, at: i)
+	}
+	func applying(_ fn: (Node) -> Node, range: Range<NodeIndex>) -> Node {
+		let l = subrope(from: NodeIndex.start, to: range.lowerBound)
+		let m = subrope(from: range.lowerBound, to: range.upperBound)
+		let r = subrope(from: range.upperBound, to: endIndex)
+		return l.appending(fn(m)).appending(r)
+	}
+	func settingAttributes(_ attrs: Attributes) -> Node {
 		switch self {
 		case .cursor(let h, _):
 			return .cursor(h, attrs)
@@ -285,7 +303,22 @@ extension Node {
 			return self
 		}
 	}
-	public func addingAttributes(_ nattrs: Attributes) -> Node {
+	func clearingAttributes() -> Node {
+		switch self {
+		case .cursor(let h, _):
+			return .cursor(h, [:])
+		case .container(let h, let n):
+			return .container(h, n.clearingAttributes())
+		case .concat(let l, _, _, _, let r, _):
+			return Node(left: l.clearingAttributes(),
+			    right: r.clearingAttributes())
+		case .leaf(_, let content):
+			return .leaf([:], content)
+		case .empty, .index(_):
+			return self
+		}
+	}
+	func addingAttributes(_ nattrs: Attributes) -> Node {
 		switch self {
 		case .cursor(let h, var attrs):
 			attrs.merge(nattrs) { (_, new) in new }
@@ -301,6 +334,21 @@ extension Node {
 		case .empty, .index(_):
 			return self
 		}
+	}
+	func settingAttributes(_ attrs: Attributes, range: Range<NodeIndex>)
+	    -> Node {
+		return applying({ node in node.settingAttributes(attrs) },
+		    range: range)
+	}
+	func clearingAttributes(range: Range<NodeIndex>)
+	    -> Node {
+		return applying({ node in node.clearingAttributes() },
+		    range: range)
+	}
+	func addingAttributes(_ attrs: Attributes, range: Range<NodeIndex>)
+	    -> Node {
+		return applying({ node in node.addingAttributes(attrs) },
+		    range: range)
 	}
 }
 
@@ -409,11 +457,11 @@ public extension Node {
 			       left.hids.union(right.hids), right,
 			       left.endIndex + right.endIndex)
 	}
-    init(content c: C) {
+	init(content c: C, attributes attrs: Attributes = [:]) {
 		if c.isEmpty {
 			self = Node<C>.empty
 		} else {
-			self = Node<C>.leaf([:], c)
+			self = Node<C>.leaf(attrs, c)
 		}
 	}
 	init<I>(content i: I) where C : Initializable,
@@ -532,6 +580,36 @@ public extension Node {
 		case .cursor(_, _):
 			return NodeIndex.start
 		}
+	}
+	var length: Int {
+		return endIndex.utf16Offset - startIndex.utf16Offset
+	}
+	func apply<R>(_ fn: (Node, NodeIndex, NodeIndex) -> R,
+	    at i: NodeIndex, base: NodeIndex = NodeIndex.start) -> R {
+		switch self {
+		case .leaf(_, _), .cursor(_, _), .empty, .index(_):
+			return fn(self, i, base)
+		case .concat(let ropel, let idx, _, _, let roper, _):
+			if i < idx {
+				return ropel.apply(fn, at: i, base: base)
+			} else {
+				return roper.apply(fn, at: i - idx,
+				    base: base + idx)
+			}
+		case .container(_, let rope):
+			return rope.apply(fn, at: i, base: base)
+		}
+	}
+	func utf16(at i: NodeIndex) -> C.UTF16View.Element {
+		func utf16(_ node: Node, at i: NodeIndex, base: NodeIndex)
+		    -> C.UTF16View.Element {
+			guard case .leaf(_, let s) = node else {
+				fatalError("In \(#function), no utf16 \(i)")
+			}
+			let sidx = C.Index(utf16Offset: i.utf16Offset, in: s)
+			return s.utf16[sidx]
+		}
+		return apply(utf16, at: i)
 	}
 	func element(at i: NodeIndex) -> Element {
 		switch self {
