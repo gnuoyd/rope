@@ -61,8 +61,8 @@ public func == <C>(_ l: Node<C>, _ r: Node<C>) -> Bool {
 	}
 }
 
-extension Node {
-	public func insertingIndex(_ j: Handle, oneStepAfter i: Handle,
+public extension Node {
+	func insertingIndex(_ j: Handle, oneStepAfter i: Handle,
 	    sibling r: Node) -> Step<C> {
 		let result = insertingIndex(j, oneStepAfter: i)
 		switch result {
@@ -82,7 +82,7 @@ extension Node {
 			return .absent
 		}
 	}
-	public func afterStepInsertingIndex(_ j: Handle) -> Step<C> {
+	func afterStepInsertingIndex(_ j: Handle) -> Step<C> {
 		switch self {
 		/* A step over a cursor, index, or empty string is NOT
 		 * a full step.
@@ -128,7 +128,7 @@ extension Node {
 			}
 		}
 	}
-	public func insertingIndex(_ j: Handle, oneStepAfter i: Handle)
+	func insertingIndex(_ j: Handle, oneStepAfter i: Handle)
 	    -> Step<C> {
 		switch self {
 		case .index(let w) where w.get() == i:
@@ -183,7 +183,7 @@ extension Node {
 	/* TBD extract `performing` from `insertingIndex(_:,oneStepAfter:)`
 	 * and element(at:) ?
 	 */
-	public func firstElement() -> ElementResult<C> {
+	func firstElement() -> ElementResult<C> {
 		switch self {
 		case .cursor(_, _), .index(_), .empty:
 			/* No match: the element is not on this span. */
@@ -201,7 +201,7 @@ extension Node {
 			return l.firstElementUsingSibling(r)
 		}
 	}
-	public func firstElementUsingSibling(_ r: Node) ->
+	func firstElementUsingSibling(_ r: Node) ->
 	    ElementResult<C> {
 		switch firstElement() {
                 case .inchOut:
@@ -210,7 +210,7 @@ extension Node {
 			return result
 		}
 	}
-	public func element(at i: Handle, sibling r: Node) ->
+	func element(at i: Handle, sibling r: Node) ->
 	    ElementResult<C> {
 		switch element(at: i) {
 		case .inchOut:
@@ -222,7 +222,7 @@ extension Node {
 	/* TBD extract `performing` from `insertingIndex(_:,oneStepAfter:)`
 	 * and element(at:) ?
 	 */
-	public func element(at i: Handle) -> ElementResult<C> {
+	func element(at i: Handle) -> ElementResult<C> {
 		switch self {
 		case .index(let w) where w.get() == i:
 			/* The index matches: inch out so that the caller
@@ -295,8 +295,8 @@ extension Node {
 	}
 }
 
-extension Node {
-	public func inserting(_ elt: Node, at target: Handle) -> Node {
+public extension Node {
+	func inserting(_ elt: Node, at target: Handle) -> Node {
 		switch self {
 		case .index(let w):
 			guard let handle = w.get(), handle == target else {
