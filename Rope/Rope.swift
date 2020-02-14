@@ -39,11 +39,11 @@ public class Rope<C : Content> : Collection {
 	public var generation: UInt64 = 0
 	public var startIndex: Index {
 		if top.startIndex == top.endIndex {
-                        return .end(of: self)
+			return .end(of: self)
 		}
-                return .start(of: self)
+		return .start(of: self)
 	}
-        public var endIndex: Index { return .end(of: self) }
+	public var endIndex: Index { return .end(of: self) }
 
 	public init() {
 		top = .empty
@@ -72,14 +72,14 @@ public class Rope<C : Content> : Collection {
 			let h = Handle()
 			guard case
 			    .step(let n) = top.afterStepInsertingIndex(h) else {
-                                return .end(of: self)
+				return .end(of: self)
 			}
 			top = n
-                        return .interior(of: self, at: generation,
+			return .interior(of: self, at: generation,
 			                 index: 0, handle: h)
 		case .end(_):
 			fatalError("No index after .endIndex")
-                case .interior(_, _, let m, let h):
+		case .interior(_, _, let m, let h):
 			let j = Handle()
 			switch top.insertingIndex(j, oneStepAfter: h) {
 			case .inchOut:
@@ -89,10 +89,10 @@ public class Rope<C : Content> : Collection {
 				fatalError(
 				    ".interior(\(m), \(h)) is absent")
 			case .stepOut:
-                                return .end(of: self)
+				return .end(of: self)
 			case .step(let node):
 				top = node
-                                return .interior(of: self,
+				return .interior(of: self,
 				                 at: generation,
 						 index: m + 1,
 						 handle: j)
@@ -129,7 +129,7 @@ public class Rope<C : Content> : Collection {
 		case .end(_):
 			throw RopeNoSuchElement.atEnd
 		}
-        }
+	}
 	public func insert(_ elt: Element, at i: Index) {
 		guard self === i.owner else {
 			fatalError("Invalid index")
@@ -139,9 +139,9 @@ public class Rope<C : Content> : Collection {
 		}
 		switch i {
 		case .start(_):
-                        top = Node<C>(left: elt, right: top)
+			top = Node<C>(left: elt, right: top)
 		case .end(_):
-                        top = Node(left: top, right: elt)
+			top = Node(left: top, right: elt)
 		case .interior(_, _, _, let h):
 			top = top.inserting(elt, at: h)
 		}

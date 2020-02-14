@@ -200,7 +200,7 @@ public extension Node {
 		case .leaf(let attrs, let content):
 			switch content.headAndTail {
 			case (let head, _)?:
-                                return .step(.leaf(attrs, head))
+				return .step(.leaf(attrs, head))
 			default:
 				return .inchOut
 			}
@@ -213,7 +213,7 @@ public extension Node {
 	func firstElementUsingSibling(_ r: Node) ->
 	    ElementResult<C> {
 		switch firstElement() {
-                case .inchOut:
+		case .inchOut:
 			return r.firstElement()
 		case let result:
 			return result
@@ -311,7 +311,7 @@ public extension Node {
 			guard let handle = w.get(), handle == target else {
 				fatalError("Invalid index")
 			}
-                        return elt
+			return elt
 		case .cursor(_, _):
 			fatalError("Invalid index")
 		case .container(let h, let r):
@@ -335,7 +335,7 @@ public extension Node {
 public extension Node {
 	// TBD introduce a property for all Handles but the
 	// index Handles?
-    var hids: Set<Handle.Id> {
+	var hids: Set<Handle.Id> {
 		switch self {
 		case .index(let w):
 			guard let handle = w.get() else {
@@ -353,7 +353,7 @@ public extension Node {
 			return []
 		}
 	}
-    func containsIndex(_ target: Handle) -> Bool {
+	func containsIndex(_ target: Handle) -> Bool {
 		switch self {
 		case .index(let w):
 			guard let handle = w.get() else {
@@ -368,11 +368,11 @@ public extension Node {
 			return hids.contains(target.id)
 		case .leaf(_, _), .empty:
 			return false
-                case .cursor(_, _):
-                        return false
-                }
+		case .cursor(_, _):
+			return false
+		}
 	}
-    func containsIndex(_ h1: Handle, before h2: Handle) -> Bool {
+	func containsIndex(_ h1: Handle, before h2: Handle) -> Bool {
 		switch self {
 		case .index(_):
 			fatalError("Cannot order handles on an .index(_)")
@@ -381,9 +381,10 @@ public extension Node {
 		case .container(_, let rope):
 			return rope.containsIndex(h1, before: h2)
 		case .concat(let l, _, _, let hids, let r, _):
-                        guard hids.contains(h1.id) && hids.contains(h2.id) else {
-                                return false
-                        }
+			guard hids.contains(h1.id) && hids.contains(h2.id)
+			    else {
+				return false
+			}
 			return l.containsIndex(h1, before: h2) ||
 			    (l.containsIndex(h1) && r.containsIndex(h2)) ||
 			    r.containsIndex(h1, before: h2)
@@ -396,13 +397,13 @@ public extension Node {
 }
 
 public extension Node {
-    init(handle h: Handle, node n: Node<C>) {
+	init(handle h: Handle, node n: Node<C>) {
 		self = .container(h, n)
 	}
-    init(holder: Handle) {
+	init(holder: Handle) {
 		self = .index(Weak(holder))
 	}
-    init(left: Node<C>, right: Node<C>) {
+	init(left: Node<C>, right: Node<C>) {
 		self = .concat(left, left.endIndex,
 		               1 + max(left.depth, right.depth),
 			       left.hids.union(right.hids), right,
@@ -415,7 +416,7 @@ public extension Node {
 			self = Node<C>.leaf([:], c)
 		}
 	}
-    init<I>(content i: I) where C : Initializable,
+	init<I>(content i: I) where C : Initializable,
 	    C.Initializer == I, I : Collection {
 		self.init(content: C(i))
 	}
