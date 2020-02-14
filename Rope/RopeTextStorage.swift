@@ -15,8 +15,13 @@ class RopeTextStorage: NSTextStorage {
 	    -> [NSAttributedString.Key : Any] {
 		return [:]
 	}
-	override func setAttributes(_ attrs: [NSAttributedString.Key : Any]?,
-	    range: NSRange) {
-		return
+	override func setAttributes(_ optAttrs: [NSAttributedString.Key : Any]?,
+	    range r: NSRange) {
+		let range = NodeIndex(utf16Offset: r.location)..<NodeIndex(utf16Offset: NSMaxRange(r))
+		guard let attrs = optAttrs else {
+			rope.clearAttributesOnRange(range)
+			return
+		}
+		rope.setAttributes(attrs, range: range)
 	}
 }
