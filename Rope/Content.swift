@@ -5,6 +5,7 @@ public protocol Content : Initializable, StringProtocol {
 	var isEmpty: Bool { get }
 	static var empty: Self { get }
 	var length: Int { get }
+	var utf16: Self.UTF16View { get }
 	static func +<Other>(_ l: Self, _ r: Other) -> Self where Other : Sequence, Character == Other.Element
 	init(_: SubSequence)
 	init(repeating: Element, count: Int)
