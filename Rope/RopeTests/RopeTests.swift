@@ -199,13 +199,35 @@ class HandleHolding : XCTestCase {
 	}
 */
 
+	/* Test the expectation that if the only remaining reference to an
+	 * object is the reference held by a Weak struct,
+	 * w, then trying to retrieve the object with w.get() yields nil.
+	 */
 	func testReleaseHandle() {
 		var h = Handle()
 		let w = Weak(h)
 		h = Handle()
 		XCTAssert(w.get() == nil)
 	}
-	
+
+	/* Test the expectation that if the only remaining references to an
+	 * object are the references held by Weak structs,
+	 * w and x, then trying to retrieve the object with w.get() and
+	 * x.get() yields nil.
+	 */
+	func testReleaseTwoHandles() {
+		var h = Handle()
+		let w = Weak(h)
+		let x = Weak(h)
+		h = Handle()
+		XCTAssert(w.get() == nil)
+		XCTAssert(x.get() == nil)
+	}
+
+	/* Test the expectation that if there is a second reference to an
+	 * object, o, that is also held by a Weak struct, w, then the
+	 * object retrieved by w.get() is o.
+	 */
 	func testHoldHandle() {
 		let h = Handle()
 		let w = Weak(h)
