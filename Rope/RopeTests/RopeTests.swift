@@ -343,5 +343,148 @@ class NodeSubropes : XCTestCase {
 	}
 }
 
+class NodeAttributes : XCTestCase {
+	typealias Key = NSAttributedString.Key
+	static let frontAttrs: Attributes = [Key.cursor : true]
+	static let middleAttrs: Attributes = [Key.expansion : true]
+	static let backAttrs: Attributes = [Key.font : true]
+	static let newAttrs: Attributes = [Key.cursor : false, Key.font : false]
+	static let abc: NSS = Node(content: "abc", attributes: frontAttrs)
+	static let defgh: NSS = Node(content: "defgh", attributes: middleAttrs)
+	static let ijkl: NSS = Node(content: "ijkl", attributes: backAttrs)
+	let n: NSS = Node(left: abc, right: Node(left: defgh, right: ijkl))
+
+	static func frontAttrsEqual(_ attrs: Attributes) -> Bool {
+		guard attrs.count == 1 else {
+			return false
+		}
+		guard let val = attrs[Key.cursor] as? Bool else {
+			return false
+		}
+		return val
+	}
+	static func middleAttrsEqual(_ attrs: Attributes) -> Bool {
+		guard attrs.count == 1 else {
+			return false
+		}
+		guard let val = attrs[Key.expansion] as? Bool else {
+			return false
+		}
+		return val
+	}
+	static func backAttrsEqual(_ attrs: Attributes) -> Bool {
+		guard attrs.count == 1 else {
+			return false
+		}
+		guard let val = attrs[Key.font] as? Bool else {
+			return false
+		}
+		return val
+	}
+	static func newAttrsEqual(_ attrs: Attributes) -> Bool {
+		guard attrs.count == 2 else {
+			return false
+		}
+		guard let font = attrs[Key.font] as? Bool else {
+			return false
+		}
+		guard !font else {
+			return false
+		}
+		guard let cursor = attrs[Key.cursor] as? Bool else {
+			return false
+		}
+		return !cursor
+	}
+
+	func testFrontAttributes() {
+		let (attrs, range) = n.attributes(at: NodeIndex.start)
+		XCTAssert(NodeAttributes.frontAttrsEqual(attrs))
+		XCTAssert(range == NodeIndex.utf16RangeTo(3))
+	}
+	func testMiddleAttributes() {
+		let (attrs, range) = n.attributes(at: NodeIndex(utf16Offset: 3))
+		XCTAssert(NodeAttributes.middleAttrsEqual(attrs))
+		XCTAssert(range == NodeIndex.utf16Range(3..<8))
+	}
+	func testBackAttributes() {
+		let (attrs, range) = n.attributes(at: NodeIndex(utf16Offset: 8))
+		XCTAssert(NodeAttributes.backAttrsEqual(attrs))
+		XCTAssert(range == NodeIndex.utf16Range(8..<12))
+	}
+	func testLastAttributes() {
+		let (attrs, range) = n.attributes(at: NodeIndex(utf16Offset: 11))
+		XCTAssert(NodeAttributes.backAttrsEqual(attrs))
+		XCTAssert(range == NodeIndex.utf16Range(8..<12))
+	}
+	func testSettingFrontAndMiddleAttributes() {
+		let newn = n.settingAttributes(NodeAttributes.newAttrs,
+		    range: NodeIndex.utf16Range(0..<8))
+		let (attrs, frontRange) = newn.attributes(at: NodeIndex(utf16Offset: 0))
+		XCTAssert(NodeAttributes.newAttrsEqual(attrs))
+		XCTAssert(frontRange == NodeIndex.utf16Range(0..<3))
+		let (_, middleRange) = newn.attributes(at: NodeIndex(utf16Offset: 3))
+		XCTAssert(middleRange == NodeIndex.utf16Range(3..<8))
+	}
+	static func helpTestSettingCentralAttributes(_ oldn: NSS) {
+		let newn = oldn.settingAttributes(NodeAttributes.newAttrs,
+		    range: NodeIndex.utf16Range(2..<9))
+
+		let (frontAttrs, frontRange) =
+		    newn.attributes(at: NodeIndex(utf16Offset: 0))
+		XCTAssert(frontRange == NodeIndex.utf16Range(0..<2))
+		XCTAssert(NodeAttributes.frontAttrsEqual(frontAttrs))
+
+		let (midAttrs1, midRange1) =
+		    newn.attributes(at: NodeIndex(utf16Offset: 2))
+		XCTAssert(midRange1 == NodeIndex.utf16Range(2..<3))
+		XCTAssert(NodeAttributes.newAttrsEqual(midAttrs1))
+
+		let (midAttrs2, midRange2) =
+		    newn.attributes(at: NodeIndex(utf16Offset: 3))
+		XCTAssert(midRange2 == NodeIndex.utf16Range(3..<8))
+		XCTAssert(NodeAttributes.newAttrsEqual(midAttrs2))
+
+		let (midAttrs3, midRange3) =
+		    newn.attributes(at: NodeIndex(utf16Offset: 8))
+		XCTAssert(midRange3 == NodeIndex.utf16Range(8..<9))
+		XCTAssert(NodeAttributes.newAttrsEqual(midAttrs3))
+
+		let (backAttrs, backRange) =
+		    newn.attributes(at: NodeIndex(utf16Offset: 9))
+		XCTAssert(backRange == NodeIndex.utf16Range(9..<12))
+		XCTAssert(NodeAttributes.backAttrsEqual(backAttrs))
+	}
+	func testSettingCentralAttributes() {
+		NodeAttributes.helpTestSettingCentralAttributes(n)
+	}
+	func testSettingCentralAttributesWithCursor() {
+		let h: Handle = Handle()
+		let contn: NSS = Node(handle: h, node: n)
+		NodeAttributes.helpTestSettingCentralAttributes(contn)
+	}
+	func testSettingCentralAttributesWithContainer() {
+		let h: Handle = Handle()
+		let contn: NSS = Node(handle: h, node: n)
+		NodeAttributes.helpTestSettingCentralAttributes(contn)
+	}
+	func testSettingBackAttributes() {
+		let newn = n.settingAttributes(NodeAttributes.newAttrs,
+		    range: NodeIndex.utf16Range(8..<12))
+		let (attrs, range) = newn.attributes(at: NodeIndex(utf16Offset: 8))
+		XCTAssert(NodeAttributes.newAttrsEqual(attrs))
+		XCTAssert(range == NodeIndex.utf16Range(8..<12))
+	}
+	func testSettingLastAttributes() {
+		let newn = n.settingAttributes(NodeAttributes.newAttrs,
+		    range: NodeIndex.utf16Range(11..<12))
+		let (attrs, range) = newn.attributes(at: NodeIndex(utf16Offset: 11))
+		XCTAssert(NodeAttributes.newAttrsEqual(attrs))
+		XCTAssert(range == NodeIndex.utf16Range(11..<12))
+		let (_, abuttingRange) = newn.attributes(at: NodeIndex(utf16Offset: 8))
+		XCTAssert(abuttingRange == NodeIndex.utf16Range(8..<11))
+	}
+}
+
 class RopeTextStorage : XCTestCase {
 }
