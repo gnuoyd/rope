@@ -178,7 +178,7 @@ class FibonacciTests : XCTestCase {
 	func testFibonacciByIndex() {
 		XCTAssert([0, 1, 2, 3, 4, 5].map({ i in fibonacci(index: i)}) == [0, 1, 1, 2, 3, 5])
 	}
-	
+
 	func testFibonacciGenerator() {
 		// Produce the Fibonacci sequence, 0th through 5th element.
 		let arr = Fibonacci(through: 5).reduce([], { (arr: [UInt], elt: UInt) -> [UInt] in arr + [elt]})
@@ -233,7 +233,7 @@ class HandleHolding : XCTestCase {
 		let w = Weak(h)
 		XCTAssert(w.get() == h)
 	}
-	
+
 	func testStepAndHoldIndex() {
 		let first = Node<Substring>(content: "abc")
 		let handle = Handle()
@@ -243,7 +243,7 @@ class HandleHolding : XCTestCase {
 		}
 		XCTAssert(second.leaves.map({ (x: Node<Substring>) -> Bool in if case .index(let w) = x { return w.get() == handle } else {return false } })[1])
 	}
-	
+
 	func testStepAndReleaseIndex() {
 		let first = Node<Substring>(content: "abc")
 		var handle = Handle()
@@ -268,11 +268,11 @@ class HandleHolding : XCTestCase {
 		}
 		return false
 	}
-	
+
 	func testCleanedHoldingIndices() {
 		let emptyRope = Rope<Substring>(content: "abcdefghijkl")
 		var indices: [Rope<Substring>.Index]? = []
-		
+
 		for i in emptyRope.indices {
 			indices?.append(i)
 		}
@@ -291,11 +291,11 @@ class HandleHolding : XCTestCase {
 		indices = nil
 		XCTAssert(emptyRope.node.cleaned()?.leaves.filter(HandleHolding.isIndex).count == 0)
 	}
-	
+
 	func testReleasingIndices() {
 		let rope = Rope<Substring>(content: "abcdefghijkl")
 		var indices: [Rope<Substring>.Index]? = []
-		
+
 		for i in rope.indices {
 			indices?.append(i)
 		}
@@ -321,7 +321,7 @@ class NodeSubropes : XCTestCase {
 	func testFullContent() {
 		XCTAssert(n.content == "abcdefghijkl")
 	}
-	
+
 	func testLeadingSubnode() {
 		XCTAssert(n.subrope(from: NodeIndex(utf16Offset: 0), to: NodeIndex(utf16Offset: 3)).content == "abc")
 	}
