@@ -29,11 +29,12 @@
 		EE66B2E423E90C14004D9F57 /* RopeString.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE66B2E223E90C13004D9F57 /* RopeString.swift */; };
 		EE66B2E523E90C14004D9F57 /* RopeString.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE66B2E223E90C13004D9F57 /* RopeString.swift */; };
 		EE66B2E623E90C14004D9F57 /* RopeTextStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE66B2E323E90C13004D9F57 /* RopeTextStorage.swift */; };
-		EE66B2E723E90C14004D9F57 /* RopeTextStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE66B2E323E90C13004D9F57 /* RopeTextStorage.swift */; };
 		EE66B2E923E90C99004D9F57 /* Node.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE66B2E823E90C99004D9F57 /* Node.swift */; };
 		EE66B2EA23E90C99004D9F57 /* Node.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE66B2E823E90C99004D9F57 /* Node.swift */; };
 		EE66B2EC23E90DC5004D9F57 /* RopeIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE66B2EB23E90DC5004D9F57 /* RopeIndex.swift */; };
 		EE66B2ED23E90DC5004D9F57 /* RopeIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE66B2EB23E90DC5004D9F57 /* RopeIndex.swift */; };
+		EE66B2EE23E9100C004D9F57 /* Rope.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE4F4BBF230B721200F21B13 /* Rope.swift */; };
+		EE66B2EF23E9106E004D9F57 /* Fibonacci.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE4F4BC0230B721200F21B13 /* Fibonacci.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -64,8 +65,8 @@
 		EE66B2DA23E90BA0004D9F57 /* Substring+Initializable.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Substring+Initializable.swift"; sourceTree = SOURCE_ROOT; };
 		EE66B2DF23E90BCC004D9F57 /* NodeIndex.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NodeIndex.swift; sourceTree = SOURCE_ROOT; };
 		EE66B2E223E90C13004D9F57 /* RopeString.swift */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 8; lastKnownFileType = sourcecode.swift; path = RopeString.swift; sourceTree = SOURCE_ROOT; tabWidth = 8; usesTabs = 1; };
-		EE66B2E323E90C13004D9F57 /* RopeTextStorage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RopeTextStorage.swift; sourceTree = SOURCE_ROOT; };
-		EE66B2E823E90C99004D9F57 /* Node.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Node.swift; sourceTree = SOURCE_ROOT; };
+		EE66B2E323E90C13004D9F57 /* RopeTextStorage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RopeTextStorage.swift; sourceTree = SOURCE_ROOT; tabWidth = 8; usesTabs = 1; };
+		EE66B2E823E90C99004D9F57 /* Node.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Node.swift; sourceTree = SOURCE_ROOT; tabWidth = 8; usesTabs = 1; };
 		EE66B2EB23E90DC5004D9F57 /* RopeIndex.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RopeIndex.swift; sourceTree = SOURCE_ROOT; };
 		EEA72FFB231F4EF600C38F26 /* TimingPlayground.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; path = TimingPlayground.playground; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
 		EEA72FFC23305D8000C38F26 /* IndexPlayground.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; path = IndexPlayground.playground; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
@@ -273,7 +274,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				EE66B2E723E90C14004D9F57 /* RopeTextStorage.swift in Sources */,
+				EE66B2EF23E9106E004D9F57 /* Fibonacci.swift in Sources */,
+				EE66B2EE23E9100C004D9F57 /* Rope.swift in Sources */,
 				EE66B2E123E90BCC004D9F57 /* NodeIndex.swift in Sources */,
 				EE66B2E523E90C14004D9F57 /* RopeString.swift in Sources */,
 				EE66B2EA23E90C99004D9F57 /* Node.swift in Sources */,
