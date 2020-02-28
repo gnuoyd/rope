@@ -1,3 +1,5 @@
+import Foundation   // for NSRange
+
 public struct NodeIndex : Comparable {
 	public init(utf16Offset offset: Int) {
 		self.utf16Offset = offset
@@ -10,6 +12,11 @@ extension NodeIndex {
 }
 
 extension NodeIndex {
+	static func utf16Range(_ range: NSRange) -> Range<NodeIndex> {
+		let lower = NodeIndex(utf16Offset: range.location)
+		let upper = NodeIndex(utf16Offset: NSMaxRange(range))
+		return lower..<upper
+	}
 	static func utf16Range(_ range: Range<Int>) -> Range<NodeIndex> {
 		let lower = NodeIndex(utf16Offset: range.lowerBound)
 		let upper = NodeIndex(utf16Offset: range.upperBound)
@@ -18,6 +25,14 @@ extension NodeIndex {
 	static func utf16RangeTo(_ upperBound: Int) -> Range<NodeIndex> {
 		let upper = NodeIndex(utf16Offset: upperBound)
 		return NodeIndex.start..<upper
+	}
+}
+
+extension Range where Bound == NodeIndex {
+	public var utf16NSRange: NSRange {
+		let lower = lowerBound.utf16Offset
+		let upper = upperBound.utf16Offset
+		return NSMakeRange(lower, upper - lower)
 	}
 }
 
