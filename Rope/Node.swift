@@ -778,6 +778,15 @@ public extension Node {
 		return subrope(from: NodeIndex.start, to: start).appending(
 		    subrope(from: end, to: endIndex))
 	}
+	subscript(range: Range<Index>) -> Content {
+		return subrope(from: range.lowerBound,
+			to: range.upperBound).content
+	}
+	func replacing(range: Range<Index>, with c: Content) -> Node {
+		let l = subrope(from: NodeIndex.start, to: range.lowerBound)
+		let r = subrope(from: range.upperBound, to: endIndex)
+		return l.appending(Node(content: c)).appending(r)
+	}
 	func insertingCursor(_ handle: Handle, attributes: Attributes,
 	    at i: Index) -> Node {
 		let cursor: Node = .cursor(handle, attributes)
