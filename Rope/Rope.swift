@@ -99,7 +99,26 @@ public class Rope<C : Content> : Collection {
 			}
 		}
 	}
-
+	/* TBD tests */
+	public subscript(_ r: Range<NodeIndex>) -> Content {
+		set(newValue) {
+			top = top.replacing(range: r, with: newValue)
+		}
+		get {
+			return top[r]
+		}
+	}
+/*
+	public subscript<I>(_ r: Range<NodeIndex>) -> I
+                where C : Initializable, C.Initializer == I, I : Collection, I : Initializable, I.Initializer == C {
+		set(newValue) {
+			top = top.replacing(range: r, with: C(newValue))
+		}
+		get {
+			return I(top[r])
+		}
+	}
+*/
 	public subscript(i: NodeIndex) -> Content.Element {
 		return top.element(at: i)
 	}
