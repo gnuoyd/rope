@@ -49,9 +49,6 @@ public func <(_ l: NodeIndex, _ r: NodeIndex) -> Bool {
 }
 
 func -(_ l: NodeIndex, _ r: NodeIndex) -> NodeIndex {
-	if l <= r {
-		return NodeIndex.start
-	}
 	return NodeIndex(utf16Offset: l.utf16Offset - r.utf16Offset)
 }
 
