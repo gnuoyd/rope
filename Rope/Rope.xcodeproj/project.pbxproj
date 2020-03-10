@@ -45,6 +45,27 @@
 			remoteGlobalIDString = EE4F4BA4230B70FE00F21B13;
 			remoteInfo = Rope;
 		};
+		EEB363092404B738006EA335 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EEB363032404B737006EA335 /* RopeSample.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = EEB362D22404B734006EA335;
+			remoteInfo = RopeSample;
+		};
+		EEB3630B2404B738006EA335 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EEB363032404B737006EA335 /* RopeSample.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = EEB362E62404B737006EA335;
+			remoteInfo = RopeSampleTests;
+		};
+		EEB3630D2404B738006EA335 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EEB363032404B737006EA335 /* RopeSample.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = EEB362F12404B737006EA335;
+			remoteInfo = RopeSampleUITests;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
@@ -70,6 +91,7 @@
 		EE66B2EB23E90DC5004D9F57 /* RopeIndex.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RopeIndex.swift; sourceTree = SOURCE_ROOT; };
 		EEA72FFB231F4EF600C38F26 /* TimingPlayground.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; path = TimingPlayground.playground; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
 		EEA72FFC23305D8000C38F26 /* IndexPlayground.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; path = IndexPlayground.playground; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
+		EEB363032404B737006EA335 /* RopeSample.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = RopeSample.xcodeproj; path = RopeSample/RopeSample.xcodeproj; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -94,6 +116,7 @@
 		EE4F4B9B230B70FE00F21B13 = {
 			isa = PBXGroup;
 			children = (
+				EEB363032404B737006EA335 /* RopeSample.xcodeproj */,
 				EE449D6E23DFC58C00769D36 /* TextView.playground */,
 				EEA72FFC23305D8000C38F26 /* IndexPlayground.playground */,
 				EEA72FFB231F4EF600C38F26 /* TimingPlayground.playground */,
@@ -141,6 +164,16 @@
 				EE4F4BB5230B70FE00F21B13 /* Info.plist */,
 			);
 			path = RopeTests;
+			sourceTree = "<group>";
+		};
+		EEB363042404B737006EA335 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				EEB3630A2404B738006EA335 /* RopeSample.app */,
+				EEB3630C2404B738006EA335 /* RopeSampleTests.xctest */,
+				EEB3630E2404B738006EA335 /* RopeSampleUITests.xctest */,
+			);
+			name = Products;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -224,6 +257,12 @@
 			mainGroup = EE4F4B9B230B70FE00F21B13;
 			productRefGroup = EE4F4BA6230B70FE00F21B13 /* Products */;
 			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = EEB363042404B737006EA335 /* Products */;
+					ProjectRef = EEB363032404B737006EA335 /* RopeSample.xcodeproj */;
+				},
+			);
 			projectRoot = "";
 			targets = (
 				EE4F4BA4230B70FE00F21B13 /* Rope */,
@@ -231,6 +270,30 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXReferenceProxy section */
+		EEB3630A2404B738006EA335 /* RopeSample.app */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.application;
+			path = RopeSample.app;
+			remoteRef = EEB363092404B738006EA335 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		EEB3630C2404B738006EA335 /* RopeSampleTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = RopeSampleTests.xctest;
+			remoteRef = EEB3630B2404B738006EA335 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		EEB3630E2404B738006EA335 /* RopeSampleUITests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = RopeSampleUITests.xctest;
+			remoteRef = EEB3630D2404B738006EA335 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+/* End PBXReferenceProxy section */
 
 /* Begin PBXResourcesBuildPhase section */
 		EE4F4BA3230B70FE00F21B13 /* Resources */ = {
