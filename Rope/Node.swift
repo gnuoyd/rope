@@ -6,8 +6,8 @@ public typealias Attributes = [NSAttributedString.Key : Any]
  * possible for a cursor to move up and down the hierarchy of text
  * containers without changing between-character positions.  A cursor
  * can appear at the position left of the first character or right of
- * the last character in a Node.  A cursor can also appear in an empty
- * Node.
+ * the last character in a Node.  A cursor can also appear in a
+ * Node that contains no characters.
  */
 public indirect enum Node<C : Content> {
 public typealias Content = C
