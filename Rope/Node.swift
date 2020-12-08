@@ -532,7 +532,7 @@ public extension Node {
 	}
 	var depth: UInt {
 		switch self {
-		case .leaf(_), .cursor(_, _), .empty, .index(_):
+		case .leaf(_, _), .cursor(_, _), .empty, .index(_):
 			return 0
 		case .container(_, let rope):
 			return rope.depth
@@ -561,7 +561,7 @@ public extension Node {
 			return rope.midIndex
 		case .concat(_, let idx, _, _, _, _):
 			return idx
-		case .leaf(_), .empty, .cursor(_, _), .index(_):
+		case .leaf(_, _), .empty, .cursor(_, _), .index(_):
 			return self.endIndex
 		}
 	}
