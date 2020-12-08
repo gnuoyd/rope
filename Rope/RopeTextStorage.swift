@@ -31,8 +31,8 @@ public class RopeTextStorage: NSTextStorage {
 			range.initialize(to: r.utf16NSRange)
 		}
 		Swift.print("\(attrs.count) attributes on " +
-		    "[\(r.upperBound.utf16Offset), " +
-		    "\(r.lowerBound.utf16Offset)], \(attrs)")
+		    "[\(r.lowerBound.utf16Offset), " +
+		    "\(r.upperBound.utf16Offset)], \(attrs)")
 		return attrs;
 	}
 	override public func replaceCharacters(in range: NSRange,
