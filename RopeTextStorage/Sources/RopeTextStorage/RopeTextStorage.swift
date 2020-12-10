@@ -1,3 +1,6 @@
+import AppKit
+import Rope
+
 public class RopeTextStorage: NSTextStorage {
 	let rope: Rope<Substring>
 	let _string: RopeString

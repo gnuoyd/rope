@@ -12,17 +12,17 @@ extension NodeIndex {
 }
 
 extension NodeIndex {
-	static func utf16Range(_ range: NSRange) -> Range<NodeIndex> {
+	public static func utf16Range(_ range: NSRange) -> Range<NodeIndex> {
 		let lower = NodeIndex(utf16Offset: range.location)
 		let upper = NodeIndex(utf16Offset: NSMaxRange(range))
 		return lower..<upper
 	}
-	static func utf16Range(_ range: Range<Int>) -> Range<NodeIndex> {
+	public static func utf16Range(_ range: Range<Int>) -> Range<NodeIndex> {
 		let lower = NodeIndex(utf16Offset: range.lowerBound)
 		let upper = NodeIndex(utf16Offset: range.upperBound)
 		return lower..<upper
 	}
-	static func utf16RangeTo(_ upperBound: Int) -> Range<NodeIndex> {
+	public static func utf16RangeTo(_ upperBound: Int) -> Range<NodeIndex> {
 		let upper = NodeIndex(utf16Offset: upperBound)
 		return NodeIndex.start..<upper
 	}

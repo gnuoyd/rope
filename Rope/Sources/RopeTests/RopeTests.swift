@@ -486,5 +486,12 @@ class NodeAttributes : XCTestCase {
 	}
 }
 
-class RopeTextStorage : XCTestCase {
+class AppendInsertRemoveReplace : XCTestCase {
+	func testReplace() {
+		
+		// let rope = Rope<Substring>(content: "This is the original content.")
+		let str: String = "This is the original content."
+	
+		print(str.firstIndex(of: " is") ?? -1)
+	}
 }

@@ -1,4 +1,5 @@
 import AppKit
+import Rope
 
 class RopeString : NSString {
 	let rope: Rope<Substring>
