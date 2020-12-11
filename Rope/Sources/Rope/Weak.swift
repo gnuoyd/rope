@@ -1,3 +1,6 @@
+//
+// Copyright (c) 2019, 2020 David Young.  All rights reserved.
+//
 public struct Weak<O : AnyObject> {
 	public typealias Reference = O
 	private var _f: () -> O?

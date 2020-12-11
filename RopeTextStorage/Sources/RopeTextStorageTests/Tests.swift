@@ -1,8 +1,5 @@
 //
-//	Tests.swift
-//
-//	Created by David Young on 8 Dec 2020.
-//	Copyright © 2019 White Coral Islands. All rights reserved.
+// Copyright (c) 2019, 2020 David Young.  All rights reserved.
 //
 
 import XCTest

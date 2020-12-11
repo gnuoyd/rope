@@ -1,11 +1,6 @@
 //
-//	RopeTests.swift
-//	RopeTests
+// Copyright (c) 2019, 2020 David Young.  All rights reserved.
 //
-//	Created by David Young on 19 Aug 19.
-//	Copyright © 2019 White Coral Islands. All rights reserved.
-//
-
 import XCTest
 @testable import Rope
 

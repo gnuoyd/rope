@@ -1,4 +1,7 @@
 // swift-tools-version:5.1
+//
+// Copyright (c) 2019, 2020 David Young.  All rights reserved.
+//
 import PackageDescription
 
 let package = Package(

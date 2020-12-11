@@ -1,3 +1,6 @@
+//
+// Copyright (c) 2019, 2020 David Young.  All rights reserved.
+//
 public class Handle : Hashable {
 	public typealias Id = UInt64
 	static var nextId: Id = 0

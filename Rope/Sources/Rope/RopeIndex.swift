@@ -1,3 +1,6 @@
+//
+// Copyright (c) 2019, 2020 David Young.  All rights reserved.
+//
 public enum RopeIndex<C : Content> : Comparable {
 case start(of: Rope<C>)
 case end(of: Rope<C>)
