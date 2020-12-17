@@ -34,11 +34,17 @@ case step(Node<C>)	/* A full step occurred, resulting in the
 			 * associated Node
 			 */
 case inchOut		/* A partial step occurred: stepping over a
-		 	* content-free Node case cursor, empty, or index
-		 	*/
+			 * content-free Node `n` such as .cursor, .empty,
+			 * or .index.
+			 *
+			 * The full step must be completed on the `n`'s
+			 * parent.
+			 */
 case stepOut		/* A full upward step occurred: stepping over
-			 * a container boundary, or stepping over the last
-			 * UTF-16 element of a leaf
+			 * the boundary of container `n`, or stepping over
+			 * the last UTF-16 element of a leaf, `n`.
+			 *
+			 * The full step lands on `n`'s parent.
 			 */
 }
 
