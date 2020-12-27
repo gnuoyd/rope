@@ -620,6 +620,27 @@ public extension Node {
 		}
 		return apply(utf16, at: i)
 	}
+	func handlesLeading(to i0: NodeIndex) -> [Handle] {
+		var path: [Handle] = []
+		var i = i0
+		var next = self
+		while true {
+			switch next {
+			case .leaf(_, _), .cursor(_, _), .empty, .index(_):
+				return path
+			case .concat(let ropel, let idx, _, _, let roper, _):
+				if i < idx {
+					next = ropel
+				} else {
+					i = i - idx
+					next = roper
+				}
+			case .container(let handle, let rope):
+				path.append(handle)
+				next = rope
+			}
+		}
+	}
 	func element(at i: NodeIndex) -> Element {
 		switch self {
 		case .leaf(_, let s):

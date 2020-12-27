@@ -37,6 +37,53 @@ class IndexOrder: XCTestCase {
 	}
 }
 
+class ContainerTrails: XCTestCase {
+	let h0 = Handle()
+	let h1 = Handle()
+	let h2 = Handle()
+	let abc: NSS = Node(content: "abc")
+	let def: NSS = Node(content: "def")
+	let ghi: NSS = Node(content: "ghi")
+	var _tree: NSS? = nil
+	var tree: NSS {
+		if let t = _tree {
+			return t
+		}
+		let right = Node(handle: h1,
+		                 node: Node(left: def,
+					    right: Node(handle: h2, node: ghi)))
+		let t = Node(handle: h0, node: Node(left: abc, right: right))
+		_tree = t
+		return t
+	}
+	var _expectations: [[Handle]]? = nil
+	var expectations: [[Handle]] {
+		if let olde = _expectations {
+			return olde
+		}
+		let newe: [[Handle]] = [[h0],
+					[h0],
+					[h0],
+					[h0, h1],
+					[h0, h1],
+					[h0, h1],
+					[h0, h1, h2],
+					[h0, h1, h2],
+					[h0, h1, h2],
+					[h0, h1, h2]]
+		_expectations = newe
+		return newe
+	}
+	let indices: [NodeIndex] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map() { i in
+	    NodeIndex(utf16Offset: i)
+	}
+	func testHandlePaths() {
+		for (i, expected) in zip(indices, expectations) {
+			XCTAssert(tree.handlesLeading(to: i) == expected)
+		}
+	}
+}
+
 class ContainerElementLookupUsingRopeIndices: XCTestCase {
 	let h = Handle()
 	let nodel: NSS = Node(content: "abc")
