@@ -1,4 +1,5 @@
 **/.*.swp
+**/.DS_store
 **/.build
 **/.swiftpm
-**/.DS_store
+**/tags
