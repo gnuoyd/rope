@@ -15,21 +15,21 @@ case atEnd
  *
  * Get/set/add/remove attributes on a cursor.
  *
- * Enclose a range in a container.  The range must be
- * well-formed: must begin and end inside the same container. 
+ * Enclose a range in an extent.  The range must be
+ * well-formed: must begin and end inside the same extent. 
  *
- * Insert a cursor between characters or nested between containers.
+ * Insert a cursor between characters or nested between extents.
  *
  * Remove a cursor.
  *
  * "Step" a cursor left or right by a character.
  *
- * "Scoot" a cursor left or right by a container boundary.
+ * "Scoot" a cursor left or right by an extent boundary.
  *
  * "Scoot" a cursor left or right by a cursor?
  *
- * Replace a cursor by a container; apply the cursor's attributes to
- * the container's content.
+ * Replace a cursor by an extent; apply the cursor's attributes to
+ * the extent's content.
  *
  * Insert some text left of a cursor; apply the cursor's attributes
  * to the text.
