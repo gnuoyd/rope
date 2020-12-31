@@ -16,9 +16,6 @@ public class Handle : Hashable {
 	public func hash(into hasher: inout Hasher) {
 		hasher.combine(_id)
 	}
-//	deinit {
-//		print("b-bye")
-//	}
 }
 
 extension Handle : CustomDebugStringConvertible {
