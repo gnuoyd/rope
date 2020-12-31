@@ -24,7 +24,8 @@ case empty
 }
 
 /*
- * Result of taking a step in a Node
+ * Result of taking a step in a Node.  A full step moves up or down
+ * the container hierarchy or across a UTF-16 element.
  */
 public enum Step<C: Content> {
 case absent		/* The location to step from could not be
