@@ -5,6 +5,14 @@ import Foundation
 
 public typealias Attributes = [NSAttributedString.Key : Any]
 
+public class ExtentController<C : Content> : Handle {
+	func subrope(of interior: Node<C>, from: NodeIndex, to: NodeIndex,
+	    depth: Int = 0) -> Node<C> {
+		return .extent(self, interior.subrope(from: from,
+		    to: to, depth: depth))
+	}
+}
+
 /* A Node directly encodes the presence of cursors because it is
  * possible for a cursor to move up and down the hierarchy of text
  * extents without changing between-character positions.  A cursor
@@ -17,7 +25,7 @@ public typealias Content = C
 public typealias Element = C.Element
 case cursor(Handle, Attributes)
 case index(Weak<Handle>)
-case extent(Handle, Node)
+case extent(ExtentController<C>, Node)
 case concat(Node, NodeIndex, UInt, Set<Handle.Id>, Node, NodeIndex)
 case leaf(Attributes, C)
 case empty
@@ -66,9 +74,9 @@ public func == <C>(_ l: Node<C>, _ r: Node<C>) -> Bool {
 		return lHandle == rHandle
 	case (.index(let lWeakHandle), .index(let rWeakHandle)):
 		return lWeakHandle.get() == rWeakHandle.get()
-	case (.extent(let lHandle, let lNode),
-	      .extent(let rHandle, let rNode)):
-		return lHandle == rHandle && lNode == rNode
+	case (.extent(let lCtlr, let lNode),
+	      .extent(let rCtlr, let rNode)):
+		return lCtlr == rCtlr && lNode == rNode
 	case (.concat(let lNode1, _, _, _, let lNode2, _),
 	      .concat(let rNode1, _, _, _, let rNode2, _)):
 		return lNode1 == rNode1 && lNode2 == rNode2
@@ -111,8 +119,8 @@ public extension Node {
 		case .cursor(_, _), .empty, .index(_):
 			return .inchOut
 		/* A step into an extent is a full step. */
-		case .extent(let h, let n):
-			return .step(.extent(h,
+		case .extent(let ctlr, let n):
+			return .step(.extent(ctlr,
 			                        Node(left: Node(holder: j),
 						     right: n)))
 		case .leaf(let attrs, let content):
@@ -156,15 +164,15 @@ public extension Node {
 			return .inchOut
 		case .cursor(_, _), .index(_), .leaf(_, _), .empty:
 			return .absent
-		case .extent(let h, let n):
+		case .extent(let ctlr, let n):
 			switch n.insertingIndex(j, oneStepAfter: i) {
 			case .inchOut:
 				return .stepOut
 			case .stepOut:
-				return .step(.extent(h,
+				return .step(.extent(ctlr,
 				    Node(left: n, right: Node(holder: j))))
 			case .step(let newn):
-				return .step(.extent(h, newn))
+				return .step(.extent(ctlr, newn))
 			case .absent:
 				return .absent
 			}
@@ -253,12 +261,12 @@ public extension Node {
 		case .cursor(_, _), .empty, .index(_), .leaf(_, _):
 			/* No match: the element is not on this span. */
 			return .absent
-		case .extent(let h, let n):
+		case .extent(let ctlr, let n):
 			switch n.element(at: i) {
 			case .inchOut:
-				return .step(.extent(h, .empty))
+				return .step(.extent(ctlr, .empty))
 			case .step(let newn):
-				return .step(.extent(h, newn))
+				return .step(.extent(ctlr, newn))
 			case .absent:
 				return .absent
 			}
@@ -302,8 +310,8 @@ public extension Node {
 		switch self {
 		case .cursor(let h, _):
 			return .cursor(h, attrs)
-		case .extent(let h, let n):
-			return .extent(h, n.settingAttributes(attrs))
+		case .extent(let ctlr, let n):
+			return .extent(ctlr, n.settingAttributes(attrs))
 		case .concat(let l, _, _, _, let r, _):
 			return Node(left: l.settingAttributes(attrs),
 			    right: r.settingAttributes(attrs))
@@ -317,8 +325,8 @@ public extension Node {
 		switch self {
 		case .cursor(let h, _):
 			return .cursor(h, [:])
-		case .extent(let h, let n):
-			return .extent(h, n.clearingAttributes())
+		case .extent(let ctlr, let n):
+			return .extent(ctlr, n.clearingAttributes())
 		case .concat(let l, _, _, _, let r, _):
 			return Node(left: l.clearingAttributes(),
 			    right: r.clearingAttributes())
@@ -333,8 +341,8 @@ public extension Node {
 		case .cursor(let h, var attrs):
 			attrs.merge(nattrs) { (_, new) in new }
 			return .cursor(h, attrs)
-		case .extent(let h, let n):
-			return .extent(h, n.addingAttributes(nattrs))
+		case .extent(let ctlr, let n):
+			return .extent(ctlr, n.addingAttributes(nattrs))
 		case .concat(let l, _, _, _, let r, _):
 			return Node(left: l.addingAttributes(nattrs),
 			    right: r.addingAttributes(nattrs))
@@ -372,8 +380,10 @@ public extension Node {
 			return elt
 		case .cursor(_, _):
 			fatalError("Invalid index")
-		case .extent(let h, let r):
-			return Node(handle: h, node: r.inserting(elt, at: target))
+		case .extent(let ctlr, let r):
+			/* EXT let the controller handle the request */
+			return Node(controller: ctlr,
+			            node: r.inserting(elt, at: target))
 		case .concat(let l, _, _, _, let r, _):
 			if l.containsIndex(target) {
 				return Node(left: l.inserting(elt, at: target),
@@ -402,8 +412,8 @@ public extension Node {
 			return [handle.id]
 		case .cursor(let handle, _):
 			return [handle.id]
-		case .extent(let handle, let rope):
-			let hids: Set<Handle.Id> = [handle.id]
+		case .extent(let ctlr, let rope):
+			let hids: Set<Handle.Id> = [ctlr.id]
 			return hids.union(rope.hids)
 		case .concat(_, _, _, let hids, _, _):
 			return hids
@@ -455,8 +465,8 @@ public extension Node {
 }
 
 public extension Node {
-	init(handle h: Handle, node n: Node<C>) {
-		self = .extent(h, n)
+	init(controller ctlr: ExtentController<C>, node n: Node<C>) {
+		self = .extent(ctlr, n)
 	}
 	init(holder: Handle) {
 		self = .index(Weak(holder))
@@ -636,8 +646,8 @@ public extension Node {
 					i = i - idx
 					next = roper
 				}
-			case .extent(let handle, let rope):
-				path.append(handle)
+			case .extent(let ctlr, let rope):
+				path.append(ctlr)
 				next = rope
 			}
 		}
@@ -686,11 +696,11 @@ public extension Node {
 		switch self {
 		case .empty, .cursor(_, _), .leaf(_, _):
 			return self
-		case .extent(let h, let n):
+		case .extent(let ctlr, let n):
 			guard let nn = n.cleaned() else {
 				return nil
 			}
-			return .extent(h, nn)
+			return .extent(ctlr, nn)
 		case .index(let w):
 			guard let handle = w.get() else {
 				return nil
@@ -711,8 +721,8 @@ public extension Node {
 		switch self {
 		case .empty, .cursor(_, _), .leaf(_, _):
 			return self
-		case .extent(let handles, let rope):
-			return .extent(handles, rope.rebalanced())
+		case .extent(let ctlr, let rope):
+			return .extent(ctlr, rope.rebalanced())
 		default:
 			break
 		}
@@ -766,8 +776,15 @@ public extension Node {
 		case .empty, .cursor(_, _):
 			assert(from == to)
 			return self
-		case .extent(_, let rope):
-			return rope.subrope(from: from, to: to, depth: depth)
+		/* EXT Need to take care subdividing extents.  Perhaps subrope
+		 * should be an ExtentController method?
+		 *
+		 * XXX Today, this code simply drops the extent from the
+		 * subrope!
+		 */
+		case .extent(let ctlr, let rope):
+			return ctlr.subrope(of: rope, from: from, to: to,
+			    depth: depth)
 		case .concat(let ropel, let idx, _, _, let roper, _):
 			if from == to {
 				return .empty

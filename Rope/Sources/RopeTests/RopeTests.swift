@@ -6,6 +6,7 @@ import XCTest
 
 typealias NSS = Node<Substring>
 typealias RSS = Rope<Substring>
+typealias ECSS = ExtentController<Substring>
 
 infix operator ⨯: MultiplicationPrecedence
 
@@ -38,9 +39,9 @@ class IndexOrder: XCTestCase {
 }
 
 class ContainerTrails: XCTestCase {
-	let h0 = Handle()
-	let h1 = Handle()
-	let h2 = Handle()
+	let ctlr0 = ECSS()
+	let ctlr1 = ECSS()
+	let ctlr2 = ECSS()
 	let abc: NSS = Node(content: "abc")
 	let def: NSS = Node(content: "def")
 	let ghi: NSS = Node(content: "ghi")
@@ -49,10 +50,12 @@ class ContainerTrails: XCTestCase {
 		if let t = _tree {
 			return t
 		}
-		let right = Node(handle: h1,
+		let right = Node(controller: ctlr1,
 		                 node: Node(left: def,
-					    right: Node(handle: h2, node: ghi)))
-		let t = Node(handle: h0, node: Node(left: abc, right: right))
+					    right: Node(controller: ctlr2,
+					                node: ghi)))
+		let t = Node(controller: ctlr0, node: Node(left: abc,
+						           right: right))
 		_tree = t
 		return t
 	}
@@ -61,16 +64,16 @@ class ContainerTrails: XCTestCase {
 		if let olde = _expectations {
 			return olde
 		}
-		let newe: [[Handle]] = [[h0],
-					[h0],
-					[h0],
-					[h0, h1],
-					[h0, h1],
-					[h0, h1],
-					[h0, h1, h2],
-					[h0, h1, h2],
-					[h0, h1, h2],
-					[h0, h1, h2]]
+		let newe: [[Handle]] = [[ctlr0],
+					[ctlr0],
+					[ctlr0],
+					[ctlr0, ctlr1],
+					[ctlr0, ctlr1],
+					[ctlr0, ctlr1],
+					[ctlr0, ctlr1, ctlr2],
+					[ctlr0, ctlr1, ctlr2],
+					[ctlr0, ctlr1, ctlr2],
+					[ctlr0, ctlr1, ctlr2]]
 		_expectations = newe
 		return newe
 	}
@@ -85,7 +88,7 @@ class ContainerTrails: XCTestCase {
 }
 
 class ContainerElementLookupUsingRopeIndices: XCTestCase {
-	let h = Handle()
+	let ctlr = ECSS()
 	let nodel: NSS = Node(content: "abc")
 	let noder: NSS = Node(content: "def")
 	var _expectations: [NSS]? = nil
@@ -96,10 +99,10 @@ class ContainerElementLookupUsingRopeIndices: XCTestCase {
 				return olde
 			}
 			let newe: [NSS] = [.empty,
-			    Node(handle: h, node: Node(content: "a")),
-			    Node(handle: h, node: Node(content: "b")),
-			    Node(handle: h, node: Node(content: "c")),
-			    Node(handle: h, node: .empty),
+			    Node(controller: ctlr, node: Node(content: "a")),
+			    Node(controller: ctlr, node: Node(content: "b")),
+			    Node(controller: ctlr, node: Node(content: "c")),
+			    Node(controller: ctlr, node: .empty),
 			    Node(content: "d"),
 			    Node(content: "e"),
 			    Node(content: "f")]
@@ -113,7 +116,8 @@ class ContainerElementLookupUsingRopeIndices: XCTestCase {
 				return oldr
 			}
 			let newr: RSS = Rope()
-			newr.node = Node(left: Node(handle: h, node: nodel),
+			newr.node = Node(left: Node(controller: ctlr,
+						    node: nodel),
 			                 right: noder)
 			_r = newr
 			return newr
@@ -501,13 +505,13 @@ class NodeAttributes : XCTestCase {
 		NodeAttributes.helpTestSettingCentralAttributes(n)
 	}
 	func testSettingCentralAttributesWithCursor() {
-		let h: Handle = Handle()
-		let contn: NSS = Node(handle: h, node: n)
+		let ctlr = ECSS()
+		let contn: NSS = Node(controller: ctlr, node: n)
 		NodeAttributes.helpTestSettingCentralAttributes(contn)
 	}
 	func testSettingCentralAttributesWithContainer() {
-		let h: Handle = Handle()
-		let contn: NSS = Node(handle: h, node: n)
+		let ctlr = ECSS()
+		let contn: NSS = Node(controller: ctlr, node: n)
 		NodeAttributes.helpTestSettingCentralAttributes(contn)
 	}
 	func testSettingBackAttributes() {
