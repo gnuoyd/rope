@@ -38,7 +38,7 @@ class IndexOrder: XCTestCase {
 	}
 }
 
-class ContainerTrails: XCTestCase {
+class ExtentTrails: XCTestCase {
 	let ctlr0 = ECSS()
 	let ctlr1 = ECSS()
 	let ctlr2 = ECSS()
@@ -82,7 +82,7 @@ class ContainerTrails: XCTestCase {
 	}
 	func testHandlePaths() {
 		for (i, expected) in zip(indices, expectations) {
-			XCTAssert(tree.handlesLeading(to: i) == expected)
+			XCTAssert(tree.activeExtents(at: i) == expected)
 		}
 	}
 }

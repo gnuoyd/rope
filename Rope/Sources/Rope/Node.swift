@@ -631,8 +631,8 @@ public extension Node {
 		}
 		return apply(utf16, at: i)
 	}
-	func handlesLeading(to i0: NodeIndex) -> [Handle] {
-		var path: [Handle] = []
+	func activeExtents(at i0: NodeIndex) -> [ExtentController<C>] {
+		var path: [ExtentController<C>] = []
 		var i = i0
 		var next = self
 		while true {
