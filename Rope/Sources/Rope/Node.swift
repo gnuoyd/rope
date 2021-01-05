@@ -5,7 +5,37 @@ import Foundation
 
 public typealias Attributes = [NSAttributedString.Key : Any]
 
+func *(_ s: String, _ times: Int) -> String {
+	if times < 0 {
+		return String(s.reversed()) * -times
+	}
+	if times == 0 {
+		return ""
+	}
+	if times.isMultiple(of: 2) {
+		let t = s * (times / 2)
+		return t + t
+	}
+	return s + s * (times - 1)
+}
+
 public class ExtentController<C : Content> : Handle {
+	func subrope(of content: Node<C>, from: RopeIndex<C>, depth: Int = 0)
+	    -> Node<C>? {
+		guard let subcontent = content.subrope(from: from, depth: depth)
+		    else {
+			return nil
+		}
+		return .extent(self, subcontent)
+	}
+	func subrope(of content: Node<C>, to: RopeIndex<C>, depth: Int = 0)
+	    -> Node<C>? {
+		guard let subcontent = content.subrope(to: to, depth: depth)
+		    else {
+			return nil
+		}
+		return .extent(self, subcontent)
+	}
 	func subrope(of interior: Node<C>, from: NodeIndex, to: NodeIndex,
 	    depth: Int = 0) -> Node<C> {
 		return .extent(self, interior.subrope(from: from,
@@ -64,6 +94,78 @@ public enum ElementResult<C : Content> {
 case absent
 case inchOut
 case step(Node<C>)
+}
+
+infix operator ~: ComparisonPrecedence
+infix operator !~: ComparisonPrecedence
+
+/* Return true iff `lhs` is equal to `rhs`, ignoring embedded indices,
+ * text attributes, and the *number* of leaves.  The *content* of leaves must
+ * the same.
+ */
+public func ~(_ lhs: Node<Substring>, _ rhs: Node<Substring>) -> Bool {
+	let lleaves = lhs.leaves.makeIterator(),
+	    rleaves = rhs.leaves.makeIterator()
+	var lresidue: Node<Substring>? = nil, rresidue: Node<Substring>? = nil
+	while true {
+		switch (lresidue ?? lleaves.next(), rresidue ?? rleaves.next()){
+		case (nil, nil):
+			return true
+		case (.index(_), let r):
+			lresidue = nil
+			rresidue = r
+		case (let l, .index(_)):
+			lresidue = l
+			rresidue = nil
+		case (.cursor(let l, _), .cursor(let r, _)):
+			// XXX doesn't match attributes
+			if l != r {
+				return false
+			}
+			lresidue = nil
+			rresidue = nil
+		case (.extent(let lctlr, let l), .extent(let rctlr, let r)):
+			if lctlr !== rctlr {
+				return false
+			}
+			if l !~ r {
+				return false
+			}
+			lresidue = nil
+			rresidue = nil
+		case (.leaf(let lattr, let l), .leaf(let rattr, let r)):
+			// XXX doesn't match attributes
+			if l == r {
+				lresidue = nil
+				rresidue = nil
+				continue
+			}
+			if l.hasPrefix(r) {
+				lresidue = Node(content: l.dropFirst(r.count),
+				    attributes: lattr)
+				rresidue = nil
+				continue
+			}
+			if r.hasPrefix(l) {
+				lresidue = nil
+				rresidue = Node(content: r.dropFirst(l.count),
+				    attributes: rattr)
+				continue
+			}
+			return false
+		case (.empty, .empty):
+			lresidue = nil
+			rresidue = nil
+			continue
+		default:
+			return false
+		}
+	}
+}
+
+/* Return true iff `lhs ~ rhs` is false. */
+public func !~(_ lhs: Node<Substring>, _ rhs: Node<Substring>) -> Bool {
+	return !(lhs ~ rhs)
 }
 
 public func == <C>(_ l: Node<C>, _ r: Node<C>) -> Bool {
@@ -822,9 +924,123 @@ public extension Node {
 			return .leaf(attrs, s[i..<j])
 		}
 	}
+	func subrope(from: RopeIndex<C>, rightSibling: Node<C> = .empty,
+	    depth: Int = 0) -> Node<C>? {
+		switch (self, from) {
+		case (_, .end(_)):
+			return .empty
+		case (_, .start(_)):
+			return self.appending(rightSibling)
+		case (.extent(let ctlr, let content), _):
+			guard let subextent = ctlr.subrope(of: content,
+			    from: from, depth: depth) else {
+				return rightSibling.subrope(from: from,
+				    depth: depth)
+			}
+			return subextent.appending(rightSibling)
+		case (.index(let w), .interior(_, _, _, let h))
+		    where w.get() == h:
+			return rightSibling
+		case (.concat(let l, _, _, _, let r, _),
+		      .interior(_, _, _, let h))
+		    where self.containsIndex(h):
+			guard let match = l.subrope(from: from,
+			    rightSibling: r.appending(rightSibling),
+			    depth: depth + 1) else {
+				return r.subrope(from: from,
+				    rightSibling: rightSibling,
+				    depth: depth + 1)
+			    }
+			return match
+		case (.cursor(_, _), _), (.empty, _), (.index(_), _),
+		     (.leaf(_, _), _) where rightSibling == .empty:
+			return nil
+		default:
+			return rightSibling.subrope(from: from, depth: depth)
+		}
+	}
+	func subrope(leftSibling: Node<C> = .empty, to: RopeIndex<C>,
+	    depth: Int = 0) -> Node<C>? {
+//		Swift.print("enter \(" " * depth)\(#function) leftSibling \(leftSibling) self \(self) to \(to)", terminator: ": ")
+		switch (self, to) {
+		case (_, .start(_)):
+//			Swift.print("start match")
+			return .empty
+		case (_, .end(_)):
+//			Swift.print("end match")
+			return leftSibling.appending(self)
+		case (.extent(let ctlr, let content), _):
+			guard let subextent = ctlr.subrope(of: content, to: to,
+			    depth: depth + 1) else {
+//				Swift.print("extent mismatch")
+				return leftSibling.subrope(to: to, depth: depth + 1)
+			}
+//			Swift.print("extent match")
+			return leftSibling.appending(subextent)
+		case (.index(let w), .interior(_, _, _, let h))
+		    where w.get() == h:
+//			Swift.print("index match")
+			return leftSibling
+		case (.concat(let l, _, _, _, let r, _),
+		      .interior(_, _, _, let h)) where self.containsIndex(h):
+//			Swift.print("concat match")
+			guard let match = r.subrope(
+			    leftSibling: leftSibling.appending(l),
+			    to: to, depth: depth + 1) else {
+				return l.subrope(leftSibling: leftSibling,
+				    to: to, depth: depth + 1)
+			}
+			return match
+		case (.cursor(_, _), _), (.empty, _), (.index(_), _),
+		     (.leaf(_, _), _) where leftSibling == .empty:
+//			Swift.print("no match")
+			return nil
+		default:
+//			Swift.print("default match")
+			return leftSibling.subrope(to: to, depth: depth + 1)
+		}
+	}
 	func deleting(from start: Index, to end: Index) -> Node {
 		return subrope(from: NodeIndex.start, to: start).appending(
 		    subrope(from: end, to: endIndex))
+	}
+	func compactMap(_ filter: (Node<C>) -> Node<C>?) -> Node<C>? {
+		switch self {
+		case .extent(let ctlr, let content):
+			let filtered = content.compactMap(filter) ?? .empty
+			return Node(controller: ctlr, node: filtered)
+		case .concat(let l, _, _, _, let r, _):
+			switch (l.compactMap(filter), r.compactMap(filter)) {
+			case (nil, nil):
+				return nil
+			case (let node?, nil), (nil, let node?):
+				return node
+			case (let newl?, let newr?):
+				return Node(left: newl, right: newr)
+			}
+		case let node:
+			return filter(node)
+		}
+	}
+	func subrope(from: RopeIndex<C>, to: RopeIndex<C>,
+	    depth: Int = 0) -> Node<C>? {
+		func filter(_ node: Node<C>) -> Node<C>? {
+			if case .index(_) = node {
+				return nil
+			}
+			return node
+		}
+		guard let suffix = subrope(from: from, depth: depth) else {
+			return nil
+		}
+		guard let result = suffix.subrope(to: to, depth: depth) else {
+			return nil
+		}
+		return result.compactMap(filter)
+	}
+	subscript(range: Range<RopeIndex<C>>) -> Content {
+		return subrope(from: range.lowerBound,
+		               to: range.upperBound)?.content ?? Content.empty
 	}
 	subscript(range: Range<Index>) -> Content {
 		return subrope(from: range.lowerBound,

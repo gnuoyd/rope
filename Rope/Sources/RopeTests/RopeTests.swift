@@ -87,7 +87,173 @@ class ExtentTrails: XCTestCase {
 	}
 }
 
-class ContainerElementLookupUsingRopeIndices: XCTestCase {
+class WholeRangeUsingRopeIndices: XCTestCase {
+	let ctlr = ECSS()
+	let nodel: NSS = Node(content: "abc")
+	let noder: NSS = Node(content: "def")
+	var _expectations: [NSS]? = nil
+	var _r: RSS? = nil
+	var r: RSS {
+		get {
+			if let oldr = _r {
+				return oldr
+			}
+			let newr: RSS = Rope()
+			newr.node = Node(left: Node(controller: ctlr,
+						    node: nodel),
+			                 right: noder)
+			_r = newr
+			return newr
+		}
+	}
+	func testLookupByRange() {
+		XCTAssert(r[r.startIndex..<r.endIndex] ~ r.node)
+	}
+}
+
+class ThreeUnitRangesUsingRopeIndices: XCTestCase {
+	let ctlr = ECSS()
+	let nodel: NSS = Node(content: "abc")
+	let noder: NSS = Node(content: "def")
+	var _expectations: [NSS]? = nil
+	var _r: RSS? = nil
+	var expectations: [NSS] {
+		get {
+			if let olde = _expectations {
+				return olde
+			}
+			let newe: [NSS] = [
+			    Node(controller: ctlr, node: Node(content: "ab")),
+			    Node(controller: ctlr, node: Node(content: "abc")),
+			    Node(controller: ctlr, node: Node(content: "bc")),
+			    Node(left: Node(controller: ctlr,
+			                    node: Node(content: "c")),
+			         right: Node(content: "d")),
+			    Node(left: Node(controller: ctlr, node: .empty),
+			         right: Node(content: "de")),
+			    Node(content: "def")]
+			_expectations = newe
+			return newe
+		}
+	}
+	var r: RSS {
+		get {
+			if let oldr = _r {
+				return oldr
+			}
+			let newr: RSS = Rope()
+			newr.node = Node(left: Node(controller: ctlr,
+						    node: nodel),
+			                 right: noder)
+			_r = newr
+			return newr
+		}
+	}
+	func testLookupByRanges() {
+		var prev = r.startIndex
+		for (idx, expected) in zip(r.indices.dropFirst(3), expectations) {
+			let found = r[prev..<idx]
+			prev = r.index(after: prev)
+			XCTAssert(found ~ expected, "found \(found) expected \(expected)")
+		}
+	}
+}
+
+class TwoUnitRangesUsingRopeIndices: XCTestCase {
+	let ctlr = ECSS()
+	let nodel: NSS = Node(content: "abc")
+	let noder: NSS = Node(content: "def")
+	var _expectations: [NSS]? = nil
+	var _r: RSS? = nil
+	var expectations: [NSS] {
+		get {
+			if let olde = _expectations {
+				return olde
+			}
+			let newe: [NSS] = [
+			    Node(controller: ctlr, node: Node(content: "a")),
+			    Node(controller: ctlr, node: Node(content: "ab")),
+			    Node(controller: ctlr, node: Node(content: "bc")),
+			    Node(controller: ctlr, node: Node(content: "c")),
+			    Node(left: Node(controller: ctlr, node: .empty),
+			         right: Node(content: "d")),
+			    Node(content: "de"),
+			    Node(content: "ef")]
+			_expectations = newe
+			return newe
+		}
+	}
+	var r: RSS {
+		get {
+			if let oldr = _r {
+				return oldr
+			}
+			let newr: RSS = Rope()
+			newr.node = Node(left: Node(controller: ctlr,
+						    node: nodel),
+			                 right: noder)
+			_r = newr
+			return newr
+		}
+	}
+	func testLookupByRanges() {
+		var prev = r.startIndex
+		for (idx, expected) in zip(r.indices.dropFirst(2), expectations) {
+			let found = r[prev..<idx]
+			prev = r.index(after: prev)
+			XCTAssert(found ~ expected, "found \(found) expected \(expected)")
+		}
+	}
+}
+
+class UnitRangesUsingRopeIndices: XCTestCase {
+	let ctlr = ECSS()
+	let nodel: NSS = Node(content: "abc")
+	let noder: NSS = Node(content: "def")
+	var _expectations: [NSS]? = nil
+	var _r: RSS? = nil
+	var expectations: [NSS] {
+		get {
+			if let olde = _expectations {
+				return olde
+			}
+			let newe: [NSS] = [.empty,
+			    Node(controller: ctlr, node: .empty),
+			    Node(controller: ctlr, node: Node(content: "a")),
+			    Node(controller: ctlr, node: Node(content: "b")),
+			    Node(controller: ctlr, node: Node(content: "c")),
+			    Node(controller: ctlr, node: .empty),
+			    Node(content: "d"),
+			    Node(content: "e"),
+			    Node(content: "f")]
+			_expectations = newe
+			return newe
+		}
+	}
+	var r: RSS {
+		get {
+			if let oldr = _r {
+				return oldr
+			}
+			let newr: RSS = Rope()
+			newr.node = Node(left: Node(controller: ctlr,
+						    node: nodel),
+			                 right: noder)
+			_r = newr
+			return newr
+		}
+	}
+	func testLookupByRanges() {
+		var prev = r.startIndex
+		for (idx, expected) in zip(r.indices, expectations) {
+			let found = r[prev..<idx]
+			prev = idx
+			XCTAssert(found == expected, "found \(found) expected \(expected)")
+		}
+	}
+}
+
+class ExtentElementLookupUsingRopeIndices: XCTestCase {
 	let ctlr = ECSS()
 	let nodel: NSS = Node(content: "abc")
 	let noder: NSS = Node(content: "def")
@@ -509,7 +675,7 @@ class NodeAttributes : XCTestCase {
 		let contn: NSS = Node(controller: ctlr, node: n)
 		NodeAttributes.helpTestSettingCentralAttributes(contn)
 	}
-	func testSettingCentralAttributesWithContainer() {
+	func testSettingCentralAttributesWithExtent() {
 		let ctlr = ECSS()
 		let contn: NSS = Node(controller: ctlr, node: n)
 		NodeAttributes.helpTestSettingCentralAttributes(contn)

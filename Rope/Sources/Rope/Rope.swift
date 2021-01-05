@@ -126,6 +126,15 @@ public class Rope<C : Content> : Collection {
 	public subscript(i: NodeIndex) -> Content.Element {
 		return top.element(at: i)
 	}
+	public subscript(r: Range<Index>) -> Element {
+		get {
+			guard let e = top.subrope(from: r.lowerBound,
+			    to: r.upperBound) else {
+				fatalError("No such range")
+			}
+			return e
+		}
+	}
 	public subscript(i: Index) -> Element {
 		get {
 			do {
