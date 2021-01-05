@@ -528,9 +528,9 @@ extension Node : CustomDebugStringConvertible {
 	public var debugDescription: String {
 		switch self {
 		case .index(let w) where w.get() != nil:
-			return "⬦"
+			return "⬦\(w.get()!.id)⬦"
 		case .index(_):
-			return "."
+			return "⬦⬦"
 		case .cursor(_, _):
 			return "|"
 		case .extent(_, let rope):
