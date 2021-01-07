@@ -7,6 +7,14 @@ case end(of: Rope<C>)
 case interior(of: Rope<C>, at: UInt64, index: UInt64, handle: Handle)
 }
 
+extension RopeIndex {
+	init(utf16Offset i: Int, in rope: Rope<C>) {
+		let h = Handle()
+		rope.node = rope.node.insertingIndex(h, at: i)
+		self = .interior(of: rope, at: 0, index: 0, handle: h)
+	}
+}
+
 enum RopeIndexComparisonError : Error {
 case MismatchedOwners
 }

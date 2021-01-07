@@ -253,6 +253,55 @@ class UnitRangesUsingRopeIndices: XCTestCase {
 	}
 }
 
+class LookupUsingRopeIndicesDerivedFromUTF16Offsets: XCTestCase {
+	let ctlr = ECSS()
+	let nodel: NSS = Node(content: "abc")
+	let noder: NSS = Node(content: "def")
+	var _expectations: [NSS]? = nil
+	var _r: RSS? = nil
+	var expectations: [NSS] {
+		get {
+			if let olde = _expectations {
+				return olde
+			}
+			let newe: [NSS] = [
+			    Node(controller: ctlr, node: Node(content: "a")),
+			    Node(controller: ctlr, node: Node(content: "b")),
+			    Node(controller: ctlr, node: Node(content: "c")),
+			    Node(content: "d"),
+			    Node(content: "e"),
+			    Node(content: "f")]
+			_expectations = newe
+			return newe
+		}
+	}
+	var r: RSS {
+		get {
+			if let oldr = _r {
+				return oldr
+			}
+			let newr: RSS = Rope()
+			newr.node = Node(left: Node(controller: ctlr,
+						    node: nodel),
+			                 right: noder)
+			_r = newr
+			return newr
+		}
+	}
+	func testIterateElements() {
+		for (i, expected) in expectations.enumerated() {
+			let idx = RopeIndex(utf16Offset: i, in: r)
+			let found = r[idx]
+			XCTAssert(found == expected,
+			    "found \(found) expected \(expected)")
+		}
+	}
+	func testEndIndex() {
+		let idx = RopeIndex(utf16Offset: expectations.count, in: r)
+		XCTAssertThrowsError(try r.element(at: idx))
+	}
+}
+
 class ExtentElementLookupUsingRopeIndices: XCTestCase {
 	let ctlr = ECSS()
 	let nodel: NSS = Node(content: "abc")

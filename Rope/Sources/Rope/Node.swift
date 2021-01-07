@@ -259,6 +259,32 @@ public extension Node {
 			}
 		}
 	}
+	func insertingIndex(_ h: Handle, at utf16Offset: Int) -> Node<C> {
+		switch self {
+		case .cursor(_, _), .index(_), .empty:
+			assert(utf16Offset == 0)
+			return self.appending(Node(holder: h))
+		case .leaf(let attrs, let content):
+			let idx = String.Index(utf16Offset: utf16Offset,
+			    in: content)
+			let l = content.prefix(upTo: idx)
+			let r = content.suffix(from: idx)
+			return Node(content: C.init(l), attributes: attrs)
+			    .appending(Node(holder: h))
+			    .appending(Node(content: C.init(r),
+			        attributes: attrs))
+		case .extent(let ctlr, let n):
+			return Node(controller: ctlr,
+			            node: n.insertingIndex(h, at: utf16Offset))
+		case .concat(let l, let idx, _, _, let r, _)
+		    where utf16Offset < idx.utf16Offset:
+			return l.insertingIndex(h, at: utf16Offset).appending(r)
+		case .concat(let l, let idx, _, _, let r, _):
+			return l.appending(
+			    r.insertingIndex(h,
+			        at: utf16Offset - idx.utf16Offset))
+		}
+	}
 	func insertingIndex(_ j: Handle, oneStepAfter i: Handle)
 	    -> Step<C> {
 		switch self {
