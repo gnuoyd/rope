@@ -325,33 +325,27 @@ class ExtentElementLookupUsingRopeIndices: XCTestCase {
 }
 
 class BasicElementLookupUsingRopeIndices: XCTestCase {
+	let rope1 = Rope<Substring>(content: "abc")
+	let rope2 = Rope<Substring>(content: "def")
 	func testStartIndices() {
-		let rope1 = Rope<Substring>(content: "abc")
-		let rope2 = Rope<Substring>(content: "def")
 		let idx1 = rope1.startIndex
 		let idx2 = rope2.startIndex
 		XCTAssert(rope1[idx1].content == "a")
 		XCTAssert(rope2[idx2].content == "d")
 	}
 	func testSecondIndices() {
-		let rope1 = Rope<Substring>(content: "abc")
-		let rope2 = Rope<Substring>(content: "def")
 		let idx1 = rope1.index(after: rope1.startIndex)
 		let idx2 = rope2.index(after: rope2.startIndex)
 		XCTAssert(rope1[idx1].content == "b")
 		XCTAssert(rope2[idx2].content == "e")
 	}
 	func testThirdIndices() {
-		let rope1 = Rope<Substring>(content: "abc")
-		let rope2 = Rope<Substring>(content: "def")
 		let idx1 = rope1.index(after: rope1.index(after: rope1.startIndex))
 		let idx2 = rope2.index(after: rope2.index(after: rope2.startIndex))
 		XCTAssert(rope1[idx1].content == "c")
 		XCTAssert(rope2[idx2].content == "f")
 	}
 	func testEndIndices() {
-		let rope1 = Rope<Substring>(content: "abc")
-		let rope2 = Rope<Substring>(content: "def")
 		let idx1 = rope1.endIndex
 		let idx2 = rope2.endIndex
 		XCTAssertThrowsError(try rope1.element(at: idx1))
@@ -360,25 +354,21 @@ class BasicElementLookupUsingRopeIndices: XCTestCase {
 }
 
 class CompareDisparateRopeIndices: XCTestCase {
+	let rope1 = Rope<Substring>(content: "abc")
+	let rope2 = Rope<Substring>(content: "def")
 	func testStartIndices() {
-		let rope1 = Rope<Substring>(content: "abc")
-		let rope2 = Rope<Substring>(content: "def")
 		let idx1 = rope1.startIndex
 		let idx2 = rope2.startIndex
 		XCTAssertThrowsError(try idx1.isLessThan(idx2))
 		XCTAssertThrowsError(try idx1.equals(idx2))
 	}
 	func testSecondIndices() {
-		let rope1 = Rope<Substring>(content: "abc")
-		let rope2 = Rope<Substring>(content: "def")
 		let idx1 = rope1.index(after: rope1.startIndex)
 		let idx2 = rope2.index(after: rope2.startIndex)
 		XCTAssertThrowsError(try idx1.isLessThan(idx2))
 		XCTAssertThrowsError(try idx1.equals(idx2))
 	}
 	func testEndIndices() {
-		let rope1 = Rope<Substring>(content: "abc")
-		let rope2 = Rope<Substring>(content: "def")
 		let idx1 = rope1.endIndex
 		let idx2 = rope2.endIndex
 		XCTAssertThrowsError(try idx1.isLessThan(idx2))
