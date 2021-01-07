@@ -38,7 +38,7 @@ public class Rope<C : Content> : Collection {
 	public typealias Content = C
 	public typealias Element = Node<C>
 	public typealias Index = RopeIndex<C>
-	public var top: Node<C>
+	private var top: Node<C>
 	public var generation: UInt64 = 0
 	public var startIndex: Index {
 		if top.startIndex == top.endIndex {
