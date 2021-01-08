@@ -82,7 +82,7 @@ class ExtentTrails: XCTestCase {
 	}
 	func testHandlePaths() {
 		for (i, expected) in zip(indices, expectations) {
-			XCTAssert(tree.activeExtents(at: i) == expected)
+			XCTAssert(tree.enclosingExtents(at: i) == expected)
 		}
 	}
 }

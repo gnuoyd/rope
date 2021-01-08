@@ -759,7 +759,7 @@ public extension Node {
 		}
 		return apply(utf16, at: i)
 	}
-	func activeExtents(at i0: NodeIndex) -> [ExtentController<C>] {
+	func enclosingExtents(at i0: NodeIndex) -> [ExtentController<C>] {
 		var path: [ExtentController<C>] = []
 		var i = i0
 		var next = self
