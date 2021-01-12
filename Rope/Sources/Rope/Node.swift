@@ -779,6 +779,87 @@ public extension Node {
 			}
 		}
 	}
+	/*
+	func enclosingExtents(at i0: RopeIndex<C>) -> [ExtentController<C>] {
+		var path: [ExtentController<C>] = []
+		var i = i0
+		var next = self
+		while true {
+			switch next {
+			case .leaf(_, _), .cursor(_, _), .empty, .index(_):
+				return path
+			case .concat(let ropel, let idx, _, _, let roper, _):
+				if i < idx {
+					next = ropel
+				} else {
+					i = i - idx
+					next = roper
+				}
+			case .extent(let ctlr, let rope):
+				path.append(ctlr)
+				next = rope
+			}
+		}
+	}
+	func extentsClosing(at i: RopeIndex<C>,
+	                    inside controllers: [ExtentController<C>] = [])
+	    -> [ExtentController<C>]? {
+		switch (self, i) {
+		case (_, .end(_)):
+			return []
+		case (_, .start(_)):
+			return []
+		case (.extent(let ctlr, let content), _):
+			controllers.append(ctlr)
+			return content.extentsClosing(at: i,
+			    inside: controllers)
+		case (.index(let w), .interior(_, _, _, let h))
+		    where w.get() == h:
+			return controllers
+		case (.concat(let l, _, _, _, let r, _),
+		      .interior(_, _, _, let h))
+			if let ctlrs = r.extentsClosing(at: i,
+			    inside: controllers) {
+				return ctlrs
+			}
+		}
+	}
+	func subrope(from: RopeIndex<C>, rightSibling: Node<C> = .empty,
+	    depth: Int = 0) -> Node<C>? {
+		switch (self, from) {
+		case (_, .end(_)):
+			return .empty
+		case (_, .start(_)):
+			return self.appending(rightSibling)
+		case (.extent(let ctlr, let content), _):
+			guard let subextent = ctlr.subrope(of: content,
+			    from: from, depth: depth) else {
+				return rightSibling.subrope(from: from,
+				    depth: depth)
+			}
+			return subextent.appending(rightSibling)
+		case (.index(let w), .interior(_, _, _, let h))
+		    where w.get() == h:
+			return rightSibling
+		case (.concat(let l, _, _, _, let r, _),
+		      .interior(_, _, _, let h))
+		    where self.containsIndex(h):
+			guard let match = l.subrope(from: from,
+			    rightSibling: r.appending(rightSibling),
+			    depth: depth + 1) else {
+				return r.subrope(from: from,
+				    rightSibling: rightSibling,
+				    depth: depth + 1)
+			    }
+			return match
+		case (.cursor(_, _), _), (.empty, _), (.index(_), _),
+		     (.leaf(_, _), _) where rightSibling == .empty:
+			return nil
+		default:
+			return rightSibling.subrope(from: from, depth: depth)
+		}
+	}
+	*/
 	func element(at i: NodeIndex) -> Element {
 		switch self {
 		case .leaf(_, let s):
