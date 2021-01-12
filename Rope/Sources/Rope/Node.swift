@@ -541,8 +541,7 @@ public extension Node {
 		case .cursor(let handle, _):
 			return [handle.id]
 		case .extent(let ctlr, let rope):
-			let hids: Set<Handle.Id> = [ctlr.id]
-			return hids.union(rope.hids)
+			return rope.hids.union([ctlr.id])
 		case .concat(_, _, _, let hids, _, _):
 			return hids
 		case .leaf(_, _), .empty:
