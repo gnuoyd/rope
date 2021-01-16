@@ -1,14 +1,20 @@
 //
 // Copyright (c) 2019, 2020 David Young.  All rights reserved.
 //
+
 public class Handle : Hashable {
-	public typealias Id = UInt64
-	static var nextId: Id = 0
-	private var _id: Id
-	public var id: Id { return _id }
+	public enum Id : Hashable {
+	typealias Number = UInt64
+	case cursor(UInt64)
+	case extent(UInt64)
+	case index(UInt64)
+	}
+	static var nextNumber: Id.Number = 0
+	var _id: Id.Number
+	public var id: Id { return .index(_id) }
 	public init() {
-		_id = Handle.nextId
-		Handle.nextId = Handle.nextId + 1
+		_id = Handle.nextNumber
+		Handle.nextNumber = Handle.nextNumber + 1
 	}
 	public static func ==(_ l: Handle, _ r: Handle) -> Bool {
 		return l._id == r._id
