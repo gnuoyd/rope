@@ -195,6 +195,13 @@ public class Rope<C : Content> : Collection {
 }
 
 extension Rope {
+	public convenience init(with node: Node<C>) {
+		self.init()
+		top = node
+	}
+}
+
+extension Rope {
         public struct UTF16View {
 		let rope: Rope<C>
 		init(rope r: Rope<C>) {
@@ -211,6 +218,13 @@ extension Rope {
 	}
 	public var utf16: UTF16View {
                 return UTF16View(rope: self)
+	}
+}
+
+extension Rope {
+	public func extentsClosing(at i: RopeIndex<C>)
+	    -> [ExtentController<C>]? {
+		return top.extentsClosing(at: i)
 	}
 }
 

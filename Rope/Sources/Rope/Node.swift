@@ -199,14 +199,13 @@ public extension Node {
 		let result = insertingIndex(j, oneStepAfter: i)
 		switch result {
 		case .step(let newl):
-			return .step(Node(left: newl, right: r))
+			return .step(.nodes(newl, r))
 		case .stepOut:
-			return .step(Node(left: self,
-			    right: Node(left: Node(holder: j), right: r)))
+			return .step(.nodes(self, .nodes(Node(holder: j), r)))
 		case .inchOut:
 			switch r.afterStepInsertingIndex(j) {
 			case .step(let newr):
-				return .step(Node(left: self, right: newr))
+				return .step(.nodes(self, newr))
 			case let result:
 				return result
 			}
@@ -223,18 +222,15 @@ public extension Node {
 			return .inchOut
 		/* A step into an extent is a full step. */
 		case .extent(let ctlr, let n):
-			return .step(.extent(ctlr,
-			                        Node(left: Node(holder: j),
-						     right: n)))
+			return .step(.extent(ctlr, .nodes(Node(holder: j), n)))
 		case .leaf(let attrs, let content):
 			switch content.headAndTail {
 			case (_, let tail)? where tail.isEmpty:
 				return .stepOut
 			case (let head, let tail)?:
-				let jtail = Node(left: Node(holder: j),
-				                 right: .leaf(attrs, tail))
-				return .step(Node(left: .leaf(attrs, head),
-				            right: jtail))
+				let jtail: Node =
+				    .nodes(Node(holder: j), .leaf(attrs, tail))
+				return .step(.nodes(.leaf(attrs, head), jtail))
 			default:
 				/* XXX Empty leaves shouldn't exist. */
 				return .inchOut
@@ -243,18 +239,15 @@ public extension Node {
 		case .concat(let l, _, _, _, let r, _):
 			switch l.afterStepInsertingIndex(j) {
 			case .step(let newl):
-				return .step(Node(left: newl, right: r))
+				return .step(.nodes(newl, r))
 			case .stepOut:
-				return .step(
-				    Node(left: l,
-				         right: Node(left: Node(holder: j),
-				                     right: r)))
+				return .step(.nodes(l, Node(holder: j), r))
 			case .inchOut, .absent:
 				break
 			}
 			switch r.afterStepInsertingIndex(j) {
 			case .step(let newr):
-				return .step(Node(left: l, right: newr))
+				return .step(.nodes(l, newr))
 			case let result:
 				return result
 			}
@@ -299,7 +292,7 @@ public extension Node {
 				return .stepOut
 			case .stepOut:
 				return .step(.extent(ctlr,
-				    Node(left: n, right: Node(holder: j))))
+				    .nodes(n, Node(holder: j))))
 			case .step(let newn):
 				return .step(.extent(ctlr, newn))
 			case .absent:
@@ -309,8 +302,7 @@ public extension Node {
 		    w.get() == i:
 			switch r.afterStepInsertingIndex(j) {
 			case .step(let newr):
-				return .step(Node(left: Node(holder: i),
-				                  right: newr))
+				return .step(.nodes(Node(holder: i), newr))
 			case let result:
 				return result
 			}
@@ -331,7 +323,7 @@ public extension Node {
 				    oneStepAfter: i)
 				switch result {
 				case .step(let newr):
-					return .step(Node(left: l, right: newr))
+					return .step(.nodes(l, newr))
 				default:
 					return result
 				}
@@ -442,8 +434,8 @@ public extension Node {
 		case .extent(let ctlr, let n):
 			return .extent(ctlr, n.settingAttributes(attrs))
 		case .concat(let l, _, _, _, let r, _):
-			return Node(left: l.settingAttributes(attrs),
-			    right: r.settingAttributes(attrs))
+			return .nodes(l.settingAttributes(attrs),
+			              r.settingAttributes(attrs))
 		case .leaf(_, let content):
 			return .leaf(attrs, content)
 		case .empty, .index(_):
@@ -457,8 +449,8 @@ public extension Node {
 		case .extent(let ctlr, let n):
 			return .extent(ctlr, n.clearingAttributes())
 		case .concat(let l, _, _, _, let r, _):
-			return Node(left: l.clearingAttributes(),
-			    right: r.clearingAttributes())
+			return .nodes(l.clearingAttributes(),
+			              r.clearingAttributes())
 		case .leaf(_, let content):
 			return .leaf([:], content)
 		case .empty, .index(_):
@@ -600,10 +592,17 @@ public extension Node {
 		self = .index(Weak(holder))
 	}
 	init(left: Node<C>, right: Node<C>) {
-		self = .concat(left, left.endIndex,
-		               1 + max(left.depth, right.depth),
-			       left.hids.union(right.hids), right,
-			       left.endIndex + right.endIndex)
+		switch (left, right) {
+		case (_, .empty):
+			self = left
+		case (.empty, _):
+			self = right
+		default:
+			self = .concat(left, left.endIndex,
+				       1 + max(left.depth, right.depth),
+				       left.hids.union(right.hids), right,
+				       left.endIndex + right.endIndex)
+		}
 	}
 	init(content c: C, attributes attrs: Attributes = [:]) {
 		if c.isEmpty {
@@ -670,6 +669,26 @@ extension Node : CustomDebugStringConvertible {
 		case .empty:
 			return "\"\""
 		}
+	}
+}
+
+public extension Node {
+	static func extent(under controller: ExtentController<C>, _ content: Node...) -> Node {
+		return Node(controller: controller, node: tree(from: content))
+	}
+	static func extent(under controller: ExtentController<C>,
+	    with content: [Node]) -> Node {
+		return Node(controller: controller, node: tree(from: content))
+	}
+	static func tree(from content: [Node]) -> Node {
+		content.reduce(.empty) { (l: Node, r: Node) in Node(left: l, right: r)}
+	}
+	static func nodes(_ content: Node...) -> Node {
+		return tree(from: content)
+	}
+	static func text(_ content: C, attributes attrs: Attributes = [:])
+	    -> Node {
+		return Node(content: content, attributes: attrs)
 	}
 }
 
@@ -780,30 +799,29 @@ public extension Node {
 			}
 		}
 	}
-	/*
-	func enclosingExtents(at i0: RopeIndex<C>) -> [ExtentController<C>] {
-		var path: [ExtentController<C>] = []
-		var i = i0
-		var next = self
-		while true {
-			switch next {
-			case .leaf(_, _), .cursor(_, _), .empty, .index(_):
-				return path
-			case .concat(let ropel, let idx, _, _, let roper, _):
-				if i < idx {
-					next = ropel
-				} else {
-					i = i - idx
-					next = roper
-				}
-			case .extent(let ctlr, let rope):
-				path.append(ctlr)
-				next = rope
-			}
+	func enclosingExtents(at i: RopeIndex<C>,
+	                      in controllers: [ExtentController<C>] = [])
+	    -> [ExtentController<C>]? {
+		switch (i, self) {
+		case (.start(_), _), (.end(_), _):
+			return controllers
+		case (.interior(_, _, _, let h), .index(let w))
+		    where w.get() == h:
+			return controllers
+		case (.interior(_, _, _, let h),
+		      .concat(let l, _, _, _, let r, _))
+		     where self.containsHandle(h):
+		     	return l.enclosingExtents(at: i, in: controllers) ??
+		     	       r.enclosingExtents(at: i, in: controllers)
+		case (.interior(_, _, _, _), .extent(let ctlr, let content)):
+			return content.enclosingExtents(at: i,
+			    in: controllers + [ctlr])
+		default:
+			return nil
 		}
 	}
 	func extentsClosing(at i: RopeIndex<C>,
-	                    inside controllers: [ExtentController<C>] = [])
+	                    in controllers: [ExtentController<C>] = [])
 	    -> [ExtentController<C>]? {
 		switch (self, i) {
 		case (_, .end(_)):
@@ -811,20 +829,34 @@ public extension Node {
 		case (_, .start(_)):
 			return []
 		case (.extent(let ctlr, let content), _):
-			controllers.append(ctlr)
 			return content.extentsClosing(at: i,
-			    inside: controllers)
+			                              in: controllers + [ctlr])
 		case (.index(let w), .interior(_, _, _, let h))
 		    where w.get() == h:
 			return controllers
-		case (.concat(let l, _, _, _, let r, _),
-		      .interior(_, _, _, let h))
-			if let ctlrs = r.extentsClosing(at: i,
-			    inside: controllers) {
-				return ctlrs
+		case (.concat(let l, let midx, _, let hids, let r, let endx),
+		      .interior(_, _, _, let h)):
+		        guard hids.contains(h.id) else {
+				return nil
 			}
+			if let c = r.extentsClosing(at: i, in: controllers) {
+				return c
+			}
+			/* If there are characters right of `l`, or any
+			 * extents open right of `l`, then the controllers
+			 * we have seen on our way down, `controllers`, do
+			 * not close at `i`. Rather, they close at an index
+			 * on the right.  So leave them out of the list.
+			 */
+			guard midx == endx && r.hids.extentCount == 0 else {
+				return l.extentsClosing(at: i)
+			}
+			return l.extentsClosing(at: i, in: controllers)
+		default:
+			return nil
 		}
 	}
+	/*
 	func subrope(from: RopeIndex<C>, rightSibling: Node<C> = .empty,
 	    depth: Int = 0) -> Node<C>? {
 		switch (self, from) {
@@ -889,12 +921,12 @@ public extension Node {
 		case (.concat(let l, _, _, _,
 		              .leaf(let pat, let p), _),
 		      .leaf(let qat, let q)) where pat.isEmpty && qat.isEmpty:
-			return Node(left: l, right: .leaf([:], p + q))
+			return .nodes(l, .leaf([:], p + q))
 		case (.leaf(let pat, let p), .leaf(let qat, let q)) where
 		    pat.isEmpty && qat.isEmpty:
 			return .leaf([:], p + q)
 		default:
-			return Node(left: self, right: rope)
+			return .nodes(self, rope)
 		}
 	}
 	var balanced: Bool {
@@ -922,7 +954,7 @@ public extension Node {
 			guard let nr = r.cleaned() else {
 				return nil
 			}
-			return Node(left: nl, right: nr)
+			return .nodes(nl, nr)
 		}
 	}
 	// Return a copy of this Rope with its balance restored.
@@ -948,8 +980,7 @@ public extension Node {
 			var n: Int = slot.count
 			for (i, fip3) in Fibonacci(from: 3).enumerated() {
 				if let left = slot[slot.count - i - 1] {
-					rope = Node(left: left,
-					                right: rope)
+					rope = .nodes(left, rope)
 					slot[slot.count - i - 1] = nil
 				}
 				if fip3 >= rope.endIndex.utf16Offset {
@@ -964,10 +995,8 @@ public extension Node {
 			switch (accum, opt) {
 			case (_, nil):
 				return accum
-			case (.empty, let next?):
-				return next
 			case (_, let next?):
-				return Node(left: accum, right: next)
+				return .nodes(accum, next)
 			}
 		})
 	}
@@ -1120,7 +1149,7 @@ public extension Node {
 			case (let node?, nil), (nil, let node?):
 				return node
 			case (let newl?, let newr?):
-				return Node(left: newl, right: newr)
+				return .nodes(newl, newr)
 			}
 		case let node:
 			return filter(node)
