@@ -24,8 +24,21 @@ public class Handle : Hashable {
 	}
 }
 
+extension Handle.Id : CustomDebugStringConvertible {
+	public var debugDescription: String {
+		switch self {
+		case .cursor(let n):
+			return ".cursor(\(n))"
+		case .extent(let n):
+			return ".extent(\(n))"
+		case .index(let n):
+			return ".index(\(n))"
+		}
+	}
+}
+
 extension Handle : CustomDebugStringConvertible {
 	public var debugDescription: String {
-		return "Handle(id: \(id))"
+		return "Handle(id: \(id.debugDescription))"
 	}
 }
