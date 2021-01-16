@@ -41,7 +41,11 @@ public class Rope<C : Content> : Collection {
 	private var top: Node<C>
 	public var generation: UInt64 = 0
 	public var startIndex: Index {
-		if top.startIndex == top.endIndex {
+		/* There are at least three index positions, start and
+		 * end, if there is even a solitary extent.  Need to return
+		 * .start(of: self) in that case.
+		 */
+		if top.startIndex == top.endIndex && top.hids.extentCount == 0 {
 			return .end(of: self)
 		}
 		return .start(of: self)

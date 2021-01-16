@@ -111,6 +111,59 @@ class WholeRangeUsingRopeIndices: XCTestCase {
 	}
 }
 
+class EmptyishRopeIndices : XCTestCase {
+	let ctlr = ECSS()
+	var _p: RSS? = nil
+	var _one: RSS? = nil
+	var _two: RSS? = nil
+	var one: RSS {
+		get {
+			if let old = _one {
+				return old
+			}
+			let new: RSS = Rope()
+			new.node = Node(controller: ctlr, node: .empty)
+			_one = new
+			return new
+		}
+	}
+	var two: RSS {
+		get {
+			if let old = _two {
+				return old
+			}
+			let l: NSS = Node(controller: ctlr, node: .empty)
+			let r: NSS = Node(controller: ctlr, node: .empty)
+			let new: RSS = Rope()
+			new.node = Node(left: l, right: r)
+			_two = new
+			return new
+		}
+	}
+	let empty: RSS = Rope()
+	func testStartIndexEmpty() {
+		XCTAssert(empty.startIndex == .end(of: empty))
+	}
+	func testStartIndexOneEmptyExtent() {
+		XCTAssert(one.startIndex == .start(of: one))
+		XCTAssert(one.startIndex != one.endIndex)
+		XCTAssert(one.index(after: one.startIndex) != one.endIndex)
+		XCTAssert(one.index(after: one.index(after: one.startIndex)) ==
+		    one.endIndex)
+	}
+	func testStartIndexTwoEmptyExtents() {
+		XCTAssert(two.startIndex == .start(of: two))
+		XCTAssert(two.startIndex != two.endIndex)
+		XCTAssert(two.index(after: two.startIndex) != two.endIndex)
+		XCTAssert(two.index(after: two.index(after: two.startIndex)) !=
+		    two.endIndex)
+		XCTAssert(two.index(after: two.index(after: two.index(after: two.startIndex))) !=
+		    two.endIndex)
+		XCTAssert(two.index(after: two.index(after: two.index(after: two.index(after: two.startIndex)))) ==
+		    two.endIndex)
+	}
+}
+
 class ThreeUnitRangesUsingRopeIndices: XCTestCase {
 	let ctlr = ECSS()
 	let nodel: NSS = Node(content: "abc")
