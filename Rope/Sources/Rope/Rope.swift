@@ -221,6 +221,9 @@ extension Rope {
 }
 
 extension Rope {
+	func enclosingExtents(at i: RopeIndex<C>) -> [ExtentController<C>]? {
+		return top.enclosingExtents(at: i)
+	}
 	public func extentsClosing(at i: RopeIndex<C>)
 	    -> [ExtentController<C>]? {
 		return top.extentsClosing(at: i)

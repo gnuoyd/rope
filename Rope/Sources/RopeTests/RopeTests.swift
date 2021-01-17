@@ -38,7 +38,62 @@ class IndexOrder: XCTestCase {
 	}
 }
 
-class ExtentTrails: XCTestCase {
+class RopeIndexedControllerPaths: XCTestCase {
+	let c = [ECSS(), ECSS(), ECSS()]
+	var _rope: RSS? = nil
+	var rope: RSS {
+		if let r = _rope {
+			return r
+		}
+		// (abc(def(ghi)))
+		// 000000000000000
+		//     1111111111
+		//         22222
+		let r: RSS = Rope(with: .extent(under: c[0],
+		                     .nodes(.text("abc"),
+				     .extent(under: c[1],
+				         .text("def"),
+					 .extent(under: c[2], .text("ghi"))))))
+		_rope = r
+		return r
+	}
+	var _expectations: [[Handle]]? = nil
+	var expectations: [[Handle]] {
+		if let olde = _expectations {
+			return olde
+		}
+		// (abc(def(ghi)))
+		// 000000000000000
+		//     1111111111
+		//         22222
+		let newe: [[Handle]] = [
+		    [],			// *(abc(def(ghi)))
+		    [c[0]],		// (*abc(def(ghi)))
+		    [c[0]],		// (a*bc(def(ghi)))
+		    [c[0]],		// (ab*c(def(ghi)))
+		    [c[0]],		// (abc*(def(ghi)))
+		    [c[0], c[1]],	// (abc(*def(ghi)))
+		    [c[0], c[1]],	// (abc(d*ef(ghi)))
+		    [c[0], c[1]],	// (abc(de*f(ghi)))
+		    [c[0], c[1]],	// (abc(def*(ghi)))
+		    [c[0], c[1], c[2]],	// (abc(def(*ghi)))
+		    [c[0], c[1], c[2]],	// (abc(def(g*hi)))
+		    [c[0], c[1], c[2]],	// (abc(def(gh*i)))
+		    [c[0], c[1], c[2]],	// (abc(def(ghi*)))
+		    [c[0], c[1]],	// (abc(def(ghi)*))
+		    [c[0]],		// (abc(def(ghi))*)
+		    []]			// (abc(def(ghi)))*
+		_expectations = newe
+		return newe
+	}
+	func testControllerPaths() {
+		for (i, expected) in zip(rope.indices, expectations) {
+			XCTAssert(rope.enclosingExtents(at: i) == expected)
+		}
+	}
+}
+
+class UTF16IndexedControllerPaths: XCTestCase {
 	let c = [ECSS(), ECSS(), ECSS()]
 	var _tree: NSS? = nil
 	var tree: NSS {
@@ -74,7 +129,7 @@ class ExtentTrails: XCTestCase {
 	let indices: [NodeIndex] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map() { i in
 	    NodeIndex(utf16Offset: i)
 	}
-	func testHandlePaths() {
+	func testControllerPaths() {
 		for (i, expected) in zip(indices, expectations) {
 			XCTAssert(tree.enclosingExtents(at: i) == expected)
 		}
