@@ -591,7 +591,7 @@ public extension Node {
 	init(holder: Handle) {
 		self = .index(Weak(holder))
 	}
-	init(left: Node<C>, right: Node<C>) {
+	private init(left: Node<C>, right: Node<C>) {
 		switch (left, right) {
 		case (_, .empty):
 			self = left

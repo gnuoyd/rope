@@ -175,9 +175,9 @@ public class Rope<C : Content> : Collection {
 		}
 		switch i {
 		case .start(_):
-			top = Node<C>(left: elt, right: top)
+			top = .nodes(elt, top)
 		case .end(_):
-			top = Node(left: top, right: elt)
+			top = .nodes(top, elt)
 		case .interior(_, _, _, let h):
 			top = top.inserting(elt, at: h)
 		}
