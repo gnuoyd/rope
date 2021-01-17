@@ -834,7 +834,7 @@ public extension Node {
 		case (.index(let w), .interior(_, _, _, let h))
 		    where w.get() == h:
 			return controllers
-		case (.concat(let l, let midx, _, let hids, let r, let endx),
+		case (.concat(let l, let midx, _, let hids, let r, _),
 		      .interior(_, _, _, let h)):
 		        guard hids.contains(h.id) else {
 				return nil
