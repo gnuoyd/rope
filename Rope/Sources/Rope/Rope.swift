@@ -69,7 +69,6 @@ public class Rope<C : Content> : Collection {
 	public init<T>(content t: T) where C : Initializable,
 	    C.Initializer == T, T : Collection {
 		top = Node(content: t)
-		Swift.print("Rope initialized with content \(top), utf16 length \(utf16.length)")
 	}
 	public func index(after i: Index) -> Index {
 		guard i.owner === self else {

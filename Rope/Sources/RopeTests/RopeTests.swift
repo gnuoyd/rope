@@ -39,19 +39,17 @@ class IndexOrder: XCTestCase {
 }
 
 class ExtentTrails: XCTestCase {
-	let ctlr0 = ECSS()
-	let ctlr1 = ECSS()
-	let ctlr2 = ECSS()
+	let c = [ECSS(), ECSS(), ECSS()]
 	var _tree: NSS? = nil
 	var tree: NSS {
 		if let t = _tree {
 			return t
 		}
-		let t: NSS = .extent(under: ctlr0,
+		let t: NSS = .extent(under: c[0],
 		                     .nodes(.text("abc"),
-				     .extent(under: ctlr1,
+				     .extent(under: c[1],
 				         .text("def"),
-					 .extent(under: ctlr2, .text("ghi")))))
+					 .extent(under: c[2], .text("ghi")))))
 		_tree = t
 		return t
 	}
@@ -60,16 +58,16 @@ class ExtentTrails: XCTestCase {
 		if let olde = _expectations {
 			return olde
 		}
-		let newe: [[Handle]] = [[ctlr0],
-					[ctlr0],
-					[ctlr0],
-					[ctlr0, ctlr1],
-					[ctlr0, ctlr1],
-					[ctlr0, ctlr1],
-					[ctlr0, ctlr1, ctlr2],
-					[ctlr0, ctlr1, ctlr2],
-					[ctlr0, ctlr1, ctlr2],
-					[ctlr0, ctlr1, ctlr2]]
+		let newe: [[Handle]] = [[c[0]],
+					[c[0]],
+					[c[0]],
+					[c[0], c[1]],
+					[c[0], c[1]],
+					[c[0], c[1]],
+					[c[0], c[1], c[2]],
+					[c[0], c[1], c[2]],
+					[c[0], c[1], c[2]],
+					[c[0], c[1], c[2]]]
 		_expectations = newe
 		return newe
 	}
