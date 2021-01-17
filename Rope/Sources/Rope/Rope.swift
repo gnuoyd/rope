@@ -226,6 +226,10 @@ extension Rope {
 	    -> [ExtentController<C>]? {
 		return top.extentsClosing(at: i)
 	}
+	public func extentsOpening(at i: RopeIndex<C>)
+	    -> [ExtentController<C>]? {
+		return top.extentsOpening(at: i)
+	}
 }
 
 /*

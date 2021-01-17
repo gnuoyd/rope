@@ -820,6 +820,42 @@ public extension Node {
 			return nil
 		}
 	}
+	func extentsOpening(at i: RopeIndex<C>,
+	                    in controllers: [ExtentController<C>] = [])
+	    -> [ExtentController<C>]? {
+		switch (self, i) {
+		case (_, .end(_)):
+			return []
+		case (_, .start(_)):
+			return []
+		case (.extent(let ctlr, let content), _):
+			return content.extentsOpening(at: i,
+			                              in: controllers + [ctlr])
+		case (.index(let w), .interior(_, _, _, let h))
+		    where w.get() == h:
+			return controllers
+		case (.concat(let l, let midx, _, let hids, let r, let endx),
+		      .interior(_, _, _, let h)):
+		        guard hids.contains(h.id) else {
+				return nil
+			}
+			if let c = l.extentsOpening(at: i, in: controllers) {
+				return c
+			}
+			/* If there are characters left of `r`, or any
+			 * extents open left of `r`, then the controllers
+			 * we have seen on our way down, `controllers`, do
+			 * not open at `i`. Rather, they open at an index
+			 * on the left.  So leave them out of the list.
+			 */
+			guard .start == midx && l.hids.extentCount == 0 else {
+				return r.extentsOpening(at: i)
+			}
+			return r.extentsOpening(at: i, in: controllers)
+		default:
+			return nil
+		}
+	}
 	func extentsClosing(at i: RopeIndex<C>,
 	                    in controllers: [ExtentController<C>] = [])
 	    -> [ExtentController<C>]? {

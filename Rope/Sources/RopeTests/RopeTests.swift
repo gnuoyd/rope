@@ -102,7 +102,7 @@ class WholeRangeUsingRopeIndices: XCTestCase {
 	}
 }
 
-class ExtentsClosing : XCTestCase {
+class ExtentsOpeningClosing : XCTestCase {
 	let simpleCtlr = ECSS()
 	let empty: RSS = Rope()
 	var _simple: RSS? = nil
@@ -116,12 +116,40 @@ class ExtentsClosing : XCTestCase {
 		_simple = r
 		return r
 	}
+	let c = [ECSS(),	// 0
+	         ECSS(),	// 1
+	         ECSS(),	// 2
+	         ECSS(),	// 3
+	         ECSS(),	// 4
+	         ECSS(),	// 5
+	         ECSS(),	// 6
+	         ECSS(),	// 7
+	         ECSS(),	// 8
+	         ECSS()]	// 9
 	var cplx: RSS {
 		if let old = _cplx {
 			return old
 		}
-		let r: RSS = Rope()
-		r.node = .extent(under: simpleCtlr, .empty)
+		// ()(a(b)c())(((def)))(((g)h)i)
+		// 00111111111444444444777777777
+		//     222 33  5555555  888888
+		//              66666    999
+		let r: RSS = Rope(with:
+                    .nodes(.extent(under: c[0], .empty),
+                           .extent(under: c[1],
+                               .text("a"),
+                               .extent(under: c[2], .text("b")),
+                               .text("c"),
+                               .extent(under: c[3], .empty)),
+                           .extent(under: c[4],
+                               .extent(under: c[5],
+                                   .extent(under: c[6],
+                                       .text("def")))),
+                           .extent(under: c[7],
+                               .extent(under: c[8],
+                                   .extent(under: c[9], .text("g")),
+                                   .text("h")),
+                               .text("i"))))
 		_cplx = r
 		return r
 	}
@@ -129,11 +157,109 @@ class ExtentsClosing : XCTestCase {
 		XCTAssert(empty.extentsClosing(at: empty.startIndex) == [])
 		XCTAssert(empty.extentsClosing(at: empty.endIndex) == [])
 	}
+	func testOpeningEmpty() {
+		XCTAssert(empty.extentsOpening(at: empty.startIndex) == [])
+		XCTAssert(empty.extentsOpening(at: empty.endIndex) == [])
+	}
 	func testClosingSimple() {
 		let middle = simple.index(after: simple.startIndex)
 		XCTAssert(simple.extentsClosing(at: simple.startIndex) == [])
 		XCTAssert(simple.extentsClosing(at: middle) == [simpleCtlr])
-		// XCTAssert(simple.extentsClosing(at: simple.endIndex) == [simpleCtlr])
+		XCTAssert(simple.extentsClosing(at: simple.endIndex) == [])
+	}
+	func testOpeningSimple() {
+		let middle = simple.index(after: simple.startIndex)
+		XCTAssert(simple.extentsOpening(at: simple.startIndex) == [])
+		XCTAssert(simple.extentsOpening(at: middle) == [simpleCtlr])
+		XCTAssert(simple.extentsClosing(at: simple.endIndex) == [])
+	}
+	func testClosingComplex() {
+		let expectations = [
+		    [],		// *()(a(b)c())(((def)))(((g)h)i)
+		    [0],	// (*)(a(b)c())(((def)))(((g)h)i)
+		    [],		// ()*(a(b)c())(((def)))(((g)h)i)
+		    [],		// ()(*a(b)c())(((def)))(((g)h)i)
+		    [],		// ()(a*(b)c())(((def)))(((g)h)i)
+		    [],		// ()(a(*b)c())(((def)))(((g)h)i)
+		    [2],	// ()(a(b*)c())(((def)))(((g)h)i)
+		    [],		// ()(a(b)*c())(((def)))(((g)h)i)
+		    [],		// ()(a(b)c*())(((def)))(((g)h)i)
+		    [1, 3],	// ()(a(b)c(*))(((def)))(((g)h)i)
+		    [1],	// ()(a(b)c()*)(((def)))(((g)h)i)
+		    [],		// ()(a(b)c())*(((def)))(((g)h)i)
+		    [],		// ()(a(b)c())(*((def)))(((g)h)i)
+		    [],		// ()(a(b)c())((*(def)))(((g)h)i)
+		    [],		// ()(a(b)c())(((*def)))(((g)h)i)
+		    [],		// ()(a(b)c())(((d*ef)))(((g)h)i)
+		    [],		// ()(a(b)c())(((de*f)))(((g)h)i)
+		    [4, 5, 6],	// ()(a(b)c())(((def*)))(((g)h)i)
+		    [4, 5],	// ()(a(b)c())(((def)*))(((g)h)i)
+		    [4],	// ()(a(b)c())(((def))*)(((g)h)i)
+		    [],		// ()(a(b)c())(((def)))*(((g)h)i)
+		    [],		// ()(a(b)c())(((def)))(*((g)h)i)
+		    [],		// ()(a(b)c())(((def)))((*(g)h)i)
+		    [],		// ()(a(b)c())(((def)))(((*g)h)i)
+		    [9],	// ()(a(b)c())(((def)))(((g*)h)i)
+		    [],		// ()(a(b)c())(((def)))(((g)*h)i)
+		    [8],	// ()(a(b)c())(((def)))(((g)h*)i)
+		    [],		// ()(a(b)c())(((def)))(((g)h)*i)
+		    [7],	// ()(a(b)c())(((def)))(((g)h)i*)
+		    []]		// ()(a(b)c())(((def)))(((g)h)i)*
+
+		for (idx, expected) in zip(cplx.indices, expectations) {
+			guard let found = cplx.extentsClosing(at: idx) else {
+				XCTFail("no such index")
+				continue
+			}
+			XCTAssert(found == expected.map() { i in c[i] },
+			          "found \(found) expected \(expected)")
+		}
+	}
+	func testOpeningComplex() {
+		let expectations = [
+				// ()(a(b)c())(((def)))(((g)h)i)
+				// 00111111111444444444777777777
+				//     222 33  5555555  888888
+				//              66666    999
+		    [],		// *()(a(b)c())(((def)))(((g)h)i)
+		    [0],	// (*)(a(b)c())(((def)))(((g)h)i)
+		    [],		// ()*(a(b)c())(((def)))(((g)h)i)
+		    [1],	// ()(*a(b)c())(((def)))(((g)h)i)
+		    [],		// ()(a*(b)c())(((def)))(((g)h)i)
+		    [2],	// ()(a(*b)c())(((def)))(((g)h)i)
+		    [],		// ()(a(b*)c())(((def)))(((g)h)i)
+		    [],		// ()(a(b)*c())(((def)))(((g)h)i)
+		    [],		// ()(a(b)c*())(((def)))(((g)h)i)
+		    [3],	// ()(a(b)c(*))(((def)))(((g)h)i)
+		    [],		// ()(a(b)c()*)(((def)))(((g)h)i)
+		    [],		// ()(a(b)c())*(((def)))(((g)h)i)
+		    [4],	// ()(a(b)c())(*((def)))(((g)h)i)
+		    [4, 5],	// ()(a(b)c())((*(def)))(((g)h)i)
+		    [4, 5, 6],	// ()(a(b)c())(((*def)))(((g)h)i)
+		    [],		// ()(a(b)c())(((d*ef)))(((g)h)i)
+		    [],		// ()(a(b)c())(((de*f)))(((g)h)i)
+		    [],		// ()(a(b)c())(((def*)))(((g)h)i)
+		    [],		// ()(a(b)c())(((def)*))(((g)h)i)
+		    [],		// ()(a(b)c())(((def))*)(((g)h)i)
+		    [],		// ()(a(b)c())(((def)))*(((g)h)i)
+		    [7],	// ()(a(b)c())(((def)))(*((g)h)i)
+		    [7, 8],	// ()(a(b)c())(((def)))((*(g)h)i)
+		    [7, 8, 9],	// ()(a(b)c())(((def)))(((*g)h)i)
+		    [],		// ()(a(b)c())(((def)))(((g*)h)i)
+		    [],		// ()(a(b)c())(((def)))(((g)*h)i)
+		    [],		// ()(a(b)c())(((def)))(((g)h*)i)
+		    [],		// ()(a(b)c())(((def)))(((g)h)*i)
+		    [],		// ()(a(b)c())(((def)))(((g)h)i*)
+		    []]		// ()(a(b)c())(((def)))(((g)h)i)*
+
+		for (idx, expected) in zip(cplx.indices, expectations) {
+			guard let found = cplx.extentsOpening(at: idx) else {
+				XCTFail("no such index")
+				continue
+			}
+			XCTAssert(found == expected.map() { i in c[i] },
+			          "found \(found) expected \(expected)")
+		}
 	}
 }
 
