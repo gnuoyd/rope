@@ -16,7 +16,7 @@ func ⨯<L, R, Lseq : Sequence, Rseq : Sequence>(_ l: Lseq, _ r: Rseq) -> LazySe
 
 class IndexOrder: XCTestCase {
 	func testComparingIndicesSequentially() {
-		let rope = Rope<Substring>(content: "pqrstuvwxyz")
+		let rope: RSS = Rope(content: "pqrstuvwxyz")
 		var previous: Rope<Substring>.Index? = nil
 		for current in rope.indices {
 			guard let p = previous else {
@@ -30,7 +30,7 @@ class IndexOrder: XCTestCase {
 	}
 
 	func testComparingIndicesPairwise() {
-		let rope = Rope<Substring>(content: "pqrstuvwxyz")
+		let rope: RSS = Rope(content: "pqrstuvwxyz")
 		let indices = rope.indices.enumerated()
 		for (l, r) in indices ⨯ indices {
 			XCTAssert((l.offset < r.offset) == (l.element < r.element))
@@ -47,9 +47,11 @@ class ExtentTrails: XCTestCase {
 		if let t = _tree {
 			return t
 		}
-		let right: NSS = .extent(under: ctlr1,
-		                     .nodes(.text("def"), .extent(under: ctlr2, .text("ghi"))))
-		let t: NSS = .extent(under: ctlr0, .nodes(.text("abc"), right))
+		let t: NSS = .extent(under: ctlr0,
+		                     .nodes(.text("abc"),
+				     .extent(under: ctlr1,
+				         .text("def"),
+					 .extent(under: ctlr2, .text("ghi")))))
 		_tree = t
 		return t
 	}
@@ -559,8 +561,8 @@ class ExtentElementLookupUsingRopeIndices: XCTestCase {
 }
 
 class BasicElementLookupUsingRopeIndices: XCTestCase {
-	let rope1 = Rope<Substring>(content: "abc")
-	let rope2 = Rope<Substring>(content: "def")
+	let rope1: RSS = Rope(content: "abc")
+	let rope2: RSS = Rope(content: "def")
 	func testStartIndices() {
 		let idx1 = rope1.startIndex
 		let idx2 = rope2.startIndex
@@ -588,8 +590,8 @@ class BasicElementLookupUsingRopeIndices: XCTestCase {
 }
 
 class CompareDisparateRopeIndices: XCTestCase {
-	let rope1 = Rope<Substring>(content: "abc")
-	let rope2 = Rope<Substring>(content: "def")
+	let rope1: RSS = Rope(content: "abc")
+	let rope2: RSS = Rope(content: "def")
 	func testStartIndices() {
 		let idx1 = rope1.startIndex
 		let idx2 = rope2.startIndex
@@ -671,7 +673,7 @@ class HandleHolding : XCTestCase {
 	}
 
 	func testStepAndHoldIndex() {
-		let first = Node<Substring>(content: "abc")
+		let first: NSS = .text("abc")
 		let handle = Handle()
 		guard case .step(let second) = first.afterStepInsertingIndex(handle) else {
 			XCTFail("afterStepInserting failed")
@@ -681,7 +683,7 @@ class HandleHolding : XCTestCase {
 	}
 
 	func testStepAndReleaseIndex() {
-		let first = Node<Substring>(content: "abc")
+		let first: NSS = .text("abc")
 		var handle = Handle()
 		guard case .step(let second) = first.afterStepInsertingIndex(handle) else {
 			XCTFail("afterStepInserting failed")
@@ -706,7 +708,7 @@ class HandleHolding : XCTestCase {
 	}
 
 	func testCleanedHoldingIndices() {
-		let emptyRope = Rope<Substring>(content: "abcdefghijkl")
+		let emptyRope: RSS = Rope(content: "abcdefghijkl")
 		var indices: [Rope<Substring>.Index]? = []
 
 		for i in emptyRope.indices {
@@ -717,7 +719,7 @@ class HandleHolding : XCTestCase {
 	}
 
 	func testCleanedReleasingIndices() {
-		let emptyRope = Rope<Substring>(content: "abcdefghijkl")
+		let emptyRope: RSS = Rope(content: "abcdefghijkl")
 		var indices: [Rope<Substring>.Index]? = []
 
 		for i in emptyRope.indices {
@@ -729,7 +731,7 @@ class HandleHolding : XCTestCase {
 	}
 
 	func testReleasingIndices() {
-		let rope = Rope<Substring>(content: "abcdefghijkl")
+		let rope: RSS = Rope(content: "abcdefghijkl")
 		var indices: [Rope<Substring>.Index]? = []
 
 		for i in rope.indices {
@@ -925,7 +927,7 @@ class NodeAttributes : XCTestCase {
 class AppendInsertRemoveReplace : XCTestCase {
 	func testReplace() {
 		
-		// let rope = Rope<Substring>(content: "This is the original content.")
+		// let rope: RSS = Rope(content: "This is the original content.")
 		let str: String = "This is the original content."
 	
 		print(str.firstIndex(of: " is") ?? -1)
