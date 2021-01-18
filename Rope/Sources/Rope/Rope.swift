@@ -77,8 +77,8 @@ public class Rope<C : Content> : Collection {
 		switch i {
 		case .start(_):
 			let h = Handle()
-			guard case
-			    .step(let n) = top.afterStepInsertingIndex(h) else {
+			guard case .step(let n) =
+			    top.inserting(h, after: .rightStep) else {
 				return .end(of: self)
 			}
 			top = n

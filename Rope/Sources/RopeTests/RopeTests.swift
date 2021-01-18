@@ -728,8 +728,9 @@ class HandleHolding : XCTestCase {
 	func testStepAndHoldIndex() {
 		let first: NSS = .text("abc")
 		let handle = Handle()
-		guard case .step(let second) = first.afterStepInsertingIndex(handle) else {
-			XCTFail("afterStepInserting failed")
+		guard case .step(let second) =
+		    first.inserting(handle, after: .rightStep) else {
+			XCTFail("inserting(_,after:) failed")
 			return
 		}
 		XCTAssert(second.leaves.map({ (x: Node<Substring>) -> Bool in if case .index(let w) = x { return w.get() == handle } else {return false } })[1])
@@ -738,8 +739,9 @@ class HandleHolding : XCTestCase {
 	func testStepAndReleaseIndex() {
 		let first: NSS = .text("abc")
 		var handle = Handle()
-		guard case .step(let second) = first.afterStepInsertingIndex(handle) else {
-			XCTFail("afterStepInserting failed")
+		guard case .step(let second) =
+		    first.inserting(handle, after: .rightStep) else {
+			XCTFail("inserting(_,after:) failed")
 			return
 		}
 		handle = Handle()

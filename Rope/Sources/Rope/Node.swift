@@ -194,6 +194,10 @@ public func == <C>(_ l: Node<C>, _ r: Node<C>) -> Bool {
 }
 
 public extension Node {
+	enum DirectedStep {
+	case rightStep
+	case leftStep
+	}
 	func insertingIndex(_ j: Handle, oneStepAfter i: Handle,
 	    sibling r: Node) -> Step<C> {
 		let result = insertingIndex(j, oneStepAfter: i)
@@ -203,7 +207,7 @@ public extension Node {
 		case .stepOut:
 			return .step(.nodes(self, .nodes(Node(holder: j), r)))
 		case .inchOut:
-			switch r.afterStepInsertingIndex(j) {
+			switch r.inserting(j, after: .rightStep) {
 			case .step(let newr):
 				return .step(.nodes(self, newr))
 			case let result:
@@ -213,17 +217,21 @@ public extension Node {
 			return .absent
 		}
 	}
-	func afterStepInsertingIndex(_ j: Handle) -> Step<C> {
-		switch self {
+	func inserting(_ j: Handle, after step: DirectedStep) -> Step<C> {
+		switch (self, step) {
+		case (_, .leftStep):
+			fatalError("cannot step left, yet.")
 		/* A step over a cursor, index, or empty string is NOT
 		 * a full step.
 		 */
-		case .cursor(_, _), .empty, .index(_):
+		case (.cursor(_, _), .rightStep),
+		     (.empty, .rightStep),
+		     (.index(_), .rightStep):
 			return .inchOut
 		/* A step into an extent is a full step. */
-		case .extent(let ctlr, let n):
+		case (.extent(let ctlr, let n), .rightStep):
 			return .step(.extent(ctlr, .nodes(Node(holder: j), n)))
-		case .leaf(let attrs, let content):
+		case (.leaf(let attrs, let content), .rightStep):
 			switch content.headAndTail {
 			case (_, let tail)? where tail.isEmpty:
 				return .stepOut
@@ -236,8 +244,8 @@ public extension Node {
 				return .inchOut
 			}
 		/* A step into a concatenation is NOT a full step. */
-		case .concat(let l, _, _, _, let r, _):
-			switch l.afterStepInsertingIndex(j) {
+		case (.concat(let l, _, _, _, let r, _), .rightStep):
+			switch l.inserting(j, after: .rightStep) {
 			case .step(let newl):
 				return .step(.nodes(newl, r))
 			case .stepOut:
@@ -245,7 +253,7 @@ public extension Node {
 			case .inchOut, .absent:
 				break
 			}
-			switch r.afterStepInsertingIndex(j) {
+			switch r.inserting(j, after: .rightStep) {
 			case .step(let newr):
 				return .step(.nodes(l, newr))
 			case let result:
@@ -300,7 +308,7 @@ public extension Node {
 			}
 		case .concat(.index(let w), _, _, _, let r, _) where
 		    w.get() == i:
-			switch r.afterStepInsertingIndex(j) {
+			switch r.inserting(j, after: .rightStep) {
 			case .step(let newr):
 				return .step(.nodes(Node(holder: i), newr))
 			case let result:
