@@ -198,47 +198,72 @@ public extension Node {
 	case rightStep
 	case leftStep
 	}
-	func insertingIndex(_ j: Handle, oneStepAfter i: Handle,
-	    sibling r: Node) -> Step<C> {
-		let result = insertingIndex(j, oneStepAfter: i)
-		switch result {
-		case .step(let newl):
-			return .step(.nodes(newl, r))
-		case .stepOut:
-			return .step(.nodes(self, .nodes(Node(holder: j), r)))
-		case .inchOut:
-			switch r.inserting(j, after: .rightStep) {
+	func inserting(_ j: Handle, one step: DirectedStep, after i: Handle,
+	    sibling: Node) -> Step<C> {
+		let result = inserting(j, one: step, after: i)
+		switch (result, step) {
+		case (.step(let newl), .rightStep):
+			return .step(.nodes(newl, sibling))
+		case (.step(let newr), .leftStep):
+			return .step(.nodes(sibling, newr))
+		case (.stepOut, .rightStep):
+			return .step(.nodes(self, Node(holder: j), sibling))
+		case (.stepOut, .leftStep):
+			return .step(.nodes(sibling, Node(holder: j), self))
+		case (.inchOut, .rightStep):
+			switch sibling.inserting(j, after: .rightStep) {
 			case .step(let newr):
 				return .step(.nodes(self, newr))
 			case let result:
 				return result
 			}
-		case .absent:
+		case (.inchOut, .leftStep):
+			switch sibling.inserting(j, after: .leftStep) {
+			case .step(let newl):
+				return .step(.nodes(newl, self))
+			case let result:
+				return result
+			}
+		case (.absent, .rightStep):
+			return .absent
+		case (.absent, .leftStep):
 			return .absent
 		}
 	}
 	func inserting(_ j: Handle, after step: DirectedStep) -> Step<C> {
 		switch (self, step) {
-		case (_, .leftStep):
-			fatalError("cannot step left, yet.")
 		/* A step over a cursor, index, or empty string is NOT
 		 * a full step.
 		 */
-		case (.cursor(_, _), .rightStep),
-		     (.empty, .rightStep),
-		     (.index(_), .rightStep):
+		case (.cursor(_, _), _), (.empty, _), (.index(_), _):
 			return .inchOut
 		/* A step into an extent is a full step. */
 		case (.extent(let ctlr, let n), .rightStep):
-			return .step(.extent(ctlr, .nodes(Node(holder: j), n)))
+			// *(...) -> (*...)
+			return .step(.extent(under: ctlr, Node(holder: j), n))
+		case (.extent(let ctlr, let n), .leftStep):
+			// (...)* -> (...*)
+			return .step(.extent(under: ctlr, n, Node(holder: j)))
 		case (.leaf(let attrs, let content), .rightStep):
 			switch content.firstAndRest {
-			case (_, let tail)? where tail.isEmpty:
+			case (_, let rest)? where rest.isEmpty:
 				return .stepOut
-			case (let head, let tail)?:
-				let jtail: Node =
-				    .nodes(Node(holder: j), .leaf(attrs, tail))
-				return .step(.nodes(.leaf(attrs, head), jtail))
+			case (let first, let rest)?:
+				return .step(.nodes(.leaf(attrs, first),
+				                    Node(holder: j),
+						    .leaf(attrs, rest)))
+			default:
+				/* XXX Empty leaves shouldn't exist. */
+				return .inchOut
+			}
+		case (.leaf(let attrs, let content), .leftStep):
+			switch content.restAndLast {
+			case (let rest, _)? where rest.isEmpty:
+				return .stepOut
+			case (let rest, let last)?:
+				return .step(.nodes(.leaf(attrs, rest),
+				                    Node(holder: j),
+						    .leaf(attrs, last)))
 			default:
 				/* XXX Empty leaves shouldn't exist. */
 				return .inchOut
@@ -256,6 +281,22 @@ public extension Node {
 			switch r.inserting(j, after: .rightStep) {
 			case .step(let newr):
 				return .step(.nodes(l, newr))
+			case let result:
+				return result
+			}
+		/* A step into a concatenation is NOT a full step. */
+		case (.concat(let l, _, _, _, let r, _), .leftStep):
+			switch r.inserting(j, after: .leftStep) {
+			case .step(let newr):
+				return .step(.nodes(l, newr))
+			case .stepOut:
+				return .step(.nodes(l, Node(holder: j), r))
+			case .inchOut, .absent:
+				break
+			}
+			switch l.inserting(j, after: .leftStep) {
+			case .step(let newl):
+				return .step(.nodes(newl, r))
 			case let result:
 				return result
 			}
@@ -287,58 +328,83 @@ public extension Node {
 			        at: utf16Offset - idx.utf16Offset))
 		}
 	}
-	func insertingIndex(_ j: Handle, oneStepAfter i: Handle)
+	func inserting(_ j: Handle, one step: DirectedStep, after i: Handle)
 	    -> Step<C> {
-		switch self {
-		case .index(let w) where w.get() == i:
+		switch (self, step) {
+		case (.index(let w), _) where w.get() == i:
 			return .inchOut
-		case .cursor(_, _), .index(_), .leaf(_, _), .empty:
+		case (.cursor(_, _), _), (.index(_), _),
+		     (.leaf(_, _), _), (.empty, _):
 			return .absent
-		case .extent(let ctlr, let n):
-			switch n.insertingIndex(j, oneStepAfter: i) {
-			case .inchOut:
+		case (.extent(let ctlr, let n), _):
+			switch (n.inserting(j, one: step, after: i), step) {
+			case (.inchOut, _):
 				return .stepOut
-			case .stepOut:
-				return .step(.extent(ctlr,
-				    .nodes(n, Node(holder: j))))
-			case .step(let newn):
+			case (.stepOut, .rightStep):
+				return .step(.extent(under: ctlr,
+				    n, Node(holder: j)))
+			case (.stepOut, .leftStep):
+				return .step(.extent(under: ctlr,
+				    Node(holder: j), n))
+			case (.step(let newn), _):
 				return .step(.extent(ctlr, newn))
-			case .absent:
+			case (.absent, _):
 				return .absent
 			}
-		case .concat(.index(let w), _, _, _, let r, _) where
-		    w.get() == i:
+		case (.concat(.index(let w), _, _, _, let r, _), .rightStep)
+		    where w.get() == i:
 			switch r.inserting(j, after: .rightStep) {
 			case .step(let newr):
 				return .step(.nodes(Node(holder: i), newr))
 			case let result:
 				return result
 			}
-		case .concat(let l, _, _, _, let r, _):
+		case (.concat(let l, _, _, _, .index(let w), _), .leftStep)
+		    where w.get() == i:
+			switch l.inserting(j, after: .leftStep) {
+			case .step(let newl):
+				return .step(.nodes(newl, Node(holder: i)))
+			case let result:
+				return result
+			}
+		case (.concat(let l, _, _, _, let r, _), _):
 			let id = i.id
-			switch (l.hids.contains(id), r.hids.contains(id)) {
-			case (false, false):
+			switch (l.hids.contains(id), r.hids.contains(id),
+				step) {
+			case (false, false, _):
 				return .absent
-			case (true, true):
+			case (true, true, _):
 				assert(l.hids.contains(id) !=
 				       r.hids.contains(id))
 				return .inchOut
-			case (true, false):
-				return l.insertingIndex(j, oneStepAfter: i,
+			case (true, false, .rightStep):
+				return l.inserting(j, one: .rightStep, after: i,
 				    sibling: r)
-			case (false, true):
-				let result = r.insertingIndex(j,
-				    oneStepAfter: i)
+			case (false, true, .rightStep):
+				let result = r.inserting(j, one: .rightStep,
+				    after: i)
 				switch result {
 				case .step(let newr):
 					return .step(.nodes(l, newr))
 				default:
 					return result
 				}
+			case (false, true, .leftStep):
+				return r.inserting(j, one: .leftStep, after: i,
+				    sibling: l)
+			case (true, false, .leftStep):
+				let result = l.inserting(j, one: .leftStep,
+				    after: i)
+				switch result {
+				case .step(let newl):
+					return .step(.nodes(newl, r))
+				default:
+					return result
+				}
 			}
 		}
 	}
-	/* TBD extract `performing` from `insertingIndex(_:,oneStepAfter:)`
+	/* TBD extract `performing` from `inserting(_:,one:,after:)`
 	 * and element(at:) ?
 	 */
 	func firstElement() -> ElementResult<C> {
@@ -377,7 +443,7 @@ public extension Node {
 			return result
 		}
 	}
-	/* TBD extract `performing` from `insertingIndex(_:,oneStepAfter:)`
+	/* TBD extract `performing` from `inserting(_:,one:,after:)`
 	 * and element(at:) ?
 	 */
 	func element(at i: Handle) -> ElementResult<C> {

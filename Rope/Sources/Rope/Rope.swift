@@ -88,7 +88,7 @@ public class Rope<C : Content> : Collection {
 			fatalError("No index after .endIndex")
 		case .interior(_, _, let m, let h):
 			let j = Handle()
-			switch top.insertingIndex(j, oneStepAfter: h) {
+			switch top.inserting(j, one: .rightStep, after: h) {
 			case .inchOut:
 				fatalError(
 				    ".interior(\(m), \(h)) already at end?")
