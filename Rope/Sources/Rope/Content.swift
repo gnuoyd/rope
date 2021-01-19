@@ -15,7 +15,7 @@ public protocol Content : Initializable, StringProtocol {
 }
 
 extension Content {
-	var headAndTail: (Self, Self)? {
+	var firstAndRest: (Self, Self)? {
 		if startIndex == endIndex {
 			return nil
 		}

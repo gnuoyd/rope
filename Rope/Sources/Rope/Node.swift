@@ -232,7 +232,7 @@ public extension Node {
 		case (.extent(let ctlr, let n), .rightStep):
 			return .step(.extent(ctlr, .nodes(Node(holder: j), n)))
 		case (.leaf(let attrs, let content), .rightStep):
-			switch content.headAndTail {
+			switch content.firstAndRest {
 			case (_, let tail)? where tail.isEmpty:
 				return .stepOut
 			case (let head, let tail)?:
@@ -347,7 +347,7 @@ public extension Node {
 			/* No match: the element is not on this span. */
 			return .inchOut
 		case .leaf(let attrs, let content):
-			switch content.headAndTail {
+			switch content.firstAndRest {
 			case (let head, _)?:
 				return .step(.leaf(attrs, head))
 			default:
