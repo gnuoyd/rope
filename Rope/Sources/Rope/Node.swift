@@ -1070,7 +1070,7 @@ public extension Node {
 	// Return a copy of this Rope with its balance restored.
 	func rebalanced() -> Node<C> {
 		switch self {
-		case .empty, .cursor(_, _), .leaf(_, _):
+		case .empty, .cursor(_, _), .index(_), .leaf(_, _):
 			return self
 		case .extent(let ctlr, let rope):
 			return .extent(ctlr, rope.rebalanced())
