@@ -411,7 +411,6 @@ class ThreeUnitRangesUsingRopeIndices: XCTestCase {
 		var prev = r.endIndex
 		for (idx, expected) in zip(r.indices.reversed().dropFirst(2),
 			                   expectations.reversed()) {
-			Swift.print("checking idx \(idx) prev \(prev), r \(r.node) ")
 			let found = r[idx..<prev]
 			prev = r.index(before: prev)
 			XCTAssert(found ~ expected,
