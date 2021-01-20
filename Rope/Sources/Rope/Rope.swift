@@ -35,6 +35,10 @@ case atEnd
  * to the text.
  */
 public class Rope<C : Content> : Collection {
+	public enum Climb {
+	case `in`
+	case out
+	}
 	public typealias Content = C
 	public typealias Element = Node<C>
 	public typealias Index = RopeIndex<C>
@@ -104,6 +108,38 @@ public class Rope<C : Content> : Collection {
 						 index: m + 1,
 						 handle: j)
 			}
+		}
+	}
+	public func index(after i: Index, climbing dir: Climb) -> Index? {
+		if case .end(_) = i {
+			return nil
+		}
+		let j = index(after: i)
+		switch (enclosingExtents(at: i)?.count,
+			dir,
+		        enclosingExtents(at: j)?.count) {
+		case (let ni?, .in, let nj?) where ni < nj:
+			return j
+		case (let ni?, .out, let nj?) where ni > nj:
+			return j
+		default:
+			return nil
+		}
+	}
+	public func index(before i: Index, climbing dir: Climb) -> Index? {
+		if case .start(_) = i {
+			return nil
+		}
+		let j = index(before: i)
+		switch (enclosingExtents(at: i)?.count,
+			dir,
+		        enclosingExtents(at: j)?.count) {
+		case (let ni?, .in, let nj?) where ni < nj:
+			return j
+		case (let ni?, .out, let nj?) where ni > nj:
+			return j
+		default:
+			return nil
 		}
 	}
 	public func index(before i: Index) -> Index {

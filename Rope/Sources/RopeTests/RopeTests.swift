@@ -91,6 +91,98 @@ class RopeIndexedControllerPaths: XCTestCase {
 			XCTAssert(rope.enclosingExtents(at: i) == expected)
 		}
 	}
+	func testForwardClimbIn() {
+		let down: [Bool] = [
+		    true,	// *(abc(def(ghi)))
+		    false,	// (*abc(def(ghi)))
+		    false,	// (a*bc(def(ghi)))
+		    false,	// (ab*c(def(ghi)))
+		    true,	// (abc*(def(ghi)))
+		    false,	// (abc(*def(ghi)))
+		    false,	// (abc(d*ef(ghi)))
+		    false,	// (abc(de*f(ghi)))
+		    true,	// (abc(def*(ghi)))
+		    false,	// (abc(def(*ghi)))
+		    false,	// (abc(def(g*hi)))
+		    false,	// (abc(def(gh*i)))
+		    false,	// (abc(def(ghi*)))
+		    false,	// (abc(def(ghi)*))
+		    false,	// (abc(def(ghi))*)
+		    false]	// (abc(def(ghi)))*
+		for (i, expected) in zip(rope.indices, down) {
+			let j = rope.index(after: i, climbing: .in)
+			XCTAssert((j != nil) == expected)
+		}
+	}
+	func testBackwardClimbIn() {
+		let down: [Bool] = [
+		    false,	// *(abc(def(ghi)))
+		    false,	// (*abc(def(ghi)))
+		    false,	// (a*bc(def(ghi)))
+		    false,	// (ab*c(def(ghi)))
+		    false,	// (abc*(def(ghi)))
+		    false,	// (abc(*def(ghi)))
+		    false,	// (abc(d*ef(ghi)))
+		    false,	// (abc(de*f(ghi)))
+		    false,	// (abc(def*(ghi)))
+		    false,	// (abc(def(*ghi)))
+		    false,	// (abc(def(g*hi)))
+		    false,	// (abc(def(gh*i)))
+		    false,	// (abc(def(ghi*)))
+		    true,	// (abc(def(ghi)*))
+		    true,	// (abc(def(ghi))*)
+		    true]	// (abc(def(ghi)))*
+		for (i, expected) in zip(rope.indices, down) {
+			let j = rope.index(before: i, climbing: .in)
+			XCTAssert((j != nil) == expected)
+		}
+	}
+	func testForwardClimbOut() {
+		let down: [Bool] = [
+		    false,	// *(abc(def(ghi)))
+		    false,	// (*abc(def(ghi)))
+		    false,	// (a*bc(def(ghi)))
+		    false,	// (ab*c(def(ghi)))
+		    false,	// (abc*(def(ghi)))
+		    false,	// (abc(*def(ghi)))
+		    false,	// (abc(d*ef(ghi)))
+		    false,	// (abc(de*f(ghi)))
+		    false,	// (abc(def*(ghi)))
+		    false,	// (abc(def(*ghi)))
+		    false,	// (abc(def(g*hi)))
+		    false,	// (abc(def(gh*i)))
+		    true,	// (abc(def(ghi*)))
+		    true,	// (abc(def(ghi)*))
+		    true,	// (abc(def(ghi))*)
+		    false]	// (abc(def(ghi)))*
+		for (i, expected) in zip(rope.indices, down) {
+			let j = rope.index(after: i, climbing: .out)
+			XCTAssert((j != nil) == expected)
+		}
+	}
+	func testBackwardClimbOut() {
+		let down: [Bool] = [
+		    false,	// *(abc(def(ghi)))
+		    true,	// (*abc(def(ghi)))
+		    false,	// (a*bc(def(ghi)))
+		    false,	// (ab*c(def(ghi)))
+		    false,	// (abc*(def(ghi)))
+		    true,	// (abc(*def(ghi)))
+		    false,	// (abc(d*ef(ghi)))
+		    false,	// (abc(de*f(ghi)))
+		    false,	// (abc(def*(ghi)))
+		    true,	// (abc(def(*ghi)))
+		    false,	// (abc(def(g*hi)))
+		    false,	// (abc(def(gh*i)))
+		    false,	// (abc(def(ghi*)))
+		    false,	// (abc(def(ghi)*))
+		    false,	// (abc(def(ghi))*)
+		    false]	// (abc(def(ghi)))*
+		for (i, expected) in zip(rope.indices, down) {
+			let j = rope.index(before: i, climbing: .out)
+			XCTAssert((j != nil) == expected)
+		}
+	}
 }
 
 class UTF16IndexedControllerPaths: XCTestCase {
