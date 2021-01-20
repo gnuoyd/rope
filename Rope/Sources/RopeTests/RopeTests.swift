@@ -319,31 +319,10 @@ class ExtentsOpeningClosing : XCTestCase {
 }
 
 class EmptyishRopeIndices : XCTestCase {
-	var _p: RSS? = nil
-	var _one: RSS? = nil
-	var _two: RSS? = nil
-	var one: RSS {
-		get {
-			if let old = _one {
-				return old
-			}
-			let new: RSS = Rope(with: .extent(under: ECSS(), .empty))
-			_one = new
-			return new
-		}
-	}
-	var two: RSS {
-		get {
-			if let old = _two {
-				return old
-			}
-			let new: RSS = Rope(with:
-			    .nodes(.extent(under: ECSS(), .empty),
-			           .extent(under: ECSS(), .empty)))
-			_two = new
-			return new
-		}
-	}
+	let one: RSS = Rope(with: .extent(under: ECSS(), .empty))
+	let two: RSS = Rope(with:
+	    .nodes(.extent(under: ECSS(), .empty),
+		   .extent(under: ECSS(), .empty)))
 	let empty: RSS = Rope()
 	func testStartIndexEmpty() {
 		XCTAssert(empty.startIndex == .end(of: empty))
