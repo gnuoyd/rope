@@ -327,12 +327,21 @@ class EmptyishRopeIndices : XCTestCase {
 	func testStartIndexEmpty() {
 		XCTAssert(empty.startIndex == .end(of: empty))
 	}
+	func testEndIndexEmpty() {
+		XCTAssert(empty.endIndex == .end(of: empty))
+	}
 	func testStartIndexOneEmptyExtent() {
 		XCTAssert(one.startIndex == .start(of: one))
 		XCTAssert(one.startIndex != one.endIndex)
 		XCTAssert(one.index(after: one.startIndex) != one.endIndex)
 		XCTAssert(one.index(after: one.index(after: one.startIndex)) ==
 		    one.endIndex)
+	}
+	func testEndIndexOneEmptyExtent() {
+		XCTAssert(one.endIndex == .end(of: one))
+		XCTAssert(one.index(before: one.endIndex) != one.startIndex)
+		XCTAssert(one.index(before: one.index(before: one.endIndex)) ==
+		    one.startIndex)
 	}
 	func testStartIndexTwoEmptyExtents() {
 		XCTAssert(two.startIndex == .start(of: two))
@@ -344,6 +353,16 @@ class EmptyishRopeIndices : XCTestCase {
 		    two.endIndex)
 		XCTAssert(two.index(after: two.index(after: two.index(after: two.index(after: two.startIndex)))) ==
 		    two.endIndex)
+	}
+	func testEndIndexTwoEmptyExtents() {
+		XCTAssert(two.endIndex == .end(of: two))
+		XCTAssert(two.index(before: two.endIndex) != two.startIndex)
+		XCTAssert(two.index(before: two.index(before: two.endIndex)) !=
+		    two.startIndex)
+		XCTAssert(two.index(before: two.index(before: two.index(before: two.endIndex))) !=
+		    two.startIndex)
+		XCTAssert(two.index(before: two.index(before: two.index(before: two.index(before: two.endIndex)))) ==
+		    two.startIndex)
 	}
 }
 
@@ -380,12 +399,23 @@ class ThreeUnitRangesUsingRopeIndices: XCTestCase {
 			return newr
 		}
 	}
-	func testLookupByRanges() {
+	func testLookupByRangesForward() {
 		var prev = r.startIndex
 		for (idx, expected) in zip(r.indices.dropFirst(3), expectations) {
 			let found = r[prev..<idx]
 			prev = r.index(after: prev)
 			XCTAssert(found ~ expected, "found \(found) expected \(expected)")
+		}
+	}
+	func testLookupByRangesBackward() {
+		var prev = r.endIndex
+		for (idx, expected) in zip(r.indices.reversed().dropFirst(2),
+			                   expectations.reversed()) {
+			Swift.print("checking idx \(idx) prev \(prev), r \(r.node) ")
+			let found = r[idx..<prev]
+			prev = r.index(before: prev)
+			XCTAssert(found ~ expected,
+			          "found \(found) expected \(expected)")
 		}
 	}
 }
@@ -424,12 +454,22 @@ class TwoUnitRangesUsingRopeIndices: XCTestCase {
 			return newr
 		}
 	}
-	func testLookupByRanges() {
+	func testLookupByRangesForward() {
 		var prev = r.startIndex
 		for (idx, expected) in zip(r.indices.dropFirst(2), expectations) {
 			let found = r[prev..<idx]
 			prev = r.index(after: prev)
-			XCTAssert(found ~ expected, "found \(found) expected \(expected)")
+			XCTAssert(found ~ expected,
+			          "found \(found) expected \(expected)")
+		}
+	}
+	func testLookupByRangesBackward() {
+		var prev = r.endIndex
+		for (idx, expected) in zip(r.indices.reversed().dropFirst(1), expectations.reversed()) {
+			let found = r[idx..<prev]
+			prev = r.index(before: prev)
+			XCTAssert(found ~ expected,
+			          "found \(found) expected \(expected)")
 		}
 	}
 }
@@ -468,10 +508,18 @@ class UnitRangesUsingRopeIndices: XCTestCase {
 			return newr
 		}
 	}
-	func testLookupByRanges() {
+	func testLookupByRangesForward() {
 		var prev = r.startIndex
 		for (idx, expected) in zip(r.indices, expectations) {
 			let found = r[prev..<idx]
+			prev = idx
+			XCTAssert(found == expected, "found \(found) expected \(expected)")
+		}
+	}
+	func testLookupByRangesBackward() {
+		var prev = r.endIndex
+		for (idx, expected) in zip(r.indices.reversed(), expectations.reversed()) {
+			let found = r[idx..<prev]
 			prev = idx
 			XCTAssert(found == expected, "found \(found) expected \(expected)")
 		}
@@ -574,7 +622,7 @@ class ExtentElementLookupUsingRopeIndices: XCTestCase {
 			XCTAssert(found == expected)
 		}
 	}
-	func testStepIndices() {
+	func testStepIndicesForward() {
 		var idx = r.startIndex
 		idx = r.index(after: idx)
 		idx = r.index(after: idx)
@@ -584,7 +632,19 @@ class ExtentElementLookupUsingRopeIndices: XCTestCase {
 		idx = r.index(after: idx)
 		idx = r.index(after: idx)
 		idx = r.index(after: idx)
-		print(idx)
+		XCTAssert(idx == r.endIndex)
+	}
+	func testStepIndicesBackward() {
+		var idx = r.endIndex
+		idx = r.index(before: idx)
+		idx = r.index(before: idx)
+		idx = r.index(before: idx)
+		idx = r.index(before: idx)
+		idx = r.index(before: idx)
+		idx = r.index(before: idx)
+		idx = r.index(before: idx)
+		idx = r.index(before: idx)
+		XCTAssert(idx == r.startIndex)
 	}
 	func testEndIndices() {
 		let idx = r.endIndex
@@ -592,28 +652,60 @@ class ExtentElementLookupUsingRopeIndices: XCTestCase {
 	}
 }
 
-class BasicElementLookupUsingRopeIndices: XCTestCase {
+class BasicElementLookupUsingRopeIndex: XCTestCase {
 	let rope1: RSS = Rope(content: "abc")
 	let rope2: RSS = Rope(content: "def")
-	func testStartIndices() {
+	func testStartIndex() {
 		let idx1 = rope1.startIndex
 		let idx2 = rope2.startIndex
 		XCTAssert(rope1[idx1].content == "a")
 		XCTAssert(rope2[idx2].content == "d")
 	}
-	func testSecondIndices() {
+	func testSecondIndex() {
 		let idx1 = rope1.index(after: rope1.startIndex)
 		let idx2 = rope2.index(after: rope2.startIndex)
 		XCTAssert(rope1[idx1].content == "b")
 		XCTAssert(rope2[idx2].content == "e")
 	}
-	func testThirdIndices() {
-		let idx1 = rope1.index(after: rope1.index(after: rope1.startIndex))
-		let idx2 = rope2.index(after: rope2.index(after: rope2.startIndex))
+	func testThirdIndex() {
+		let idx1 = rope1.index(after:
+		           rope1.index(after: rope1.startIndex))
+		let idx2 = rope2.index(after:
+		           rope2.index(after: rope2.startIndex))
 		XCTAssert(rope1[idx1].content == "c")
 		XCTAssert(rope2[idx2].content == "f")
+		XCTAssert(rope1.index(after: idx1) == rope1.endIndex)
+		XCTAssert(rope2.index(after: idx2) == rope2.endIndex)
 	}
-	func testEndIndices() {
+	func testThreeLeftOfEndIndex() {
+		let idx1 = rope1.index(before:
+		           rope1.index(before:
+			   rope1.index(before: rope1.endIndex)))
+		let idx2 = rope2.index(before:
+		           rope2.index(before:
+			   rope2.index(before: rope2.endIndex)))
+		XCTAssert(rope1[idx1].content == "a")
+		XCTAssert(rope2[idx2].content == "d")
+		XCTAssert(idx1 == rope1.startIndex)
+		XCTAssert(idx2 == rope2.startIndex)
+	}
+	func testTwoLeftOfEndIndex() {
+		let idx1 = rope1.index(before:
+		           rope1.index(before: rope1.endIndex))
+		let idx2 = rope2.index(before:
+		           rope2.index(before: rope2.endIndex))
+		XCTAssert(rope1[idx1].content == "b")
+		XCTAssert(rope2[idx2].content == "e")
+	}
+	func testOneLeftOfEndIndex() {
+		let idx1 = rope1.index(before: rope1.endIndex)
+		let idx2 = rope2.index(before: rope2.endIndex)
+		XCTAssert(rope1[idx1].content == "c")
+		XCTAssert(rope2[idx2].content == "f")
+		XCTAssert(rope1.index(after: idx1) == rope1.endIndex)
+		XCTAssert(rope2.index(after: idx2) == rope2.endIndex)
+	}
+	func testEndIndex() {
 		let idx1 = rope1.endIndex
 		let idx2 = rope2.endIndex
 		XCTAssertThrowsError(try rope1.element(at: idx1))

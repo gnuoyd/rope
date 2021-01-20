@@ -106,6 +106,42 @@ public class Rope<C : Content> : Collection {
 			}
 		}
 	}
+	public func index(before i: Index) -> Index {
+		guard i.owner === self else {
+			fatalError("Mismatched owner")
+		}
+		switch i {
+		case .start(_):
+			fatalError("No index before .startIndex")
+		case .end(_):
+			let h = Handle()
+			guard case .step(let n) =
+			    top.inserting(h, after: .leftStep) else {
+				return .start(of: self)
+			}
+			top = n
+			return .interior(of: self, at: generation,
+			                 index: 0, handle: h)
+		case .interior(_, _, let m, let h):
+			let j = Handle()
+			switch top.inserting(j, one: .leftStep, after: h) {
+			case .inchOut:
+				fatalError(
+				    ".interior(\(m), \(h)) already at start?")
+			case .absent:
+				fatalError(
+				    ".interior(\(m), \(h)) is absent")
+			case .stepOut:
+				return .start(of: self)
+			case .step(let node):
+				top = node
+				return .interior(of: self,
+				                 at: generation,
+						 index: m + 1,
+						 handle: j)
+			}
+		}
+	}
 	/* TBD tests */
 	public subscript(_ r: Range<NodeIndex>) -> Content {
 		set(newValue) {
