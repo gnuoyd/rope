@@ -72,12 +72,9 @@ extension RopeIndex {
 			return false
 		case (_, .end(_)):
 			return true
-		case (.interior(_, let g1, _, let h1),
-		      .interior(_, let g2, _, let h2)) where g1 != g2:
+		case (.interior(_, _, _, let h1),
+		      .interior(_, _, _, let h2)):
 			return self.owner.containsIndex(h1, before: h2)
-		case (.interior(_, _, let m, _), .interior(_, _, let n, _))
-		    where m < n:
-			return true
 		default:
 			return false
 		}

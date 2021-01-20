@@ -637,9 +637,9 @@ public extension Node {
 	func containsHandle(_ h1: Handle, before h2: Handle) -> Bool {
 		switch self {
 		case .index(_):
-			fatalError("Cannot order handles on an .index(_)")
+			return false
 		case .cursor(_, _):
-			fatalError("Cannot order handles on a .cursor(_)")
+			return false
 		case .extent(_, let rope):
 			return rope.containsHandle(h1, before: h2)
 		case .concat(let l, _, _, let hids, let r, _):
@@ -651,9 +651,9 @@ public extension Node {
 			    (l.containsHandle(h1) && r.containsHandle(h2)) ||
 			    r.containsHandle(h1, before: h2)
 		case .leaf(_, _):
-			fatalError("Cannot order handles on a .leaf(_, _)")
+			return false
 		case .empty:
-			fatalError("Cannot order handles on an .empty")
+			return false
 		}
 	}
 }
