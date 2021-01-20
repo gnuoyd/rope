@@ -126,7 +126,7 @@ class UTF16IndexedControllerPaths: XCTestCase {
 		_expectations = newe
 		return newe
 	}
-	let indices: [NodeIndex] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map() { i in
+	let indices: [NodeIndex] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map { i in
 	    NodeIndex(utf16Offset: i)
 	}
 	func testControllerPaths() {
@@ -266,7 +266,7 @@ class ExtentsOpeningClosing : XCTestCase {
 				XCTFail("no such index")
 				continue
 			}
-			XCTAssert(found == expected.map() { i in c[i] },
+			XCTAssert(found == expected.map { i in c[i] },
 			          "found \(found) expected \(expected)")
 		}
 	}
@@ -312,7 +312,7 @@ class ExtentsOpeningClosing : XCTestCase {
 				XCTFail("no such index")
 				continue
 			}
-			XCTAssert(found == expected.map() { i in c[i] },
+			XCTAssert(found == expected.map { i in c[i] },
 			          "found \(found) expected \(expected)")
 		}
 	}
