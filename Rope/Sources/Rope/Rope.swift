@@ -110,38 +110,6 @@ public class Rope<C : Content> : Collection {
 			}
 		}
 	}
-	public func index(after i: Index, climbing dir: Climb) -> Index? {
-		if case .end(_) = i {
-			return nil
-		}
-		let j = index(after: i)
-		switch (enclosingExtents(at: i)?.count,
-			dir,
-		        enclosingExtents(at: j)?.count) {
-		case (let ni?, .in, let nj?) where ni < nj:
-			return j
-		case (let ni?, .out, let nj?) where ni > nj:
-			return j
-		default:
-			return nil
-		}
-	}
-	public func index(before i: Index, climbing dir: Climb) -> Index? {
-		if case .start(_) = i {
-			return nil
-		}
-		let j = index(before: i)
-		switch (enclosingExtents(at: i)?.count,
-			dir,
-		        enclosingExtents(at: j)?.count) {
-		case (let ni?, .in, let nj?) where ni < nj:
-			return j
-		case (let ni?, .out, let nj?) where ni > nj:
-			return j
-		default:
-			return nil
-		}
-	}
 	public func index(before i: Index) -> Index {
 		guard i.owner === self else {
 			fatalError("Mismatched owner")
@@ -303,6 +271,41 @@ extension Rope {
 	public func extentsOpening(at i: RopeIndex<C>)
 	    -> [ExtentController<C>]? {
 		return top.extentsOpening(at: i)
+	}
+}
+
+extension Rope {
+	public func index(after i: Index, climbing dir: Climb) -> Index? {
+		if case .end(_) = i {
+			return nil
+		}
+		let j = index(after: i)
+		switch (enclosingExtents(at: i)?.count,
+			dir,
+		        enclosingExtents(at: j)?.count) {
+		case (let ni?, .in, let nj?) where ni < nj:
+			return j
+		case (let ni?, .out, let nj?) where ni > nj:
+			return j
+		default:
+			return nil
+		}
+	}
+	public func index(before i: Index, climbing dir: Climb) -> Index? {
+		if case .start(_) = i {
+			return nil
+		}
+		let j = index(before: i)
+		switch (enclosingExtents(at: i)?.count,
+			dir,
+		        enclosingExtents(at: j)?.count) {
+		case (let ni?, .in, let nj?) where ni < nj:
+			return j
+		case (let ni?, .out, let nj?) where ni > nj:
+			return j
+		default:
+			return nil
+		}
 	}
 }
 
