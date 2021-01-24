@@ -580,10 +580,10 @@ public extension Node {
 			return Node(controller: ctlr,
 			            node: r.inserting(elt, at: target))
 		case .concat(let l, _, _, _, let r, _):
-			if l.containsHandle(target) {
+			if l.containsIndex(target) {
 				return Node(left: l.inserting(elt, at: target),
 				            right: r)
-			} else if r.containsHandle(target) {
+			} else if r.containsIndex(target) {
 				return Node(left: l,
 				            right: r.inserting(elt, at: target))
 			} else {
@@ -615,7 +615,7 @@ public extension Node {
 			return []
 		}
 	}
-	func containsHandle(_ target: Handle) -> Bool {
+	func containsIndex(_ target: Handle) -> Bool {
 		switch self {
 		case .index(let w):
 			guard let handle = w.get() else {
@@ -625,7 +625,7 @@ public extension Node {
 		case .cursor(target, _):
 			return true
 		case .extent(_, let rope):
-			return rope.containsHandle(target)
+			return rope.containsIndex(target)
 		case .concat(_, _, _, let hids, _, _):
 			return hids.contains(target.id)
 		case .leaf(_, _), .empty:
@@ -634,22 +634,22 @@ public extension Node {
 			return false
 		}
 	}
-	func containsHandle(_ h1: Handle, before h2: Handle) -> Bool {
+	func containsIndex(_ h1: Handle, before h2: Handle) -> Bool {
 		switch self {
 		case .index(_):
 			return false
 		case .cursor(_, _):
 			return false
 		case .extent(_, let rope):
-			return rope.containsHandle(h1, before: h2)
+			return rope.containsIndex(h1, before: h2)
 		case .concat(let l, _, _, let hids, let r, _):
 			guard hids.contains(h1.id) && hids.contains(h2.id)
 			    else {
 				return false
 			}
-			return l.containsHandle(h1, before: h2) ||
-			    (l.containsHandle(h1) && r.containsHandle(h2)) ||
-			    r.containsHandle(h1, before: h2)
+			return l.containsIndex(h1, before: h2) ||
+			    (l.containsIndex(h1) && r.containsIndex(h2)) ||
+			    r.containsIndex(h1, before: h2)
 		case .leaf(_, _):
 			return false
 		case .empty:
@@ -884,7 +884,7 @@ public extension Node {
 			return controllers
 		case (.interior(_, _, _, let h),
 		      .concat(let l, _, _, _, let r, _))
-		     where self.containsHandle(h):
+		     where self.containsIndex(h):
 		     	return l.enclosingExtents(at: i, in: controllers) ??
 		     	       r.enclosingExtents(at: i, in: controllers)
 		case (.interior(_, _, _, _), .extent(let ctlr, let content)):
@@ -986,7 +986,7 @@ public extension Node {
 			return rightSibling
 		case (.concat(let l, _, _, _, let r, _),
 		      .interior(_, _, _, let h))
-		    where self.containsHandle(h):
+		    where self.containsIndex(h):
 			guard let match = l.subrope(from: from,
 			    rightSibling: r.appending(rightSibling),
 			    depth: depth + 1) else {
@@ -1186,7 +1186,7 @@ public extension Node {
 			return rightSibling
 		case (.concat(let l, _, _, _, let r, _),
 		      .interior(_, _, _, let h))
-		    where self.containsHandle(h):
+		    where self.containsIndex(h):
 			guard let match = l.subrope(from: from,
 			    rightSibling: r.appending(rightSibling),
 			    depth: depth + 1) else {
@@ -1225,7 +1225,7 @@ public extension Node {
 //			Swift.print("index match")
 			return leftSibling
 		case (.concat(let l, _, _, _, let r, _),
-		      .interior(_, _, _, let h)) where self.containsHandle(h):
+		      .interior(_, _, _, let h)) where self.containsIndex(h):
 //			Swift.print("concat match")
 			guard let match = r.subrope(
 			    leftSibling: leftSibling.appending(l),
