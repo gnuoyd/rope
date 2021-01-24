@@ -829,13 +829,17 @@ class CompareDisparateRopeIndices: XCTestCase {
 
 class FibonacciTests : XCTestCase {
 	func testFibonacciByIndex() {
-		XCTAssert([0, 1, 2, 3, 4, 5].map({ i in fibonacci(index: i)}) == [0, 1, 1, 2, 3, 5])
+		XCTAssert([0, 1, 2, 3, 4, 5].map {
+			i in fibonacci(index: i)
+		} == [0, 1, 1, 2, 3, 5])
 	}
 
 	func testFibonacciGenerator() {
 		// Produce the Fibonacci sequence, 0th through 5th element.
-		let arr = Fibonacci(through: 5).reduce([], { (arr: [UInt], elt: UInt) -> [UInt] in arr + [elt]})
-
+		let arr = Fibonacci(through: 5).reduce([]) {
+			(arr: [UInt], elt: UInt) -> [UInt] in
+				arr + [elt]
+		}
 		XCTAssert(arr == [0, 1, 1, 2, 3, 5])
 	}
 }
