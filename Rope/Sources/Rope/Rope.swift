@@ -275,7 +275,8 @@ extension Rope {
 }
 
 extension Rope {
-	public func index(after i: Index, climbing dir: Climb) -> Index? {
+	public func index(after i: Index, climbing dir: Climb,
+	    bottom: inout ExtentController<C>?) -> Index? {
 		if case .end(_) = i {
 			return nil
 		}
@@ -291,21 +292,134 @@ extension Rope {
 			return nil
 		}
 	}
-	public func index(before i: Index, climbing dir: Climb) -> Index? {
+	public func index(before i: Index, climbing dir: Climb,
+	    bottom: inout ExtentController<C>?) -> Index? {
 		if case .start(_) = i {
 			return nil
 		}
 		let j = index(before: i)
-		switch (enclosingExtents(at: i)?.count,
+		switch (enclosingExtents(at: i),
 			dir,
-		        enclosingExtents(at: j)?.count) {
-		case (let ni?, .in, let nj?) where ni < nj:
+		        enclosingExtents(at: j)) {
+		case (let ei?, .in, let ej?) where ei.count < ej.count:
+			bottom = ej.last
 			return j
-		case (let ni?, .out, let nj?) where ni > nj:
+		case (let ei?, .out, let ej?) where ei.count > ej.count:
+			bottom = ej.last
 			return j
 		default:
 			return nil
 		}
+	}
+	public func index(after i: Index, climbing dir: Climb) -> Index? {
+		var discard: ExtentController<C>?
+		return index(after: i, climbing: dir, bottom: &discard)
+	}
+	public func index(before i: Index, climbing dir: Climb) -> Index? {
+		var discard: ExtentController<C>?
+		return index(before: i, climbing: dir, bottom: &discard)
+	}
+}
+
+public func commonPrefix<S>(_ s1: S, _ s2: S)
+    -> [S.Element] where S : Sequence, S.Element : Equatable {
+	return zip(s1, s2).prefix { (e1, e2) in e1 == e2 }.map { (e, _) in e }
+}
+
+extension Rope {
+	public func tightened(selection: Range<Index>)
+	    -> (range: Range<Index>,
+	        leftControllers: [ExtentController<C>],
+	        rightControllers: [ExtentController<C>])? {
+		var (l, r) = (selection.lowerBound, selection.upperBound)
+		var lo, ro: [ExtentController<C>]
+		/* TBD move enclosingExtents calls out of loop, use
+		 * index(after/before: ..., climbing: .in, bottom: ...) to
+		 * get the next deeper extent at each step
+		 */
+		while true {
+			switch (enclosingExtents(at: l),
+				enclosingExtents(at: r)) {
+			case (let _lo?, let _ro?):
+				lo = _lo
+				ro = _ro
+			default:
+				return nil
+			}
+			if l == r {
+				assert(lo == ro)
+				return (l..<r, lo, lo)
+			}
+			if lo.count < ro.count,
+			   let next = index(after: l, climbing: .in) {
+				l = next
+			} else if lo.count > ro.count,
+			          let next = index(before: r, climbing: .in) {
+				r = next
+			} else if lo.count == ro.count,
+			          let lnext = index(after: l, climbing: .in),
+			    let rnext = index(before: r, climbing: .in) {
+				l = lnext
+				r = rnext
+			} else {
+				return (l..<r, lo, ro)
+			}
+		}
+	}
+	public func rightLoosened(selection s: Range<Index>,
+	    limit: ExtentController<C>?) -> Range<Index>? {
+		let l = s.lowerBound
+		var r = s.upperBound
+		var bottom: ExtentController<C>?
+		guard let extents = enclosingExtents(at: r) else {
+			return nil
+		}
+		if extents.last == limit {
+			return l..<r
+		}
+		while let next = index(after: r, climbing: .out,
+		    bottom: &bottom) {
+			r = next
+			if bottom == limit {
+				break
+			}
+		}
+		return l..<r
+	}
+	public func leftLoosened(selection s: Range<Index>,
+	    limit: ExtentController<C>?) -> Range<Index>? {
+		var l = s.lowerBound
+		let r = s.upperBound
+		var bottom: ExtentController<C>?
+		guard let extents = enclosingExtents(at: l) else {
+			return nil
+		}
+		if extents.last == limit {
+			return l..<r
+		}
+		while let next = index(before: l, climbing: .out,
+		    bottom: &bottom) {
+			l = next
+			if bottom == limit {
+				break
+			}
+		}
+		return l..<r
+	}
+	public func refine(selection s: Range<Index>)
+	    -> (range: Range<Index>, controller: ExtentController<C>?)? {
+		guard let (tight, lo, ro) = tightened(selection: s) else {
+			return nil
+		}
+		/* TBD loosen `tight` inside the innermost controller.
+		 * Return loosened range.
+		 */
+		let common = commonPrefix(lo, ro)
+		let looser = leftLoosened(selection: tight,
+		    limit: common.last)!
+		let loosest = rightLoosened(selection: looser,
+		    limit: common.last)!
+		return (range: loosest, controller: common.last)
 	}
 }
 

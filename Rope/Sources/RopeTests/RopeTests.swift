@@ -1151,6 +1151,34 @@ class AppendInsertRemoveReplace : XCTestCase {
 	}
 }
 
+class CommonPrefix : XCTestCase {
+	let l: [Int] = [1, 2, 3, 4, 5]
+	let r: [Int] = [1, 2, 3, 4, 5]
+	let p: [Int] = [3, 4, 5]
+	let q: [Int] = [1, 2, 3, 4, 5]
+	let a: [Int] = [1, 2, 3]
+	let b: [Int] = [1, 2, 3, 4, 5]
+	let empty: [Int] = []
+	func testWholeMatch() {
+		XCTAssert(commonPrefix(l, r) == l)
+	}
+	func testNoMatch() {
+		XCTAssert(commonPrefix(p, q) == empty)
+	}
+	func testPartialMatch() {
+		XCTAssert(commonPrefix(a, b) == [1, 2, 3])
+	}
+	func testEmpty() {
+		XCTAssert(commonPrefix(empty, empty) == empty)
+	}
+	func testEmpty2() {
+		XCTAssert(commonPrefix(empty, r) == empty)
+	}
+	func testEmpty3() {
+		XCTAssert(commonPrefix(l, empty) == empty)
+	}
+}
+
 class HandleSets : XCTestCase {
 	func testInit() {
 		let set = HandleSet()
