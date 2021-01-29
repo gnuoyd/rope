@@ -423,6 +423,22 @@ extension Rope {
 	}
 }
 
+extension Rope {
+	public func index(_ i: Index, offsetBy _times: Int) -> Index {
+		var times = _times
+		var result: Index = i
+		while times < 0 {
+			result = index(before: result)
+			times = times + 1
+		}
+		while times > 0 {
+			result = index(after: result)
+			times = times - 1
+		}
+		return result
+	}
+}
+
 /*
 extension Rope : ExpressibleByStringLiteral,
     ExpressibleByExtendedGraphemeClusterLiteral where
