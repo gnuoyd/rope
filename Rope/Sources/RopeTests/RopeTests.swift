@@ -38,7 +38,7 @@ class IndexOrder: XCTestCase {
 	}
 }
 
-class RopeIndexedControllerPaths: XCTestCase {
+class NestedExtentBase : XCTestCase {
 	let c = [ECSS(), ECSS(), ECSS()]
 	var _rope: RSS? = nil
 	var rope: RSS {
@@ -57,6 +57,9 @@ class RopeIndexedControllerPaths: XCTestCase {
 		_rope = r
 		return r
 	}
+}
+
+class RopeIndexedControllerPaths: NestedExtentBase {
 	var _expectations: [[Handle]]? = nil
 	var expectations: [[Handle]] {
 		if let olde = _expectations {
@@ -1356,5 +1359,192 @@ class HandleSets : XCTestCase {
 		XCTAssert(set.cursorCount == 2)
 		XCTAssert(set.extentCount == 0)
 		XCTAssert(set.indexCount == 0)
+	}
+}
+
+class TightenSelection: NestedExtentBase {
+	public func testBothTighten1() {
+		// *(abc(def(ghi)))*
+		let start = rope.startIndex
+		let end = rope.endIndex
+		let outer = start..<end
+		let result = rope.tightened(selection: outer)
+		guard let (tightened, lctlrs, rctlrs) = result else {
+			XCTAssert(false,
+			    "expected non-nil .tightened(selection:)")
+			return
+		}
+		let l = rope.index(after: rope.startIndex)
+		let r = rope.index(before: rope.endIndex)
+		// (*abc(def(ghi))*)
+		XCTAssert(tightened == l..<r)
+		XCTAssert(lctlrs[...] == c[..<1])
+		XCTAssert(rctlrs[...] == c[..<1])
+	}
+	public func testBothTighten2() {
+		// (abc*(def(ghi))*)
+		let start = rope.index(rope.startIndex, offsetBy: 4)
+		let end = rope.index(rope.endIndex, offsetBy: -1)
+		let outer = start..<end
+		let result = rope.tightened(selection: outer)
+		guard let (tightened, lctlrs, rctlrs) = result else {
+			XCTAssert(false,
+			    "expected non-nil .tightened(selection:)")
+			return
+		}
+		let l = rope.index(rope.startIndex, offsetBy: 5)
+		let r = rope.index(rope.endIndex, offsetBy: -2)
+		// (abc(*def(ghi)*))
+		XCTAssert(tightened == l..<r)
+		XCTAssert(lctlrs[...] == c[..<2])
+		XCTAssert(rctlrs[...] == c[..<2])
+	}
+	public func testBothTighten3() {
+		// (abc(def*(ghi)*))
+		let start = rope.index(rope.startIndex, offsetBy: 8)
+		let end = rope.index(rope.endIndex, offsetBy: -2)
+		let outer = start..<end
+		let result = rope.tightened(selection: outer)
+		guard let (tightened, lctlrs, rctlrs) = result else {
+			XCTAssert(false,
+			    "expected non-nil .tightened(selection:)")
+			return
+		}
+		let l = rope.index(rope.startIndex, offsetBy: 9)
+		let r = rope.index(rope.endIndex, offsetBy: -3)
+		// (abc(def(*ghi*)))
+		XCTAssert(tightened == l..<r)
+		XCTAssert(lctlrs == c)
+		XCTAssert(rctlrs == c)
+	}
+	/* All cursor positions:
+	 *   *(abc(def(ghi)))
+	 *   (*abc(def(ghi)))
+	 *   (a*bc(def(ghi)))
+	 *   (ab*c(def(ghi)))
+	 *   (abc*(def(ghi)))
+	 *   (abc(*def(ghi)))
+	 *   (abc(d*ef(ghi)))
+	 *   (abc(de*f(ghi)))
+	 *   (abc(def*(ghi)))
+	 *   (abc(def(*ghi)))
+	 *   (abc(def(g*hi)))
+	 *   (abc(def(gh*i)))
+	 *   (abc(def(ghi*)))
+	 *   (abc(def(ghi)*))
+	 *   (abc(def(ghi))*)
+	 *   (abc(def(ghi)))*
+	 */
+	public func testLeftTighten1() {
+		// *(abc(def(ghi))*)
+		let start = rope.startIndex
+		let end = rope.index(rope.endIndex, offsetBy: -1)
+		let outer = start..<end
+		let result = rope.tightened(selection: outer)
+		guard let (tightened, lctlrs, rctlrs) = result else {
+			XCTAssert(false,
+			    "expected non-nil .tightened(selection:)")
+			return
+		}
+		let l = rope.index(rope.startIndex, offsetBy: 1)
+		let r = rope.index(rope.endIndex, offsetBy: -1)
+		// (*abc(def(ghi))*)
+		XCTAssert(tightened == l..<r)
+		XCTAssert(lctlrs[...] == c[..<1])
+		XCTAssert(rctlrs[...] == c[..<1])
+	}
+	public func testRightTighten1() {
+		// (*abc(def(ghi)))*
+		let start = rope.index(rope.startIndex, offsetBy: 1)
+		let end = rope.endIndex
+		let outer = start..<end
+		let result = rope.tightened(selection: outer)
+		guard let (tightened, lctlrs, rctlrs) = result else {
+			XCTAssert(false,
+			    "expected non-nil .tightened(selection:)")
+			return
+		}
+		let l = start
+		let r = rope.index(rope.endIndex, offsetBy: -1)
+		// (*abc(def(ghi))*)
+		XCTAssert(tightened == l..<r)
+		XCTAssert(lctlrs[...] == c[..<1])
+		XCTAssert(rctlrs[...] == c[..<1])
+	}
+	public func testUntightenable1() {
+		// (*abc(def(ghi))*)
+		let start = rope.index(rope.startIndex, offsetBy: 1)
+		let end = rope.index(rope.endIndex, offsetBy: -1)
+		let outer = start..<end
+		let result = rope.tightened(selection: outer)
+		guard let (tightened, lctlrs, rctlrs) = result else {
+			XCTAssert(false,
+			    "expected non-nil .tightened(selection:)")
+			return
+		}
+		// (*abc(def(ghi))*)
+		XCTAssert(tightened == outer)
+		XCTAssert(lctlrs[...] == c[..<1])
+		XCTAssert(rctlrs[...] == c[..<1])
+	}
+}
+
+// TBD share `rope` with RopeIndexedControllerPaths
+class CompareDisparateIndicesComplicatedRopes: NestedExtentBase {
+	/* All cursor positions:
+	 *   *(abc(def(ghi)))
+	 *   (*abc(def(ghi)))
+	 *   (a*bc(def(ghi)))
+	 *   (ab*c(def(ghi)))
+	 *   (abc*(def(ghi)))
+	 *   (abc(*def(ghi)))
+	 *   (abc(d*ef(ghi)))
+	 *   (abc(de*f(ghi)))
+	 *   (abc(def*(ghi)))
+	 *   (abc(def(*ghi)))
+	 *   (abc(def(g*hi)))
+	 *   (abc(def(gh*i)))
+	 *   (abc(def(ghi*)))
+	 *   (abc(def(ghi)*))
+	 *   (abc(def(ghi))*)
+	 *   (abc(def(ghi)))*
+	 */
+	func testEquals() {
+		XCTAssert(rope.index(before: rope.endIndex) ==
+		    rope.index(rope.endIndex, offsetBy: -1))
+		XCTAssert(rope.index(before: rope.index(before: rope.endIndex)) ==
+		    rope.index(rope.endIndex, offsetBy: -2))
+		XCTAssert(rope.index(before: rope.endIndex) ==
+		    rope.index(rope.startIndex, offsetBy: 14))
+		XCTAssert(rope.index(after: rope.startIndex) ==
+		    rope.index(rope.endIndex, offsetBy: -14))
+		let n = rope.indices.count + 1
+		/* Test 3 times.  Each test leaves stale indices behind
+		 * that should confound defective index comparison.
+		 */
+		for _ in 0..<3 {
+			for step in 0..<n {
+				let i1 = rope.index(rope.startIndex,
+				                    offsetBy: step)
+				let i2 = rope.index(rope.endIndex,
+				    offsetBy: step - (n - 1))
+				XCTAssert(i1 == i2)
+			}
+		}
+	}
+	func testLessThanGreaterThan() {
+		/* Test 3 times.  Each test leaves stale indices behind
+		 * that should confound defective index comparison.
+		 */
+		for _ in 0..<3 {
+			let numberedIndices =
+			    (rope.indices + [rope.endIndex]).enumerated()
+			for ((n1, idx1), (n2, idx2)) in
+			    numberedIndices ⨯ numberedIndices {
+				XCTAssert((n1 == n2) && (idx1 == idx2) ||
+					  (n1 < n2) && (idx1 < idx2) ||
+					  (n1 > n2) && (idx1 > idx2))
+			}
+		}
 	}
 }
