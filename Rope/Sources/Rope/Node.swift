@@ -580,10 +580,10 @@ public extension Node {
 			return Node(controller: ctlr,
 			            node: r.inserting(elt, at: target))
 		case .concat(let l, _, _, _, let r, _):
-			if l.containsIndex(target) {
+			if l.contains(target) {
 				return Node(left: l.inserting(elt, at: target),
 				            right: r)
-			} else if r.containsIndex(target) {
+			} else if r.contains(target) {
 				return Node(left: l,
 				            right: r.inserting(elt, at: target))
 			} else {
@@ -615,7 +615,7 @@ public extension Node {
 			return []
 		}
 	}
-	func containsIndex(_ target: Handle) -> Bool {
+	func contains(_ target: Handle) -> Bool {
 		switch self {
 		case .index(let w):
 			guard let handle = w.get() else {
@@ -625,7 +625,7 @@ public extension Node {
 		case .cursor(target, _):
 			return true
 		case .extent(_, let rope):
-			return rope.containsIndex(target)
+			return rope.contains(target)
 		case .concat(_, _, _, let hids, _, _):
 			return hids.contains(target.id)
 		case .leaf(_, _), .empty:
@@ -634,26 +634,84 @@ public extension Node {
 			return false
 		}
 	}
-	func containsIndex(_ h1: Handle, before h2: Handle) -> Bool {
+	func indices(follow target: Handle) -> Bool? {
 		switch self {
-		case .index(_):
-			return false
-		case .cursor(_, _):
+		case .index(let w):
+			if w.get() != target {
+				return nil
+			}
 			return false
 		case .extent(_, let rope):
-			return rope.containsIndex(h1, before: h2)
+			return rope.contains(target) ? true : nil
+		case .concat(let l, let midx, _, _, let r, let eidx):
+			switch l.indices(follow: target) {
+			case nil:
+				return r.indices(follow: target)
+			case true?:
+				return true
+			case false?:
+				return r.hids.extentCount > 0 || midx != eidx
+			}
+		case .cursor(_, _), .leaf(_, _), .empty:
+			return nil
+		}
+	}
+	func indices(precede target: Handle) -> Bool? {
+		switch self {
+		case .index(let w):
+			if w.get() != target {
+				return nil
+			}
+			return false
+		case .extent(_, let rope):
+			return rope.contains(target) ? true : nil
+		case .concat(let l, let midx, _, _, let r, _):
+			switch r.indices(precede: target) {
+			case nil:
+				return l.indices(precede: target)
+			case true?:
+				return true
+			case false?:
+				return l.hids.extentCount > 0 || .start != midx
+			}
+		case .cursor(_, _), .leaf(_, _), .empty:
+			return nil
+		}
+	}
+	func index(_ h1: Handle, precedes h2: Handle) -> Bool? {
+		switch self {
+		case .index(_):
+			return nil
+		case .cursor(_, _):
+			return nil
+		case .extent(_, let rope):
+			return rope.index(h1, precedes: h2)
 		case .concat(let l, _, _, let hids, let r, _):
+			/* I'm not sure if short-circuiting here actually
+			 * saves us much work.  Benchmark and see?
+			 */
 			guard hids.contains(h1.id) && hids.contains(h2.id)
 			    else {
-				return false
+				return nil
 			}
-			return l.containsIndex(h1, before: h2) ||
-			    (l.containsIndex(h1) && r.containsIndex(h2)) ||
-			    r.containsIndex(h1, before: h2)
+			if let ordered = l.index(h1, precedes: h2) {
+				return ordered
+			}
+			if let ordered = r.index(h1, precedes: h2) {
+				return ordered
+			}
+			guard let follow = l.indices(follow: h1),
+			      let precede = r.indices(precede: h2) else {
+				if l.contains(h2) && r.contains(h1) {
+					return false
+				}
+				return nil
+			}
+			return follow || precede
 		case .leaf(_, _):
-			return false
+			return nil
 		case .empty:
-			return false
+			return nil
 		}
 	}
 }
@@ -884,7 +942,7 @@ public extension Node {
 			return controllers
 		case (.interior(_, _, _, let h),
 		      .concat(let l, _, _, _, let r, _))
-		     where self.containsIndex(h):
+		     where self.contains(h):
 		     	return l.enclosingExtents(at: i, in: controllers) ??
 		     	       r.enclosingExtents(at: i, in: controllers)
 		case (.interior(_, _, _, _), .extent(let ctlr, let content)):
@@ -986,7 +1044,7 @@ public extension Node {
 			return rightSibling
 		case (.concat(let l, _, _, _, let r, _),
 		      .interior(_, _, _, let h))
-		    where self.containsIndex(h):
+		    where self.contains(h):
 			guard let match = l.subrope(from: from,
 			    rightSibling: r.appending(rightSibling),
 			    depth: depth + 1) else {
@@ -1186,7 +1244,7 @@ public extension Node {
 			return rightSibling
 		case (.concat(let l, _, _, _, let r, _),
 		      .interior(_, _, _, let h))
-		    where self.containsIndex(h):
+		    where self.contains(h):
 			guard let match = l.subrope(from: from,
 			    rightSibling: r.appending(rightSibling),
 			    depth: depth + 1) else {
@@ -1225,7 +1283,7 @@ public extension Node {
 //			Swift.print("index match")
 			return leftSibling
 		case (.concat(let l, _, _, _, let r, _),
-		      .interior(_, _, _, let h)) where self.containsIndex(h):
+		      .interior(_, _, _, let h)) where self.contains(h):
 //			Swift.print("concat match")
 			guard let match = r.subrope(
 			    leftSibling: leftSibling.appending(l),

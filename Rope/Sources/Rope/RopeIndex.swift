@@ -17,6 +17,7 @@ extension RopeIndex {
 
 enum RopeIndexComparisonError : Error {
 case MismatchedOwners
+case IndexNotFound
 }
 
 extension RopeIndex {
@@ -55,6 +56,13 @@ extension RopeIndex {
 		case (.interior(_, _, _, let h), .interior(_, _, _, let j))
 		    where h == j:
 			return true
+		case (.interior(_, _, _, let h1), .interior(_, _, _, let h2)):
+			guard let precedes = self.owner.index(h1, precedes: h2),
+			      let follows = self.owner.index(h2, precedes: h1)
+			      else {
+				throw RopeIndexComparisonError.IndexNotFound
+			}
+			return !precedes && !follows
 		default:
 			return false
 		}
@@ -74,7 +82,11 @@ extension RopeIndex {
 			return true
 		case (.interior(_, _, _, let h1),
 		      .interior(_, _, _, let h2)):
-			return self.owner.containsIndex(h1, before: h2)
+			guard let precedes = self.owner.index(h1, precedes: h2)
+			    else {
+				throw RopeIndexComparisonError.IndexNotFound
+			}
+			return precedes
 		default:
 			return false
 		}

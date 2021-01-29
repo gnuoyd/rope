@@ -67,8 +67,8 @@ public class Rope<C : Content> : Collection {
 			top = newValue
 		}
 	}
-	public func containsIndex(_ h1: Handle, before h2: Handle) -> Bool {
-		return top.containsIndex(h1, before: h2)
+	public func index(_ h1: Handle, precedes h2: Handle) -> Bool? {
+		return top.index(h1, precedes: h2)
 	}
 	public init<T>(content t: T) where C : Initializable,
 	    C.Initializer == T, T : Collection {
