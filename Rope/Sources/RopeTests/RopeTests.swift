@@ -59,6 +59,178 @@ class NestedExtentBase : XCTestCase {
 	}
 }
 
+class DirectSelection : XCTestCase {
+	let c = [ECSS(), ECSS(), ECSS(), ECSS()]
+	var _abc: RSS? = nil
+	var _abcdef: RSS? = nil
+	var _pqrs: RSS? = nil
+	var abc: RSS {
+		if let r = _abc {
+			return r
+		}
+		let r: RSS = Rope(with: .nodes(.extent(under: c[0], .text("a")),
+				     .text("b"),
+				     .extent(under: c[1], .text("c"))))
+		_abc = r
+		return r
+	}
+	var abcdef: RSS {
+		if let r = _abcdef {
+			return r
+		}
+		// (()(a)b(cd)ef)
+		let r: RSS = Rope(with:
+		    .extent(under: c[0],
+		        .extent(under: c[1], .empty),
+		        .extent(under: c[2], .text("a")),
+			.text("b"),
+		        .extent(under: c[3], .text("cd")),
+			.text("ef")))
+		_abcdef = r
+		return r
+	}
+	var pqrs: RSS {
+		if let r = _pqrs {
+			return r
+		}
+		let r: RSS = Rope(with: .nodes(.extent(under: c[0], .text("p"),
+		    .extent(under: c[1], .text("q")), .text("r")),
+				     .extent(under: c[2], .text("s"))))
+		_pqrs = r
+		return r
+	}
+	func testDirectAbc1() {
+		let start = abc.index(after: abc.startIndex)
+		let end = abc.index(before: abc.endIndex)
+		// (*a)b(c*)
+		guard let (range, ctlr) = abc.directed(selection: start..<end)
+		    else {
+			XCTAssert(false, "\(start..<end) not found")
+			return
+		}
+		// *(a)b(c)*
+		XCTAssert(range == abc.startIndex..<abc.endIndex)
+		XCTAssert(ctlr == nil)
+	}
+	func testTightenPqrs1() {
+		let start = pqrs.index(pqrs.startIndex, offsetBy: 2)
+		let end = pqrs.index(pqrs.endIndex, offsetBy: -3)
+		// (p*(a)b)*(c)
+		guard let (range, lctlrs, rctlrs) =
+		    pqrs.tightened(selection: start..<end) else {
+			XCTAssert(false, "\(start..<end) not found")
+			return
+		}
+		// (p*(a)b*)(c)
+		let l = start
+		let r = pqrs.index(pqrs.endIndex, offsetBy: -4)
+		XCTAssert(range == l..<r)
+		XCTAssert(lctlrs[...] == c[..<1])
+		XCTAssert(rctlrs[...] == c[..<1])
+	}
+	func testDirectPqrs1() {
+		let start = pqrs.index(pqrs.startIndex, offsetBy: 2)
+		let end = pqrs.index(pqrs.endIndex, offsetBy: -3)
+		// (p*(a)b)*(c)
+		guard let (range, ctlr) = pqrs.directed(selection: start..<end)
+		    else {
+			XCTAssert(false, "\(start..<end) not found")
+			return
+		}
+		// (p*(a)b*)(c)
+		let l = start
+		let r = pqrs.index(pqrs.endIndex, offsetBy: -4)
+		XCTAssert(range == l..<r)
+		XCTAssert(ctlr == c[0])
+	}
+	func testDirectAbcdef1() {
+		let start = abcdef.index(abcdef.startIndex, offsetBy: 3)
+		let end = abcdef.index(abcdef.endIndex, offsetBy: -5)
+		// (()*(a)b(c*d)ef)
+		guard let (range, ctlr) =
+		    abcdef.directed(selection: start..<end) else {
+			XCTAssert(false, "\(start..<end) not found")
+			return
+		}
+		// (()*(a)b(c*d)ef)
+		XCTAssert(range == start..<end)
+		XCTAssert(ctlr == c[0])
+	}
+	func testDirectAbcdef2() {
+		let start = abcdef.index(abcdef.startIndex, offsetBy: 4)
+		let end = abcdef.index(abcdef.endIndex, offsetBy: -5)
+		// (()(*a)b(c*d)ef)
+		guard let (range, ctlr) =
+		    abcdef.directed(selection: start..<end) else {
+			XCTAssert(false, "\(start..<end) not found")
+			return
+		}
+		// (()*(a)b(c*d)ef)
+		let l = abcdef.index(abcdef.startIndex, offsetBy: 3)
+		let r = end
+		XCTAssert(range == l..<r)
+		XCTAssert(ctlr == c[0])
+	}
+	func testDirectAbcdef3() {
+		let start = abcdef.index(abcdef.startIndex, offsetBy: 5)
+		let end = abcdef.index(abcdef.endIndex, offsetBy: -5)
+		// (()(a*)b(c*d)ef)
+		guard let (range, ctlr) =
+		    abcdef.directed(selection: start..<end) else {
+			XCTAssert(false, "\(start..<end) not found")
+			return
+		}
+		// (()(a*)b(c*d)ef)
+		let l = start
+		let r = end
+		XCTAssert(range == l..<r)
+		XCTAssert(ctlr == c[0])
+	}
+}
+
+class IndexOffsetBy : XCTestCase {
+	let c = [ECSS(), ECSS(), ECSS(), ECSS()]
+	var _abcdef: RSS? = nil
+	var abcdef: RSS {
+		if let r = _abcdef {
+			return r
+		}
+		// (()(a)b(cd)ef)
+		let r: RSS = Rope(with:
+		    .extent(under: c[0],
+		        .extent(under: c[1], .empty),
+		        .extent(under: c[2], .text("a")),
+			.text("b"),
+		        .extent(under: c[3], .text("cd")),
+			.text("ef")))
+		_abcdef = r
+		return r
+	}
+	func testStart() {
+		XCTAssert(abcdef.index(abcdef.startIndex, offsetBy: 0) ==
+		          abcdef.startIndex)
+	}
+	func testEnd() {
+		XCTAssert(abcdef.index(abcdef.endIndex, offsetBy: 0) ==
+		          abcdef.endIndex)
+	}
+	func testStartToEnd() {
+		XCTAssert(abcdef.index(abcdef.startIndex, offsetBy: 14) ==
+		          abcdef.endIndex)
+	}
+	func testEndToStart() {
+		XCTAssert(abcdef.index(abcdef.endIndex, offsetBy: -14) ==
+		          abcdef.startIndex)
+	}
+	func testAll() {
+		for i in 0...14 {
+			let l = abcdef.index(abcdef.startIndex, offsetBy: i)
+			let r = abcdef.index(abcdef.endIndex, offsetBy: i - 14)
+			XCTAssert(l == r)
+		}
+	}
+}
+
 class RopeIndexedControllerPaths: NestedExtentBase {
 	var _expectations: [[Handle]]? = nil
 	var expectations: [[Handle]] {
