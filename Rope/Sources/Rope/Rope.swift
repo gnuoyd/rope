@@ -406,7 +406,7 @@ extension Rope {
 		}
 		return l..<r
 	}
-	public func refine(selection s: Range<Index>)
+	public func directed(selection s: Range<Index>)
 	    -> (range: Range<Index>, controller: ExtentController<C>?)? {
 		guard let (tight, lo, ro) = tightened(selection: s) else {
 			return nil
