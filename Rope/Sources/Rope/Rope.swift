@@ -411,8 +411,8 @@ extension Rope {
 		guard let (tight, lo, ro) = tightened(selection: s) else {
 			return nil
 		}
-		/* TBD loosen `tight` inside the innermost controller.
-		 * Return loosened range.
+		/* Loosen `tight` inside the innermost controller and
+		 * return the loosened range.
 		 */
 		let common = commonPrefix(lo, ro)
 		let looser = leftLoosened(selection: tight,
