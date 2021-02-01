@@ -1319,8 +1319,8 @@ public extension Node {
 			return filter(node)
 		}
 	}
-	func subrope(from: RopeIndex<C>, to: RopeIndex<C>,
-	    depth: Int = 0) -> Node<C>? {
+	func subrope(from: RopeIndex<C>, to: RopeIndex<C>, depth: Int = 0)
+	    -> Node<C>? {
 		func filter(_ node: Node<C>) -> Node<C>? {
 			if case .index(_) = node {
 				return nil
