@@ -601,13 +601,13 @@ class EmptyishRopeIndices : XCTestCase {
 		XCTAssert(one.startIndex == .start(of: one))
 		XCTAssert(one.startIndex != one.endIndex)
 		XCTAssert(one.index(after: one.startIndex) != one.endIndex)
-		XCTAssert(one.index(after: one.index(after: one.startIndex)) ==
+		XCTAssert(one.index(one.startIndex, offsetBy: 2) ==
 		    one.endIndex)
 	}
 	func testEndIndexOneEmptyExtent() {
 		XCTAssert(one.endIndex == .end(of: one))
 		XCTAssert(one.index(before: one.endIndex) != one.startIndex)
-		XCTAssert(one.index(before: one.index(before: one.endIndex)) ==
+		XCTAssert(one.index(one.endIndex, offsetBy: -2) ==
 		    one.startIndex)
 	}
 	func testStartIndexTwoEmptyExtents() {
@@ -624,11 +624,11 @@ class EmptyishRopeIndices : XCTestCase {
 	func testEndIndexTwoEmptyExtents() {
 		XCTAssert(two.endIndex == .end(of: two))
 		XCTAssert(two.index(before: two.endIndex) != two.startIndex)
-		XCTAssert(two.index(before: two.index(before: two.endIndex)) !=
+		XCTAssert(two.index(two.endIndex, offsetBy: -2) !=
 		    two.startIndex)
-		XCTAssert(two.index(before: two.index(before: two.index(before: two.endIndex))) !=
+		XCTAssert(two.index(two.endIndex, offsetBy: -3) !=
 		    two.startIndex)
-		XCTAssert(two.index(before: two.index(before: two.index(before: two.index(before: two.endIndex)))) ==
+		XCTAssert(two.index(two.endIndex, offsetBy: -4) ==
 		    two.startIndex)
 	}
 }
