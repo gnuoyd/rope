@@ -1330,10 +1330,7 @@ public extension Node {
 		guard let suffix = subrope(from: from, depth: depth) else {
 			return nil
 		}
-		guard let result = suffix.subrope(to: to, depth: depth) else {
-			return nil
-		}
-		return result.compactMap(filter)
+		return suffix.subrope(to: to, depth: depth)
 	}
 	subscript(range: Range<RopeIndex<C>>) -> Content {
 		return subrope(from: range.lowerBound,
