@@ -668,10 +668,12 @@ class ThreeUnitRangesUsingRopeIndices: XCTestCase {
 	}
 	func testLookupByRangesForward() {
 		var prev = r.startIndex
-		for (idx, expected) in zip(r.indices.dropFirst(3), expectations) {
+		for (idx, expected) in zip(r.indices.dropFirst(3),
+			                   expectations) {
 			let found = r[prev..<idx]
 			prev = r.index(after: prev)
-			XCTAssert(found ~ expected, "found \(found) expected \(expected)")
+			XCTAssert(found ~ expected,
+			          "found \(found) expected \(expected)")
 		}
 	}
 	func testLookupByRangesBackward() {
@@ -722,7 +724,8 @@ class TwoUnitRangesUsingRopeIndices: XCTestCase {
 	}
 	func testLookupByRangesForward() {
 		var prev = r.startIndex
-		for (idx, expected) in zip(r.indices.dropFirst(2), expectations) {
+		for (idx, expected) in zip(r.indices.dropFirst(2),
+			                   expectations) {
 			let found = r[prev..<idx]
 			prev = r.index(after: prev)
 			XCTAssert(found ~ expected,
@@ -731,7 +734,8 @@ class TwoUnitRangesUsingRopeIndices: XCTestCase {
 	}
 	func testLookupByRangesBackward() {
 		var prev = r.endIndex
-		for (idx, expected) in zip(r.indices.reversed().dropFirst(1), expectations.reversed()) {
+		for (idx, expected) in zip(r.indices.reversed().dropFirst(1),
+			                   expectations.reversed()) {
 			let found = r[idx..<prev]
 			prev = r.index(before: prev)
 			XCTAssert(found ~ expected,
