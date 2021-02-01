@@ -614,11 +614,11 @@ class EmptyishRopeIndices : XCTestCase {
 		XCTAssert(two.startIndex == .start(of: two))
 		XCTAssert(two.startIndex != two.endIndex)
 		XCTAssert(two.index(after: two.startIndex) != two.endIndex)
-		XCTAssert(two.index(after: two.index(after: two.startIndex)) !=
+		XCTAssert(two.index(two.startIndex, offsetBy: 2) !=
 		    two.endIndex)
-		XCTAssert(two.index(after: two.index(after: two.index(after: two.startIndex))) !=
+		XCTAssert(two.index(two.startIndex, offsetBy: 3) !=
 		    two.endIndex)
-		XCTAssert(two.index(after: two.index(after: two.index(after: two.index(after: two.startIndex)))) ==
+		XCTAssert(two.index(two.startIndex, offsetBy: 4) ==
 		    two.endIndex)
 	}
 	func testEndIndexTwoEmptyExtents() {
