@@ -1321,12 +1321,6 @@ public extension Node {
 	}
 	func subrope(from: RopeIndex<C>, to: RopeIndex<C>, depth: Int = 0)
 	    -> Node<C>? {
-		func filter(_ node: Node<C>) -> Node<C>? {
-			if case .index(_) = node {
-				return nil
-			}
-			return node
-		}
 		guard let suffix = subrope(from: from, depth: depth) else {
 			return nil
 		}
