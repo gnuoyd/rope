@@ -779,15 +779,18 @@ class UnitRangesUsingRopeIndices: XCTestCase {
 		for (idx, expected) in zip(r.indices, expectations) {
 			let found = r[prev..<idx]
 			prev = idx
-			XCTAssert(found == expected, "found \(found) expected \(expected)")
+			XCTAssert(found ~ expected,
+			          "found \(found) expected \(expected)")
 		}
 	}
 	func testLookupByRangesBackward() {
 		var prev = r.endIndex
-		for (idx, expected) in zip(r.indices.reversed(), expectations.reversed()) {
+		for (idx, expected) in zip(r.indices.reversed(),
+                                           expectations.reversed()) {
 			let found = r[idx..<prev]
 			prev = idx
-			XCTAssert(found == expected, "found \(found) expected \(expected)")
+			XCTAssert(found ~ expected,
+			          "found \(found) expected \(expected)")
 		}
 	}
 }
