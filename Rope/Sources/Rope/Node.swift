@@ -112,10 +112,10 @@ public func ~(_ lhs: Node<Substring>, _ rhs: Node<Substring>) -> Bool {
 		switch (lresidue ?? lleaves.next(), rresidue ?? rleaves.next()){
 		case (nil, nil):
 			return true
-		case (.index(_), let r):
+		case (.index(_), let r), (.empty, let r):
 			lresidue = nil
 			rresidue = r
-		case (let l, .index(_)):
+		case (let l, .index(_)), (let l, .empty):
 			lresidue = l
 			rresidue = nil
 		case (.cursor(let l, _), .cursor(let r, _)):
@@ -154,10 +154,6 @@ public func ~(_ lhs: Node<Substring>, _ rhs: Node<Substring>) -> Bool {
 				continue
 			}
 			return false
-		case (.empty, .empty):
-			lresidue = nil
-			rresidue = nil
-			continue
 		default:
 			return false
 		}
