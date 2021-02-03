@@ -1270,7 +1270,8 @@ public extension Node {
 			guard let subextent = ctlr.subrope(of: content, to: to,
 			    depth: depth + 1) else {
 //				Swift.print("extent mismatch")
-				return leftSibling.subrope(to: to, depth: depth + 1)
+				return leftSibling.subrope(to: to,
+				                           depth: depth + 1)
 			}
 //			Swift.print("extent match")
 			return leftSibling.appending(subextent)

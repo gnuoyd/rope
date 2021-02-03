@@ -190,8 +190,7 @@ public class Rope<C : Content> : Collection {
 	public func element(at i: Index) throws -> Element {
 		switch i {
 		case .start(_):
-			guard case .step(let node) = top.firstElement()
-			    else {
+			guard case .step(let node) = top.firstElement() else {
 				throw RopeNoSuchElement.atStart
 			}
 			return node
