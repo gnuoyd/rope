@@ -37,10 +37,17 @@ public class ExtentController<C : Content> : Handle {
 		}
 		return .extent(self, subcontent)
 	}
-	func subrope(of interior: Node<C>, from: NodeIndex, to: NodeIndex,
+	func subrope(of content: Node<C>, from: NodeIndex, to: NodeIndex,
 	    depth: Int = 0) -> Node<C> {
-		return .extent(self, interior.subrope(from: from,
+		return .extent(self, content.subrope(from: from,
 		    to: to, depth: depth))
+	}
+	func rope(_ content: Node<C>, inserting elt: Node<C>,
+	    at target: Handle) -> Node<C>? {
+		guard let subcontent = content.inserting(elt, at: target) else {
+			return nil
+		}
+		return .extent(self, subcontent)
 	}
 }
 
@@ -562,31 +569,35 @@ public extension Node {
 }
 
 public extension Node {
-	func inserting(_ elt: Node, at target: Handle) -> Node {
+	func inserting(_ elt: Node, at target: Handle) -> Node? {
 		switch self {
 		case .index(let w):
 			guard let handle = w.get(), handle == target else {
-				fatalError("Invalid index")
+				return nil
 			}
 			return elt
 		case .cursor(_, _):
-			fatalError("Invalid index")
+			return nil
 		case .extent(let ctlr, let r):
-			/* EXT let the controller handle the request */
-			return Node(controller: ctlr,
-			            node: r.inserting(elt, at: target))
+			return ctlr.rope(r, inserting: elt, at: target)
 		case .concat(let l, _, _, _, let r, _):
 			if l.contains(target) {
-				return Node(left: l.inserting(elt, at: target),
-				            right: r)
+				guard let newl = l.inserting(elt, at: target)
+				    else {
+					return nil
+				}
+				return Node(left: newl, right: r)
 			} else if r.contains(target) {
-				return Node(left: l,
-				            right: r.inserting(elt, at: target))
+				guard let newr = r.inserting(elt, at: target)
+				    else {
+					return nil
+				}
+				return Node(left: l, right: newr)
 			} else {
-				fatalError("Invalid index")
+				return nil
 			}
 		case .leaf(_, _), .empty:
-			fatalError("Invalid index")
+			return nil
 		}
 	}
 }

@@ -204,12 +204,12 @@ public class Rope<C : Content> : Collection {
 			throw RopeNoSuchElement.atEnd
 		}
 	}
-	public func insert(_ elt: Element, at i: Index) {
+	public func insert(_ elt: Element, at i: Index) -> Bool {
 		guard self === i.owner else {
-			fatalError("Invalid index")
+			return false
 		}
 		if case .empty = elt {
-			fatalError("You may not insert .empty")
+			return false
 		}
 		switch i {
 		case .start(_):
@@ -217,8 +217,12 @@ public class Rope<C : Content> : Collection {
 		case .end(_):
 			top = .nodes(top, elt)
 		case .interior(_, _, _, let h):
-			top = top.inserting(elt, at: h)
+			guard let newtop = top.inserting(elt, at: h) else {
+				return false
+			}
+			top = newtop
 		}
+		return true
 	}
 	public func attributes(at i: NodeIndex)
 	    -> (Attributes, Range<NodeIndex>) {
