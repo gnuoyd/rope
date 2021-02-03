@@ -906,7 +906,7 @@ public extension Node {
 		}
 		return apply(utf16, at: i)
 	}
-	func enclosingExtents(at i0: NodeIndex) -> [ExtentController<C>] {
+	func extents(enclosing i0: NodeIndex) -> [ExtentController<C>] {
 		var path: [ExtentController<C>] = []
 		var i = i0
 		var next = self
@@ -927,7 +927,7 @@ public extension Node {
 			}
 		}
 	}
-	func enclosingExtents(at i: RopeIndex<C>,
+	func extents(enclosing i: RopeIndex<C>,
 	                      in controllers: [ExtentController<C>] = [])
 	    -> [ExtentController<C>]? {
 		switch (i, self) {
@@ -939,10 +939,10 @@ public extension Node {
 		case (.interior(_, _, _, let h),
 		      .concat(let l, _, _, _, let r, _))
 		     where self.contains(h):
-		     	return l.enclosingExtents(at: i, in: controllers) ??
-		     	       r.enclosingExtents(at: i, in: controllers)
+		     	return l.extents(enclosing: i, in: controllers) ??
+		     	       r.extents(enclosing: i, in: controllers)
 		case (.interior(_, _, _, _), .extent(let ctlr, let content)):
-			return content.enclosingExtents(at: i,
+			return content.extents(enclosing: i,
 			    in: controllers + [ctlr])
 		default:
 			return nil

@@ -263,7 +263,7 @@ class RopeIndexedControllerPaths: NestedExtentBase {
 	}
 	func testControllerPaths() {
 		for (i, expected) in zip(rope.indices, expectations) {
-			XCTAssert(rope.enclosingExtents(at: i) == expected)
+			XCTAssert(rope.extents(enclosing: i) == expected)
 		}
 	}
 	func testForwardClimbIn() {
@@ -398,7 +398,7 @@ class UTF16IndexedControllerPaths: XCTestCase {
 	}
 	func testControllerPaths() {
 		for (i, expected) in zip(indices, expectations) {
-			XCTAssert(tree.enclosingExtents(at: i) == expected)
+			XCTAssert(tree.extents(enclosing: i) == expected)
 		}
 	}
 }
