@@ -1348,14 +1348,17 @@ public extension Node {
 		let r = subrope(from: range.upperBound, to: endIndex)
 		return l.appending(Node(content: c)).appending(r)
 	}
-	func insertingCursor(_ handle: Handle, attributes: Attributes,
+	func inserting(cursor handle: Handle, attributes: Attributes,
 	    at i: Index) -> Node {
 		let cursor: Node = .cursor(handle, attributes)
 		return subrope(from: NodeIndex.start, to: i).appending(
 		    cursor).appending(subrope(from: i, to: endIndex))
 	}
-	func insertingContent(_ rope: Node, at i: Index) -> Node {
+	func inserting(content node: Node, at i: Index) -> Node {
+		if case .empty = node {
+			return self
+		}
 		return subrope(from: NodeIndex.start, to: i).appending(
-		    rope).appending(subrope(from: i, to: endIndex))
+		    node).appending(subrope(from: i, to: endIndex))
 	}
 }
