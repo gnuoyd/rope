@@ -1189,9 +1189,6 @@ public extension Node {
 		case .empty, .cursor(_, _):
 			assert(from == to)
 			return self
-		/* EXT Need to take care subdividing extents.  Perhaps subrope
-		 * should be an ExtentController method?
-		 */
 		case .extent(let ctlr, let rope):
 			return ctlr.subrope(of: rope, from: from, to: to,
 			    depth: depth)
