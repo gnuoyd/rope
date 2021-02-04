@@ -26,7 +26,7 @@ class RopeString : NSString {
 	}
 	override func character(at i: Int) -> unichar {
 		let c = rope.utf16[NodeIndex(utf16Offset: i)]
-		Swift.print("character(at: \(i)) -> \(c)")
+		// Swift.print("character(at: \(i)) -> \(c)")
 		return c
 	}
 }
