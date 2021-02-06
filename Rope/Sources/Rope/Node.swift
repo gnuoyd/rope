@@ -19,31 +19,30 @@ func *(_ s: String, _ times: Int) -> String {
 	return s + s * (times - 1)
 }
 
-public class ExtentController<C : Content> : Handle {
-	public override var id: Id { return .extent(_id) }
-	func subrope(of content: Node<C>, from: RopeIndex<C>, depth: Int = 0)
-	    -> Node<C>? {
+extension Rope.ExtentController {
+	func subrope(of content: Rope.Node, from: Rope.Index, depth: Int = 0)
+	    -> Rope.Node? {
 		guard let subcontent = content.subrope(from: from, depth: depth)
 		    else {
 			return nil
 		}
 		return .extent(self, subcontent)
 	}
-	func subrope(of content: Node<C>, to: RopeIndex<C>, depth: Int = 0)
-	    -> Node<C>? {
+	func subrope(of content: Rope.Node, to: Rope.Index, depth: Int = 0)
+	    -> Rope.Node? {
 		guard let subcontent = content.subrope(to: to, depth: depth)
 		    else {
 			return nil
 		}
 		return .extent(self, subcontent)
 	}
-	func subrope(of content: Node<C>, from: NodeIndex, to: NodeIndex,
-	    depth: Int = 0) -> Node<C> {
+	func subrope(of content: Rope.Node, from: NodeIndex, to: NodeIndex,
+	    depth: Int = 0) -> Rope.Node {
 		return .extent(self, content.subrope(from: from,
 		    to: to, depth: depth))
 	}
-	func rope(_ content: Node<C>, inserting elt: Node<C>,
-	    at target: Handle) -> Node<C>? {
+	func rope(_ content: Rope.Node, inserting elt: Rope.Node,
+	    at target: Handle) -> Rope.Node? {
 		guard let subcontent = content.inserting(elt, at: target) else {
 			return nil
 		}
@@ -51,57 +50,43 @@ public class ExtentController<C : Content> : Handle {
 	}
 }
 
-/* A Node directly encodes the presence of cursors because it is
- * possible for a cursor to move up and down the hierarchy of text
- * extents without changing between-character positions.  A cursor
- * can appear at the position left of the first character or right of
- * the last character in a Node.  A cursor can also appear in a
- * Node that contains no characters.
- */
-public indirect enum Node<C : Content> {
-public typealias Content = C
-public typealias Element = C.Element
-case cursor(Handle, Attributes)
-case index(Weak<Handle>)
-case extent(ExtentController<C>, Node)
-case concat(Node, NodeIndex, UInt, HandleSet, Node, NodeIndex)
-case leaf(Attributes, C)
-case empty
-}
-
-/*
- * Result of taking a step in a Node.  A full step moves up or down
- * the extent hierarchy or across a UTF-16 element.
- */
-public enum Step<C: Content> {
-case absent		/* The location to step from could not be
-			 * found.  TBD: throw an Error, instead?
-			 */
-case step(Node<C>)	/* A full step occurred, resulting in the
-			 * associated Node
-			 */
-case inchOut		/* A partial step occurred: stepping over a
-			 * content-free Node `n` such as .cursor, .empty,
-			 * or .index.
-			 *
-			 * The full step must be completed on the `n`'s
-			 * parent.
-			 */
-case stepOut		/* A full upward step occurred: stepping over
-			 * the boundary of extent `n`, or stepping over
-			 * the last UTF-16 element of a leaf, `n`.
-			 *
-			 * The full step lands on `n`'s parent.
-			 */
+extension Rope.Node {
+	/*
+	 * Result of taking a step in a Node.  A full step moves up or down
+	 * the extent hierarchy or across a UTF-16 element.
+	 */
+	public enum Step {
+	case absent		/* The location to step from could not be
+				 * found.  TBD: throw an Error, instead?
+				 */
+	case step(Rope.Node)	/* A full step occurred, resulting in the
+				 * associated Node
+				 */
+	case inchOut		/* A partial step occurred: stepping over a
+				 * content-free Node `n` such as .cursor,
+				 * .empty, or .index.
+				 *
+				 * The full step must be completed on the `n`'s
+				 * parent.
+				 */
+	case stepOut		/* A full upward step occurred: stepping over
+				 * the boundary of extent `n`, or stepping over
+				 * the last UTF-16 element of a leaf, `n`.
+				 *
+				 * The full step lands on `n`'s parent.
+				 */
+	}
 }
 
 /*
  * Result of looking up an element of a Node
  */
-public enum ElementResult<C : Content> {
-case absent
-case inchOut
-case step(Node<C>)
+public extension Rope.Node {
+	enum ElementResult {
+	case absent
+	case inchOut
+	case step(Rope.Node)
+	}
 }
 
 infix operator ~: ComparisonPrecedence
@@ -111,98 +96,106 @@ infix operator !~: ComparisonPrecedence
  * text attributes, and the *number* of leaves.  The *content* of leaves must
  * the same.
  */
-public func ~(_ lhs: Node<Substring>, _ rhs: Node<Substring>) -> Bool {
-	let lleaves = lhs.leaves.makeIterator(),
-	    rleaves = rhs.leaves.makeIterator()
-	var lresidue: Node<Substring>? = nil, rresidue: Node<Substring>? = nil
-	while true {
-		switch (lresidue ?? lleaves.next(), rresidue ?? rleaves.next()){
-		case (nil, nil):
+extension Rope.Node where Content == Substring {
+	public static func ~(_ lhs: Self, _ rhs: Self) -> Bool {
+		let lleaves = lhs.leaves.makeIterator(),
+		    rleaves = rhs.leaves.makeIterator()
+		var lresidue: Self? = nil, rresidue: Self? = nil
+		while true {
+			switch (lresidue ?? lleaves.next(),
+				rresidue ?? rleaves.next()){
+			case (nil, nil):
+				return true
+			case (.index(_), let r), (.empty, let r):
+				lresidue = nil
+				rresidue = r
+			case (let l, .index(_)), (let l, .empty):
+				lresidue = l
+				rresidue = nil
+			case (.cursor(let l, _), .cursor(let r, _)):
+				// XXX doesn't match attributes
+				if l != r {
+					return false
+				}
+				lresidue = nil
+				rresidue = nil
+			case (.extent(let lctlr, let l),
+			      .extent(let rctlr, let r)):
+				if lctlr !== rctlr {
+					return false
+				}
+				if l !~ r {
+					return false
+				}
+				lresidue = nil
+				rresidue = nil
+			case (.leaf(let lattr, let l), .leaf(let rattr, let r)):
+				// XXX doesn't match attributes
+				if l == r {
+					lresidue = nil
+					rresidue = nil
+					continue
+				}
+				if l.hasPrefix(r) {
+					lresidue =
+					    Self(content: l.dropFirst(r.count),
+					         attributes: lattr)
+					rresidue = nil
+					continue
+				}
+				if r.hasPrefix(l) {
+					lresidue = nil
+					rresidue =
+					    Self(content: r.dropFirst(l.count),
+					         attributes: rattr)
+					continue
+				}
+				return false
+			default:
+				return false
+			}
+		}
+	}
+
+	/* Return true iff `lhs ~ rhs` is false. */
+	public static func !~(_ lhs: Self, _ rhs: Self) -> Bool {
+		return !(lhs ~ rhs)
+	}
+}
+
+extension Rope.Node {
+	public static func == (_ l: Self, _ r: Self) -> Bool {
+		switch (l, r) {
+		case (.cursor(let lHandle, _),
+		      .cursor(let rHandle, _)):
+			// XXX doesn't match attributes
+			return lHandle == rHandle
+		case (.index(let lWeakHandle), .index(let rWeakHandle)):
+			return lWeakHandle.get() == rWeakHandle.get()
+		case (.extent(let lCtlr, let lNode),
+		      .extent(let rCtlr, let rNode)):
+			return lCtlr == rCtlr && lNode == rNode
+		case (.concat(let lNode1, _, _, _, let lNode2, _),
+		      .concat(let rNode1, _, _, _, let rNode2, _)):
+			return lNode1 == rNode1 && lNode2 == rNode2
+		case (.leaf(_, let lContent), .leaf(_, let rContent)):
+			// XXX doesn't match attributes
+			return lContent == rContent
+		case (.empty, .empty):
 			return true
-		case (.index(_), let r), (.empty, let r):
-			lresidue = nil
-			rresidue = r
-		case (let l, .index(_)), (let l, .empty):
-			lresidue = l
-			rresidue = nil
-		case (.cursor(let l, _), .cursor(let r, _)):
-			// XXX doesn't match attributes
-			if l != r {
-				return false
-			}
-			lresidue = nil
-			rresidue = nil
-		case (.extent(let lctlr, let l), .extent(let rctlr, let r)):
-			if lctlr !== rctlr {
-				return false
-			}
-			if l !~ r {
-				return false
-			}
-			lresidue = nil
-			rresidue = nil
-		case (.leaf(let lattr, let l), .leaf(let rattr, let r)):
-			// XXX doesn't match attributes
-			if l == r {
-				lresidue = nil
-				rresidue = nil
-				continue
-			}
-			if l.hasPrefix(r) {
-				lresidue = Node(content: l.dropFirst(r.count),
-				    attributes: lattr)
-				rresidue = nil
-				continue
-			}
-			if r.hasPrefix(l) {
-				lresidue = nil
-				rresidue = Node(content: r.dropFirst(l.count),
-				    attributes: rattr)
-				continue
-			}
-			return false
 		default:
 			return false
 		}
 	}
 }
 
-/* Return true iff `lhs ~ rhs` is false. */
-public func !~(_ lhs: Node<Substring>, _ rhs: Node<Substring>) -> Bool {
-	return !(lhs ~ rhs)
-}
-
-public func == <C>(_ l: Node<C>, _ r: Node<C>) -> Bool {
-	switch (l, r) {
-	case (.cursor(let lHandle, _),
-	      .cursor(let rHandle, _)):
-		// XXX doesn't match attributes
-		return lHandle == rHandle
-	case (.index(let lWeakHandle), .index(let rWeakHandle)):
-		return lWeakHandle.get() == rWeakHandle.get()
-	case (.extent(let lCtlr, let lNode),
-	      .extent(let rCtlr, let rNode)):
-		return lCtlr == rCtlr && lNode == rNode
-	case (.concat(let lNode1, _, _, _, let lNode2, _),
-	      .concat(let rNode1, _, _, _, let rNode2, _)):
-		return lNode1 == rNode1 && lNode2 == rNode2
-	case (.leaf(_, let lContent), .leaf(_, let rContent)):
-		// XXX doesn't match attributes
-		return lContent == rContent
-	case (.empty, .empty):
-		return true
-	default:
-		return false
-	}
-}
-
-public extension Node {
+public extension Rope.Node {
 	enum DirectedStep {
 	case rightStep
 	case leftStep
 	}
 	func inserting(_ j: Handle, one step: DirectedStep, after i: Handle,
-	    sibling: Node) -> Step<C> {
+	    sibling: Rope.Node) -> Step {
 		let result = inserting(j, one: step, after: i)
 		switch (result, step) {
 		case (.step(let newl), .rightStep):
@@ -210,9 +203,11 @@ public extension Node {
 		case (.step(let newr), .leftStep):
 			return .step(.nodes(sibling, newr))
 		case (.stepOut, .rightStep):
-			return .step(.nodes(self, Node(holder: j), sibling))
+			return .step(.nodes(self, Rope.Node(holder: j),
+			                    sibling))
 		case (.stepOut, .leftStep):
-			return .step(.nodes(sibling, Node(holder: j), self))
+			return .step(.nodes(sibling, Rope.Node(holder: j),
+			                    self))
 		case (.inchOut, .rightStep):
 			switch sibling.inserting(j, after: .rightStep) {
 			case .step(let newr):
@@ -233,7 +228,7 @@ public extension Node {
 			return .absent
 		}
 	}
-	func inserting(_ j: Handle, after step: DirectedStep) -> Step<C> {
+	func inserting(_ j: Handle, after step: DirectedStep) -> Step {
 		switch (self, step) {
 		/* A step over a cursor, index, or empty string is NOT
 		 * a full step.
@@ -243,17 +238,19 @@ public extension Node {
 		/* A step into an extent is a full step. */
 		case (.extent(let ctlr, let n), .rightStep):
 			// *(...) -> (*...)
-			return .step(.extent(under: ctlr, Node(holder: j), n))
+			return .step(.extent(under: ctlr, Rope.Node(holder: j),
+			                            n))
 		case (.extent(let ctlr, let n), .leftStep):
 			// (...)* -> (...*)
-			return .step(.extent(under: ctlr, n, Node(holder: j)))
+			return .step(.extent(under: ctlr, n,
+			                            Rope.Node(holder: j)))
 		case (.leaf(let attrs, let content), .rightStep):
 			switch content.firstAndRest {
 			case (_, let rest)? where rest.isEmpty:
 				return .stepOut
 			case (let first, let rest)?:
 				return .step(.nodes(.leaf(attrs, first),
-				                    Node(holder: j),
+				                    Rope.Node(holder: j),
 						    .leaf(attrs, rest)))
 			default:
 				/* XXX Empty leaves shouldn't exist. */
@@ -265,7 +262,7 @@ public extension Node {
 				return .stepOut
 			case (let rest, let last)?:
 				return .step(.nodes(.leaf(attrs, rest),
-				                    Node(holder: j),
+				                    Rope.Node(holder: j),
 						    .leaf(attrs, last)))
 			default:
 				/* XXX Empty leaves shouldn't exist. */
@@ -277,7 +274,7 @@ public extension Node {
 			case .step(let newl):
 				return .step(.nodes(newl, r))
 			case .stepOut:
-				return .step(.nodes(l, Node(holder: j), r))
+				return .step(.nodes(l, Rope.Node(holder: j), r))
 			case .inchOut, .absent:
 				break
 			}
@@ -293,7 +290,7 @@ public extension Node {
 			case .step(let newr):
 				return .step(.nodes(l, newr))
 			case .stepOut:
-				return .step(.nodes(l, Node(holder: j), r))
+				return .step(.nodes(l, Rope.Node(holder: j), r))
 			case .inchOut, .absent:
 				break
 			}
@@ -305,22 +302,22 @@ public extension Node {
 			}
 		}
 	}
-	func insertingIndex(_ h: Handle, at utf16Offset: Int) -> Node<C> {
+	func insertingIndex(_ h: Handle, at utf16Offset: Int) -> Rope.Node {
 		switch self {
 		case .cursor(_, _), .index(_), .empty:
 			assert(utf16Offset == 0)
-			return self.appending(Node(holder: h))
+			return self.appending(Rope.Node(holder: h))
 		case .leaf(let attrs, let content):
 			let idx = String.Index(utf16Offset: utf16Offset,
 			    in: content)
 			let l = content.prefix(upTo: idx)
 			let r = content.suffix(from: idx)
-			return Node(content: C.init(l), attributes: attrs)
-			    .appending(Node(holder: h))
-			    .appending(Node(content: C.init(r),
+			return Rope.Node(content: C.init(l), attributes: attrs)
+			    .appending(Rope.Node(holder: h))
+			    .appending(Rope.Node(content: C.init(r),
 			        attributes: attrs))
 		case .extent(let ctlr, let n):
-			return Node(controller: ctlr,
+			return Rope.Node(controller: ctlr,
 			            node: n.insertingIndex(h, at: utf16Offset))
 		case .concat(let l, let idx, _, _, let r, _)
 		    where utf16Offset < idx.utf16Offset:
@@ -332,7 +329,7 @@ public extension Node {
 		}
 	}
 	func inserting(_ j: Handle, one step: DirectedStep, after i: Handle)
-	    -> Step<C> {
+	    -> Step {
 		switch (self, step) {
 		case (.index(let w), _) where w.get() == i:
 			return .inchOut
@@ -345,10 +342,10 @@ public extension Node {
 				return .stepOut
 			case (.stepOut, .rightStep):
 				return .step(.extent(under: ctlr,
-				    n, Node(holder: j)))
+				    n, Rope.Node(holder: j)))
 			case (.stepOut, .leftStep):
 				return .step(.extent(under: ctlr,
-				    Node(holder: j), n))
+				    Rope.Node(holder: j), n))
 			case (.step(let newn), _):
 				return .step(.extent(ctlr, newn))
 			case (.absent, _):
@@ -358,7 +355,7 @@ public extension Node {
 		    where w.get() == i:
 			switch r.inserting(j, after: .rightStep) {
 			case .step(let newr):
-				return .step(.nodes(Node(holder: i), newr))
+				return .step(.nodes(Rope.Node(holder: i), newr))
 			case let result:
 				return result
 			}
@@ -366,7 +363,7 @@ public extension Node {
 		    where w.get() == i:
 			switch l.inserting(j, after: .leftStep) {
 			case .step(let newl):
-				return .step(.nodes(newl, Node(holder: i)))
+				return .step(.nodes(newl, Rope.Node(holder: i)))
 			case let result:
 				return result
 			}
@@ -410,7 +407,7 @@ public extension Node {
 	/* TBD extract `performing` from `inserting(_:,one:,after:)`
 	 * and element(at:) ?
 	 */
-	func firstElement() -> ElementResult<C> {
+	func firstElement() -> ElementResult {
 		switch self {
 		case .cursor(_, _), .index(_), .empty:
 			/* No match: the element is not on this span. */
@@ -428,8 +425,7 @@ public extension Node {
 			return l.firstElementUsingSibling(r)
 		}
 	}
-	func firstElementUsingSibling(_ r: Node) ->
-	    ElementResult<C> {
+	func firstElementUsingSibling(_ r: Rope.Node) -> ElementResult {
 		switch firstElement() {
 		case .inchOut:
 			return r.firstElement()
@@ -437,8 +433,7 @@ public extension Node {
 			return result
 		}
 	}
-	func element(at i: Handle, sibling r: Node) ->
-	    ElementResult<C> {
+	func element(at i: Handle, sibling r: Rope.Node) -> ElementResult {
 		switch element(at: i) {
 		case .inchOut:
 			return r.firstElement()
@@ -449,7 +444,7 @@ public extension Node {
 	/* TBD extract `performing` from `inserting(_:,one:,after:)`
 	 * and element(at:) ?
 	 */
-	func element(at i: Handle) -> ElementResult<C> {
+	func element(at i: Handle) -> ElementResult {
 		switch self {
 		case .index(let w) where w.get() == i:
 			/* The index matches: inch out so that the caller
@@ -487,7 +482,7 @@ public extension Node {
 	}
 }
 
-public extension Node {
+public extension Rope.Node {
 	func attributes(at i: NodeIndex, base: NodeIndex)
 	    -> (Attributes, Range<NodeIndex>) {
 		guard case .leaf(let attrs, _) = self, i < endIndex else {
@@ -496,15 +491,15 @@ public extension Node {
 		return (attrs, base..<base + endIndex)
 	}
 	func attributes(at i: NodeIndex) -> (Attributes, Range<NodeIndex>) {
-		return apply({ (node: Node, i: NodeIndex, base: NodeIndex) in node.attributes(at: i, base: base) }, at: i)
+		return apply({ (node: Self, i: NodeIndex, base: NodeIndex) in node.attributes(at: i, base: base) }, at: i)
 	}
-	func applying(_ fn: (Node) -> Node, range: Range<NodeIndex>) -> Node {
+	func applying(_ fn: (Self) -> Self, range: Range<NodeIndex>) -> Self {
 		let l = subrope(from: NodeIndex.start, to: range.lowerBound)
 		let m = subrope(from: range.lowerBound, to: range.upperBound)
 		let r = subrope(from: range.upperBound, to: endIndex)
 		return l.appending(fn(m)).appending(r)
 	}
-	func settingAttributes(_ attrs: Attributes) -> Node {
+	func settingAttributes(_ attrs: Attributes) -> Self {
 		switch self {
 		case .cursor(let h, _):
 			return .cursor(h, attrs)
@@ -519,7 +514,7 @@ public extension Node {
 			return self
 		}
 	}
-	func clearingAttributes() -> Node {
+	func clearingAttributes() -> Self {
 		switch self {
 		case .cursor(let h, _):
 			return .cursor(h, [:])
@@ -534,7 +529,7 @@ public extension Node {
 			return self
 		}
 	}
-	func addingAttributes(_ nattrs: Attributes) -> Node {
+	func addingAttributes(_ nattrs: Attributes) -> Self {
 		switch self {
 		case .cursor(let h, var attrs):
 			attrs.merge(nattrs) { (_, new) in new }
@@ -542,7 +537,7 @@ public extension Node {
 		case .extent(let ctlr, let n):
 			return .extent(ctlr, n.addingAttributes(nattrs))
 		case .concat(let l, _, _, _, let r, _):
-			return Node(left: l.addingAttributes(nattrs),
+			return Self(left: l.addingAttributes(nattrs),
 			    right: r.addingAttributes(nattrs))
 		case .leaf(var attrs, let content):
 			attrs.merge(nattrs) { (_, new) in new }
@@ -552,24 +547,23 @@ public extension Node {
 		}
 	}
 	func settingAttributes(_ attrs: Attributes, range: Range<NodeIndex>)
-	    -> Node {
+	    -> Self {
 		return applying({ node in node.settingAttributes(attrs) },
 		    range: range)
 	}
-	func clearingAttributes(range: Range<NodeIndex>)
-	    -> Node {
+	func clearingAttributes(range: Range<NodeIndex>) -> Self {
 		return applying({ node in node.clearingAttributes() },
 		    range: range)
 	}
 	func addingAttributes(_ attrs: Attributes, range: Range<NodeIndex>)
-	    -> Node {
+	    -> Self {
 		return applying({ node in node.addingAttributes(attrs) },
 		    range: range)
 	}
 }
 
-public extension Node {
-	func inserting(_ elt: Node, at target: Handle) -> Node? {
+public extension Rope.Node {
+	func inserting(_ elt: Self, at target: Handle) -> Self? {
 		switch self {
 		case .index(let w):
 			guard let handle = w.get(), handle == target else {
@@ -586,13 +580,13 @@ public extension Node {
 				    else {
 					return nil
 				}
-				return Node(left: newl, right: r)
+				return Self(left: newl, right: r)
 			} else if r.contains(target) {
 				guard let newr = r.inserting(elt, at: target)
 				    else {
 					return nil
 				}
-				return Node(left: l, right: newr)
+				return Self(left: l, right: newr)
 			} else {
 				return nil
 			}
@@ -602,7 +596,7 @@ public extension Node {
 	}
 }
 
-public extension Node {
+public extension Rope.Node {
 	// TBD introduce a property for all Handles but the
 	// index Handles?
 	var hids: HandleSet {
@@ -723,14 +717,14 @@ public extension Node {
 	}
 }
 
-public extension Node {
-	init(controller ctlr: ExtentController<C>, node n: Node<C>) {
+public extension Rope.Node {
+	init(controller ctlr: Rope.ExtentController, node n: Self) {
 		self = .extent(ctlr, n)
 	}
 	init(holder: Handle) {
 		self = .index(Weak(holder))
 	}
-	private init(left: Node<C>, right: Node<C>) {
+	private init(left: Self, right: Self) {
 		switch (left, right) {
 		case (_, .empty):
 			self = left
@@ -745,9 +739,9 @@ public extension Node {
 	}
 	init(content c: C, attributes attrs: Attributes = [:]) {
 		if c.isEmpty {
-			self = Node<C>.empty
+			self = Self.empty
 		} else {
-			self = Node<C>.leaf(attrs, c)
+			self = Self.leaf(attrs, c)
 		}
 	}
 	init<I>(content i: I) where C : Initializable,
@@ -756,41 +750,44 @@ public extension Node {
 	}
 }
 
-public class LeafIterator<C : Content> : IteratorProtocol {
-	var stack: [Node<C>]
+extension Rope.Node {
+	public class LeafIterator : IteratorProtocol {
+		var stack: [Rope.Node]
 
-	public init(for rope: Node<C>) {
-		self.stack = [rope]
-	}
-	public func next() -> Node<C>? {
-		guard var top = stack.popLast() else {
-			return nil
+		public init(for node: Rope.Node) {
+			self.stack = [node]
 		}
-		while true {
-			switch top {
-			case .concat(let l, _, _, _, let r, _):
-				stack.append(r)
-				top = l
-			case .leaf(_, _):
-				return top
-			case .empty, .cursor(_, _), .extent(_, _), .index(_):
-				return top
+		public func next() -> Rope.Node? {
+			guard var top = stack.popLast() else {
+				return nil
+			}
+			while true {
+				switch top {
+				case .concat(let l, _, _, _, let r, _):
+					stack.append(r)
+					top = l
+				case .leaf(_, _):
+					return top
+				case .empty, .cursor(_, _), .extent(_, _),
+				     .index(_):
+					return top
+				}
 			}
 		}
 	}
+
+	public struct LeafSequence : Sequence {
+		var node: Rope.Node
+		public init(of node: Rope.Node) {
+			self.node = node
+		}
+		public func makeIterator() -> LeafIterator {
+			return LeafIterator(for: node)
+		}
+	}
 }
 
-public struct LeafSequence<C : Content> : Sequence {
-	var rope: Node<C>
-	public init(of rope: Node<C>) {
-		self.rope = rope
-	}
-	public func makeIterator() -> LeafIterator<C> {
-		return LeafIterator(for: rope)
-	}
-}
-
-extension Node : CustomDebugStringConvertible {
+extension Rope.Node : CustomDebugStringConvertible {
 	public var debugDescription: String {
 		switch self {
 		case .index(let w) where w.get() != nil:
@@ -811,29 +808,32 @@ extension Node : CustomDebugStringConvertible {
 	}
 }
 
-public extension Node {
-	static func extent(under controller: ExtentController<C>, _ content: Node...) -> Node {
-		return Node(controller: controller, node: tree(from: content))
+public extension Rope.Node {
+	static func extent(under controller: Rope.ExtentController,
+	    _ content: Self...) -> Self {
+		return Self(controller: controller, node: tree(from: content))
 	}
-	static func extent(under controller: ExtentController<C>,
-	    with content: [Node]) -> Node {
-		return Node(controller: controller, node: tree(from: content))
+	static func extent(under controller: Rope.ExtentController,
+	    with content: [Self]) -> Self {
+		return Self(controller: controller, node: tree(from: content))
 	}
-	static func tree(from content: [Node]) -> Node {
-		content.reduce(.empty) { (l: Node, r: Node) in Node(left: l, right: r)}
+	static func tree(from content: [Self]) -> Self {
+		content.reduce(.empty) { (l: Self, r: Self) in
+		    Self(left: l, right: r)
+		}
 	}
-	static func nodes(_ content: Node...) -> Node {
+	static func nodes(_ content: Self...) -> Self {
 		return tree(from: content)
 	}
 	static func text(_ content: C, attributes attrs: Attributes = [:])
-	    -> Node {
-		return Node(content: content, attributes: attrs)
+	    -> Self {
+		return Self(content: content, attributes: attrs)
 	}
 }
 
-public extension Node {
+public extension Rope.Node {
 	typealias Index = NodeIndex
-	var leaves: LeafSequence<Content> {
+	var leaves: LeafSequence {
 		return LeafSequence(of: self)
 	}
 	var depth: UInt {
@@ -873,7 +873,7 @@ public extension Node {
 	}
 	var endIndex: NodeIndex {
 		switch self {
-		case Node<C>.concat(_, _, _, _, _, let idx):
+		case Self.concat(_, _, _, _, _, let idx):
 			return idx
 		case .extent(_, let rope):
 			return rope.endIndex
@@ -890,7 +890,7 @@ public extension Node {
 	var length: Int {
 		return endIndex.utf16Offset - startIndex.utf16Offset
 	}
-	func apply<R>(_ fn: (Node, NodeIndex, NodeIndex) -> R,
+	func apply<R>(_ fn: (Self, NodeIndex, NodeIndex) -> R,
 	    at i: NodeIndex, base: NodeIndex = NodeIndex.start) -> R {
 		switch self {
 		case .leaf(_, _), .cursor(_, _), .empty, .index(_):
@@ -907,7 +907,7 @@ public extension Node {
 		}
 	}
 	func utf16(at i: NodeIndex) -> C.UTF16View.Element {
-		func utf16(_ node: Node, at i: NodeIndex, base: NodeIndex)
+		func utf16(_ node: Self, at i: NodeIndex, base: NodeIndex)
 		    -> C.UTF16View.Element {
 			guard case .leaf(_, let s) = node else {
 				fatalError("In \(#function), no utf16 \(i)")
@@ -917,8 +917,8 @@ public extension Node {
 		}
 		return apply(utf16, at: i)
 	}
-	func extents(enclosing i0: NodeIndex) -> [ExtentController<C>] {
-		var path: [ExtentController<C>] = []
+	func extents(enclosing i0: NodeIndex) -> [Rope.ExtentController] {
+		var path: [Rope.ExtentController] = []
 		var i = i0
 		var next = self
 		while true {
@@ -938,9 +938,9 @@ public extension Node {
 			}
 		}
 	}
-	func extents(enclosing i: RopeIndex<C>,
-	                      in controllers: [ExtentController<C>] = [])
-	    -> [ExtentController<C>]? {
+	func extents(enclosing i: Rope.Index,
+	                      in controllers: [Rope.ExtentController] = [])
+	    -> [Rope.ExtentController]? {
 		switch (i, self) {
 		case (.start(_), _), (.end(_), _):
 			return controllers
@@ -959,9 +959,9 @@ public extension Node {
 			return nil
 		}
 	}
-	func extentsOpening(at i: RopeIndex<C>,
-	                    in controllers: [ExtentController<C>] = [])
-	    -> [ExtentController<C>]? {
+	func extentsOpening(at i: Rope.Index,
+	                    in controllers: [Rope.ExtentController] = [])
+	    -> [Rope.ExtentController]? {
 		switch (self, i) {
 		case (_, .end(_)):
 			return []
@@ -995,9 +995,9 @@ public extension Node {
 			return nil
 		}
 	}
-	func extentsClosing(at i: RopeIndex<C>,
-	                    in controllers: [ExtentController<C>] = [])
-	    -> [ExtentController<C>]? {
+	func extentsClosing(at i: Rope.Index,
+	                    in controllers: [Rope.ExtentController] = [])
+	    -> [Rope.ExtentController]? {
 		switch (self, i) {
 		case (_, .end(_)):
 			return []
@@ -1032,8 +1032,8 @@ public extension Node {
 		}
 	}
 	/*
-	func subrope(from: RopeIndex<C>, rightSibling: Node<C> = .empty,
-	    depth: Int = 0) -> Node<C>? {
+	func subrope(from: Rope.Index, rightSibling: Self = .empty,
+	    depth: Int = 0) -> Self? {
 		switch (self, from) {
 		case (_, .end(_)):
 			return .empty
@@ -1087,7 +1087,7 @@ public extension Node {
 			return rope.element(at: i)
 		}
 	}
-	func appending(_ rope: Node) -> Node {
+	func appending(_ rope: Self) -> Self {
 		switch (self, rope) {
 		case (.empty, _):
 			return rope
@@ -1108,7 +1108,7 @@ public extension Node {
 		return endIndex.utf16Offset >= fibonacci(index: depth + 2)
 	}
 	// Return this Node with all of the expired indices removed. 
-	func cleaned() -> Node<C>? {
+	func cleaned() -> Self? {
 		switch self {
 		case .empty, .cursor(_, _), .leaf(_, _):
 			return self
@@ -1121,7 +1121,7 @@ public extension Node {
 			guard let handle = w.get() else {
 				return nil
 			}
-			return Node(holder: handle)
+			return Self(holder: handle)
 		case .concat(let l, _, _, _, let r, _):
 			guard let nl = l.cleaned() else {
 				return r.cleaned()
@@ -1133,7 +1133,7 @@ public extension Node {
 		}
 	}
 	// Return a copy of this Rope with its balance restored.
-	func rebalanced() -> Node<C> {
+	func rebalanced() -> Self {
 		switch self {
 		case .empty, .cursor(_, _), .index(_), .leaf(_, _):
 			return self
@@ -1142,7 +1142,7 @@ public extension Node {
 		default:
 			break
 		}
-		var slot: [Node?] = []
+		var slot: [Self?] = []
 		let totlen = endIndex
 		for fn in Fibonacci(from: 2) {
 			if fn > totlen.utf16Offset {
@@ -1151,22 +1151,22 @@ public extension Node {
 			slot.append(nil)
 		}
 		for node in leaves {
-			var rope: Node = node
+			var tree: Self = node
 			var n: Int = slot.count
 			for (i, fip3) in Fibonacci(from: 3).enumerated() {
 				if let left = slot[slot.count - i - 1] {
-					rope = .nodes(left, rope)
+					tree = .nodes(left, tree)
 					slot[slot.count - i - 1] = nil
 				}
-				if fip3 >= rope.endIndex.utf16Offset {
+				if fip3 >= tree.endIndex.utf16Offset {
 					n = i
 					break
 				}
 			}
-			slot[slot.count - n - 1] = rope
+			slot[slot.count - n - 1] = tree
 		}
 		return slot.reduce(.empty,
-		    { (accum: Node, opt: Node?) -> Node in
+		    { (accum: Self, opt: Self?) -> Self in
 			switch (accum, opt) {
 			case (_, nil):
 				return accum
@@ -1175,8 +1175,7 @@ public extension Node {
 			}
 		})
 	}
-	func subrope(from: NodeIndex, to: NodeIndex, depth: Int = 0)
-	    -> Node<C> {
+	func subrope(from: NodeIndex, to: NodeIndex, depth: Int = 0) -> Self {
 		assert(NodeIndex.start <= from)
 		let endIndex = self.endIndex
 		assert(to <= endIndex)
@@ -1196,7 +1195,7 @@ public extension Node {
 			if from == to {
 				return .empty
 			}
-			var l, r: Node
+			var l, r: Self
 			if from == NodeIndex.start && idx <= to {
 				l = ropel
 			} else if idx <= from {
@@ -1229,8 +1228,8 @@ public extension Node {
 			return .leaf(attrs, s[i..<j])
 		}
 	}
-	func subrope(from: RopeIndex<C>, rightSibling: Node<C> = .empty,
-	    depth: Int = 0) -> Node<C>? {
+	func subrope(from: Rope.Index, rightSibling: Self = .empty,
+	    depth: Int = 0) -> Self? {
 		switch (self, from) {
 		case (_, .end(_)):
 			return .empty
@@ -1264,8 +1263,8 @@ public extension Node {
 			return rightSibling.subrope(from: from, depth: depth)
 		}
 	}
-	func subrope(leftSibling: Node<C> = .empty, to: RopeIndex<C>,
-	    depth: Int = 0) -> Node<C>? {
+	func subrope(leftSibling: Self = .empty, to: Rope.Index,
+	    depth: Int = 0) -> Self? {
 //		Swift.print("enter \(" " * depth)\(#function) leftSibling \(leftSibling) self \(self) to \(to)", terminator: ": ")
 		switch (self, to) {
 		case (_, .start(_)):
@@ -1306,15 +1305,15 @@ public extension Node {
 			return leftSibling.subrope(to: to, depth: depth + 1)
 		}
 	}
-	func deleting(from start: Index, to end: Index) -> Node {
+	func deleting(from start: Index, to end: Index) -> Self {
 		return subrope(from: NodeIndex.start, to: start).appending(
 		    subrope(from: end, to: endIndex))
 	}
-	func compactMap(_ filter: (Node<C>) -> Node<C>?) -> Node<C>? {
+	func compactMap(_ filter: (Self) -> Self?) -> Self? {
 		switch self {
 		case .extent(let ctlr, let content):
 			let filtered = content.compactMap(filter) ?? .empty
-			return Node(controller: ctlr, node: filtered)
+			return Self(controller: ctlr, node: filtered)
 		case .concat(let l, _, _, _, let r, _):
 			switch (l.compactMap(filter), r.compactMap(filter)) {
 			case (nil, nil):
@@ -1328,14 +1327,13 @@ public extension Node {
 			return filter(node)
 		}
 	}
-	func subrope(from: RopeIndex<C>, to: RopeIndex<C>, depth: Int = 0)
-	    -> Node<C>? {
+	func subrope(from: Rope.Index, to: Rope.Index, depth: Int = 0) ->Self? {
 		guard let suffix = subrope(from: from, depth: depth) else {
 			return nil
 		}
 		return suffix.subrope(to: to, depth: depth)
 	}
-	subscript(range: Range<RopeIndex<C>>) -> Content {
+	subscript(range: Range<Rope.Index>) -> Content {
 		return subrope(from: range.lowerBound,
 		               to: range.upperBound)?.content ?? Content.empty
 	}
@@ -1343,18 +1341,18 @@ public extension Node {
 		return subrope(from: range.lowerBound,
 			to: range.upperBound).content
 	}
-	func replacing(range: Range<Index>, with c: Content) -> Node {
+	func replacing(range: Range<Index>, with c: Content) -> Self {
 		let l = subrope(from: NodeIndex.start, to: range.lowerBound)
 		let r = subrope(from: range.upperBound, to: endIndex)
-		return l.appending(Node(content: c)).appending(r)
+		return l.appending(Self(content: c)).appending(r)
 	}
 	func inserting(cursor handle: Handle, attributes: Attributes,
-	    at i: Index) -> Node {
-		let cursor: Node = .cursor(handle, attributes)
+	    at i: Index) -> Self {
+		let cursor: Self = .cursor(handle, attributes)
 		return subrope(from: NodeIndex.start, to: i).appending(
 		    cursor).appending(subrope(from: i, to: endIndex))
 	}
-	func inserting(content node: Node, at i: Index) -> Node {
+	func inserting(content node: Self, at i: Index) -> Self {
 		if case .empty = node {
 			return self
 		}

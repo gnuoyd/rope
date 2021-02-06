@@ -4,9 +4,9 @@
 import XCTest
 @testable import Rope
 
-typealias NSS = Node<Substring>
 typealias RSS = Rope<Substring>
-typealias ECSS = ExtentController<Substring>
+typealias NSS = RSS.Node
+typealias ECSS = RSS.ExtentController
 
 infix operator ⨯: MultiplicationPrecedence
 
@@ -1081,7 +1081,13 @@ class HandleHolding : XCTestCase {
 			XCTFail("inserting(_,after:) failed")
 			return
 		}
-		XCTAssert(second.leaves.map({ (x: Node<Substring>) -> Bool in if case .index(let w) = x { return w.get() == handle } else {return false } })[1])
+		XCTAssert(second.leaves.map { (x: RSS.Node) -> Bool in
+			if case .index(let w) = x {
+				return w.get() == handle
+			} else {
+				return false
+			}
+		}[1])
 	}
 
 	func testStepAndReleaseIndex() {
@@ -1093,17 +1099,23 @@ class HandleHolding : XCTestCase {
 			return
 		}
 		handle = Handle()
-		XCTAssert(!second.leaves.map({ (x: Node<Substring>) -> Bool in if case .index(let w) = x { return w.get() == handle } else {return false } })[1])
+		XCTAssert(!second.leaves.map { (x: RSS.Node) -> Bool in
+			if case .index(let w) = x {
+				return w.get() == handle
+			} else {
+				return false
+			}
+		}[1])
 	}
 
-	static func isIndex(_ n: Node<Substring>) -> Bool {
+	static func isIndex(_ n: RSS.Node) -> Bool {
 		if case .index(_) = n {
 			return true
 		}
 		return false
 	}
 
-	static func isNilIndex(_ n: Node<Substring>) -> Bool {
+	static func isNilIndex(_ n: RSS.Node) -> Bool {
 		if case .index(let w) = n {
 			return w.get() == nil
 		}
@@ -1112,7 +1124,7 @@ class HandleHolding : XCTestCase {
 
 	func testCleanedHoldingIndices() {
 		let emptyRope: RSS = Rope(content: "abcdefghijkl")
-		var indices: [Rope<Substring>.Index]? = []
+		var indices: [RSS.Index]? = []
 
 		for i in emptyRope.indices {
 			indices?.append(i)
@@ -1123,7 +1135,7 @@ class HandleHolding : XCTestCase {
 
 	func testCleanedReleasingIndices() {
 		let emptyRope: RSS = Rope(content: "abcdefghijkl")
-		var indices: [Rope<Substring>.Index]? = []
+		var indices: [RSS.Index]? = []
 
 		for i in emptyRope.indices {
 			indices?.append(i)
@@ -1135,7 +1147,7 @@ class HandleHolding : XCTestCase {
 
 	func testReleasingIndices() {
 		let rope: RSS = Rope(content: "abcdefghijkl")
-		var indices: [Rope<Substring>.Index]? = []
+		var indices: [RSS.Index]? = []
 
 		for i in rope.indices {
 			indices?.append(i)

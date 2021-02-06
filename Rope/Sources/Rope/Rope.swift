@@ -40,9 +40,35 @@ public class Rope<C : Content> : Collection {
 	case out
 	}
 	public typealias Content = C
-	public typealias Element = Node<C>
-	public typealias Index = RopeIndex<C>
-	private var top: Node<C>
+	public typealias Element = Node
+	public enum Index : Comparable {
+	case start(of: Rope)
+	case end(of: Rope)
+	case interior(of: Rope, at: UInt64, index: UInt64, handle: Handle)
+	}
+	public class ExtentController : Handle {
+		public override var id: Id { return .extent(_id) }
+	}
+
+	/* A Node directly encodes the presence of cursors because it is
+	 * possible for a cursor to move up and down the hierarchy of text
+	 * extents without changing between-character positions.  A cursor
+	 * can appear at the position left of the first character or right of
+	 * the last character in a Node.  A cursor can also appear in a
+	 * Node that contains no characters.
+	 */
+	public indirect enum Node {
+	public typealias Content = C
+	public typealias Element = C.Element
+	case cursor(Handle, Attributes)
+	case index(Weak<Handle>)
+	case extent(ExtentController, Node)
+	case concat(Node, NodeIndex, UInt, HandleSet, Node, NodeIndex)
+	case leaf(Attributes, C)
+	case empty
+	}
+
+	private var top: Node
 	public var generation: UInt64 = 0
 	public var startIndex: Index {
 		/* There are at least three index positions, start and
@@ -59,7 +85,7 @@ public class Rope<C : Content> : Collection {
 	public init() {
 		top = .empty
 	}
-	public var node: Node<C> {
+	public var node: Node {
 		get {
 			return top
 		}
@@ -237,7 +263,7 @@ public class Rope<C : Content> : Collection {
 }
 
 extension Rope {
-	public convenience init(with node: Node<C>) {
+	public convenience init(with node: Node) {
 		self.init()
 		top = node
 	}
@@ -245,8 +271,8 @@ extension Rope {
 
 extension Rope {
         public struct UTF16View {
-		let rope: Rope<C>
-		init(rope r: Rope<C>) {
+		let rope: Rope
+		init(rope r: Rope) {
 			rope = r
 		}
                 public subscript(i: NodeIndex) -> Unicode.UTF16.CodeUnit {
@@ -264,22 +290,22 @@ extension Rope {
 }
 
 extension Rope {
-	func extents(enclosing i: RopeIndex<C>) -> [ExtentController<C>]? {
+	func extents(enclosing i: Index) -> [ExtentController]? {
 		return top.extents(enclosing: i)
 	}
-	public func extentsClosing(at i: RopeIndex<C>)
-	    -> [ExtentController<C>]? {
+	public func extentsClosing(at i: Index)
+	    -> [ExtentController]? {
 		return top.extentsClosing(at: i)
 	}
-	public func extentsOpening(at i: RopeIndex<C>)
-	    -> [ExtentController<C>]? {
+	public func extentsOpening(at i: Index)
+	    -> [ExtentController]? {
 		return top.extentsOpening(at: i)
 	}
 }
 
 extension Rope {
 	public func index(after i: Index, climbing dir: Climb,
-	    bottom: inout ExtentController<C>?) -> Index? {
+	    bottom: inout ExtentController?) -> Index? {
 		if case .end(_) = i {
 			return nil
 		}
@@ -296,7 +322,7 @@ extension Rope {
 		}
 	}
 	public func index(before i: Index, climbing dir: Climb,
-	    bottom: inout ExtentController<C>?) -> Index? {
+	    bottom: inout ExtentController?) -> Index? {
 		if case .start(_) = i {
 			return nil
 		}
@@ -315,11 +341,11 @@ extension Rope {
 		}
 	}
 	public func index(after i: Index, climbing dir: Climb) -> Index? {
-		var discard: ExtentController<C>?
+		var discard: ExtentController?
 		return index(after: i, climbing: dir, bottom: &discard)
 	}
 	public func index(before i: Index, climbing dir: Climb) -> Index? {
-		var discard: ExtentController<C>?
+		var discard: ExtentController?
 		return index(before: i, climbing: dir, bottom: &discard)
 	}
 }
@@ -332,10 +358,10 @@ public func commonPrefix<S>(_ s1: S, _ s2: S)
 extension Rope {
 	public func tightened(selection: Range<Index>)
 	    -> (range: Range<Index>,
-	        leftControllers: [ExtentController<C>],
-	        rightControllers: [ExtentController<C>])? {
+	        leftControllers: [ExtentController],
+	        rightControllers: [ExtentController])? {
 		var (l, r) = (selection.lowerBound, selection.upperBound)
-		var lo, ro: [ExtentController<C>]
+		var lo, ro: [ExtentController]
 		/* TBD move extents(enclosing:) calls out of loop, use
 		 * index(after/before: ..., climbing: .in, bottom: ...) to
 		 * get the next deeper extent at each step
@@ -369,10 +395,10 @@ extension Rope {
 		}
 	}
 	public func rightLoosened(selection s: Range<Index>,
-	    limit: ExtentController<C>?) -> Range<Index>? {
+	    limit: ExtentController?) -> Range<Index>? {
 		let l = s.lowerBound
 		var r = s.upperBound
-		var bottom: ExtentController<C>?
+		var bottom: ExtentController?
 		guard let extents = extents(enclosing: r) else {
 			return nil
 		}
@@ -389,10 +415,10 @@ extension Rope {
 		return l..<r
 	}
 	public func leftLoosened(selection s: Range<Index>,
-	    limit: ExtentController<C>?) -> Range<Index>? {
+	    limit: ExtentController?) -> Range<Index>? {
 		var l = s.lowerBound
 		let r = s.upperBound
-		var bottom: ExtentController<C>?
+		var bottom: ExtentController?
 		guard let extents = extents(enclosing: l) else {
 			return nil
 		}
@@ -409,7 +435,7 @@ extension Rope {
 		return l..<r
 	}
 	public func directed(selection s: Range<Index>)
-	    -> (range: Range<Index>, controller: ExtentController<C>?)? {
+	    -> (range: Range<Index>, controller: ExtentController?)? {
 		guard let (tight, lo, ro) = tightened(selection: s) else {
 			return nil
 		}
@@ -446,7 +472,7 @@ extension Rope : ExpressibleByStringLiteral,
     ExpressibleByExtendedGraphemeClusterLiteral where
     Rope.Content : ExpressibleByStringLiteral {
 	public init(stringLiteral s: S) {
-		top = Node<Content>(content: s)
+		top = Rope.Node(content: s)
 	}
 }
 */
