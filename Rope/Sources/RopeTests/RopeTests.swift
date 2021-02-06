@@ -833,14 +833,14 @@ class LookupUsingRopeIndicesDerivedFromUTF16Offsets: XCTestCase {
 	}
 	func testIterateElements() {
 		for (i, expected) in expectations.enumerated() {
-			let idx = RopeIndex(utf16Offset: i, in: r)
+			let idx = RSS.Index(utf16Offset: i, in: r)
 			let found = r[idx]
 			XCTAssert(found == expected,
 			    "found \(found) expected \(expected)")
 		}
 	}
 	func testEndIndex() {
-		let idx = RopeIndex(utf16Offset: expectations.count, in: r)
+		let idx = RSS.Index(utf16Offset: expectations.count, in: r)
 		XCTAssertThrowsError(try r.element(at: idx))
 	}
 }
