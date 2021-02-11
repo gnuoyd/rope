@@ -840,7 +840,6 @@ public extension Rope.Node {
 }
 
 public extension Rope.Node {
-	typealias Index = NodeIndex
 	var leaves: LeafSequence {
 		return LeafSequence(of: self)
 	}
@@ -869,7 +868,7 @@ public extension Rope.Node {
 	var startIndex: NodeIndex {
 		return NodeIndex.start
 	}
-	var midIndex: Index {
+	var midIndex: NodeIndex {
 		switch self {
 		case .extent(_, let rope):
 			return rope.midIndex
@@ -1314,7 +1313,7 @@ public extension Rope.Node {
 			return leftSibling.subrope(to: to, depth: depth + 1)
 		}
 	}
-	func deleting(from start: Index, to end: Index) -> Self {
+	func deleting(from start: NodeIndex, to end: NodeIndex) -> Self {
 		return subrope(from: NodeIndex.start, to: start).appending(
 		    subrope(from: end, to: endIndex))
 	}
@@ -1346,22 +1345,22 @@ public extension Rope.Node {
 		return subrope(from: range.lowerBound,
 		               to: range.upperBound)?.content ?? Content.empty
 	}
-	subscript(range: Range<Index>) -> Content {
+	subscript(range: Range<NodeIndex>) -> Content {
 		return subrope(from: range.lowerBound,
 			to: range.upperBound).content
 	}
-	func replacing(range: Range<Index>, with c: Content) -> Self {
+	func replacing(range: Range<NodeIndex>, with c: Content) -> Self {
 		let l = subrope(from: NodeIndex.start, to: range.lowerBound)
 		let r = subrope(from: range.upperBound, to: endIndex)
 		return l.appending(Self(content: c)).appending(r)
 	}
 	func inserting(cursor handle: Handle, attributes: Attributes,
-	    at i: Index) -> Self {
+	    at i: NodeIndex) -> Self {
 		let cursor: Self = .cursor(handle, attributes)
 		return subrope(from: NodeIndex.start, to: i).appending(
 		    cursor).appending(subrope(from: i, to: endIndex))
 	}
-	func inserting(content node: Self, at i: Index) -> Self {
+	func inserting(content node: Self, at i: NodeIndex) -> Self {
 		if case .empty = node {
 			return self
 		}
