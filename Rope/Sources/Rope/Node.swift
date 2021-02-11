@@ -491,9 +491,13 @@ public extension Rope.Node {
 		return (attrs, base..<base + endIndex)
 	}
 	func attributes(at i: NodeIndex) -> (Attributes, Range<NodeIndex>) {
-		return apply({ (node: Self, i: NodeIndex, base: NodeIndex) in node.attributes(at: i, base: base) }, at: i)
+		return transforming(at: i) {
+			(node: Self, i: NodeIndex, base: NodeIndex) in
+				node.attributes(at: i, base: base)
+		}
 	}
-	func applying(_ fn: (Self) -> Self, range: Range<NodeIndex>) -> Self {
+	func transforming(range: Range<NodeIndex>, with fn: (Self) -> Self)
+	    -> Self {
 		let l = subrope(from: NodeIndex.start, to: range.lowerBound)
 		let m = subrope(from: range.lowerBound, to: range.upperBound)
 		let r = subrope(from: range.upperBound, to: endIndex)
@@ -548,17 +552,21 @@ public extension Rope.Node {
 	}
 	func settingAttributes(_ attrs: Attributes, range: Range<NodeIndex>)
 	    -> Self {
-		return applying({ node in node.settingAttributes(attrs) },
-		    range: range)
+		return transforming(range: range) { node in
+			node.settingAttributes(attrs)
+		}
 	}
 	func clearingAttributes(range: Range<NodeIndex>) -> Self {
-		return applying({ node in node.clearingAttributes() },
-		    range: range)
+		return transforming(range: range) { node in
+			node.clearingAttributes()
+		}
 	}
 	func addingAttributes(_ attrs: Attributes, range: Range<NodeIndex>)
 	    -> Self {
-		return applying({ node in node.addingAttributes(attrs) },
-		    range: range)
+		return transforming(range: range) { node in
+			node.addingAttributes(attrs)
+		}
+		    
 	}
 }
 
@@ -890,20 +898,21 @@ public extension Rope.Node {
 	var length: Int {
 		return endIndex.utf16Offset - startIndex.utf16Offset
 	}
-	func apply<R>(_ fn: (Self, NodeIndex, NodeIndex) -> R,
-	    at i: NodeIndex, base: NodeIndex = NodeIndex.start) -> R {
+	func transforming<R>(at i: NodeIndex, base: NodeIndex = NodeIndex.start,
+	    with fn: (Self, NodeIndex, NodeIndex) -> R) -> R {
 		switch self {
 		case .leaf(_, _), .cursor(_, _), .empty, .index(_):
 			return fn(self, i, base)
 		case .concat(let ropel, let idx, _, _, let roper, _):
 			if i < idx {
-				return ropel.apply(fn, at: i, base: base)
+				return ropel.transforming(at: i, base: base,
+				    with: fn)
 			} else {
-				return roper.apply(fn, at: i - idx,
-				    base: base + idx)
+				return roper.transforming(at: i - idx,
+				    base: base + idx, with: fn)
 			}
 		case .extent(_, let rope):
-			return rope.apply(fn, at: i, base: base)
+			return rope.transforming(at: i, base: base, with: fn)
 		}
 	}
 	func utf16(at i: NodeIndex) -> C.UTF16View.Element {
@@ -915,7 +924,7 @@ public extension Rope.Node {
 			let sidx = C.Index(utf16Offset: i.utf16Offset, in: s)
 			return s.utf16[sidx]
 		}
-		return apply(utf16, at: i)
+		return transforming(at: i, with: utf16)
 	}
 	func extents(enclosing i0: NodeIndex) -> [Rope.ExtentController] {
 		var path: [Rope.ExtentController] = []
