@@ -5,6 +5,7 @@ import AppKit
 import Rope
 
 public class RopeTextStorage: NSTextStorage {
+    typealias Offset = Rope<Substring>.Node.Offset
 	let rope: Rope<Substring>
 	let _string: RopeString
 	public override init() {
@@ -31,7 +32,7 @@ public class RopeTextStorage: NSTextStorage {
 	override public func attributes(at location: Int,
 	    effectiveRange _range: NSRangePointer?)
 	    -> [NSAttributedString.Key : Any] {
-		let i = NodeIndex(utf16Offset: location)
+		let i = Offset(utf16Offset: location)
 		let (attrs, r) = rope.attributes(at: i)
 		if let range = _range {
 			range.initialize(to: r.utf16NSRange)
@@ -48,7 +49,7 @@ public class RopeTextStorage: NSTextStorage {
 		beginEditing()
 		// TBD make sure `str` is the most efficient representation
 		// to add to Rope<Substring> ?
-		rope[NodeIndex.utf16Range(range)] = Substring(str)
+        rope[Offset.utf16Range(range)] = Substring(str)
 		let actions = NSTextStorageEditActions.editedCharacters.union(
 		    .editedAttributes)
 		edited(actions, range: range,
@@ -58,7 +59,7 @@ public class RopeTextStorage: NSTextStorage {
 	override public func setAttributes(
 	    _ optAttrs: [NSAttributedString.Key : Any]?, range r: NSRange) {
 		beginEditing()
-		let range = NodeIndex.utf16Range(r)
+		let range = Offset.utf16Range(r)
 		if let attrs = optAttrs  {
 			rope.setAttributes(attrs, range: range)
 		} else {

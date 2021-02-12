@@ -5,6 +5,7 @@ import AppKit
 import Rope
 
 class RopeString : NSString {
+    typealias Offset = Rope<Substring>.Node.Offset
 	let rope: Rope<Substring>
 	init(rope r: Rope<Substring>) {
 		rope = r
@@ -25,7 +26,7 @@ class RopeString : NSString {
 		return rope.utf16.length
 	}
 	override func character(at i: Int) -> unichar {
-		let c = rope.utf16[NodeIndex(utf16Offset: i)]
+		let c = rope.utf16[Offset(utf16Offset: i)]
 		// Swift.print("character(at: \(i)) -> \(c)")
 		return c
 	}

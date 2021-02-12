@@ -36,8 +36,8 @@ extension Rope.ExtentController {
 		}
 		return .extent(self, subcontent)
 	}
-	func subrope(of content: Rope.Node, from: NodeIndex, to: NodeIndex,
-	    depth: Int = 0) -> Rope.Node {
+	func subrope(of content: Rope.Node, from: Rope.Node.Offset,
+	    to: Rope.Node.Offset, depth: Int = 0) -> Rope.Node {
 		return .extent(self, content.subrope(from: from,
 		    to: to, depth: depth))
 	}
@@ -483,22 +483,22 @@ public extension Rope.Node {
 }
 
 public extension Rope.Node {
-	func attributes(at i: NodeIndex, base: NodeIndex)
-	    -> (Attributes, Range<NodeIndex>) {
+	func attributes(at i: Offset, base: Offset)
+	    -> (Attributes, Range<Offset>) {
 		guard case .leaf(let attrs, _) = self, i < endIndex else {
 			fatalError("Index out of bounds")
 		}
 		return (attrs, base..<base + endIndex)
 	}
-	func attributes(at i: NodeIndex) -> (Attributes, Range<NodeIndex>) {
+	func attributes(at i: Offset) -> (Attributes, Range<Offset>) {
 		return transforming(at: i) {
-			(node: Self, i: NodeIndex, base: NodeIndex) in
+			(node: Self, i: Offset, base: Offset) in
 				node.attributes(at: i, base: base)
 		}
 	}
-	func transforming(range: Range<NodeIndex>, with fn: (Self) -> Self)
+	func transforming(range: Range<Offset>, with fn: (Self) -> Self)
 	    -> Self {
-		let l = subrope(from: NodeIndex.start, to: range.lowerBound)
+		let l = subrope(from: Offset.start, to: range.lowerBound)
 		let m = subrope(from: range.lowerBound, to: range.upperBound)
 		let r = subrope(from: range.upperBound, to: endIndex)
 		return l.appending(fn(m)).appending(r)
@@ -550,18 +550,18 @@ public extension Rope.Node {
 			return self
 		}
 	}
-	func settingAttributes(_ attrs: Attributes, range: Range<NodeIndex>)
+	func settingAttributes(_ attrs: Attributes, range: Range<Offset>)
 	    -> Self {
 		return transforming(range: range) { node in
 			node.settingAttributes(attrs)
 		}
 	}
-	func clearingAttributes(range: Range<NodeIndex>) -> Self {
+	func clearingAttributes(range: Range<Offset>) -> Self {
 		return transforming(range: range) { node in
 			node.clearingAttributes()
 		}
 	}
-	func addingAttributes(_ attrs: Attributes, range: Range<NodeIndex>)
+	func addingAttributes(_ attrs: Attributes, range: Range<Offset>)
 	    -> Self {
 		return transforming(range: range) { node in
 			node.addingAttributes(attrs)
@@ -865,10 +865,10 @@ public extension Rope.Node {
 			return l.content + r.content
 		}
 	}
-	var startIndex: NodeIndex {
-		return NodeIndex.start
+	var startIndex: Offset {
+		return Offset.start
 	}
-	var midIndex: NodeIndex {
+	var midIndex: Offset {
 		switch self {
 		case .extent(_, let rope):
 			return rope.midIndex
@@ -878,7 +878,7 @@ public extension Rope.Node {
 			return self.endIndex
 		}
 	}
-	var endIndex: NodeIndex {
+	var endIndex: Offset {
 		switch self {
 		case Self.concat(_, _, _, _, _, let idx):
 			return idx
@@ -887,18 +887,18 @@ public extension Rope.Node {
 		case .leaf(_, let s):
 			let endOffset = s.endIndex.utf16Offset(in: s)
 			let startOffset = s.startIndex.utf16Offset(in: s)
-			return NodeIndex(utf16Offset: endOffset - startOffset)
+			return Offset(utf16Offset: endOffset - startOffset)
 		case .empty, .index(_):
-			return NodeIndex.start
+			return Offset.start
 		case .cursor(_, _):
-			return NodeIndex.start
+			return Offset.start
 		}
 	}
 	var length: Int {
 		return endIndex.utf16Offset - startIndex.utf16Offset
 	}
-	func transforming<R>(at i: NodeIndex, base: NodeIndex = NodeIndex.start,
-	    with fn: (Self, NodeIndex, NodeIndex) -> R) -> R {
+	func transforming<R>(at i: Offset, base: Offset = Offset.start,
+	    with fn: (Self, Offset, Offset) -> R) -> R {
 		switch self {
 		case .leaf(_, _), .cursor(_, _), .empty, .index(_):
 			return fn(self, i, base)
@@ -914,8 +914,8 @@ public extension Rope.Node {
 			return rope.transforming(at: i, base: base, with: fn)
 		}
 	}
-	func utf16(at i: NodeIndex) -> C.UTF16View.Element {
-		func utf16(_ node: Self, at i: NodeIndex, base: NodeIndex)
+	func utf16(at i: Offset) -> C.UTF16View.Element {
+		func utf16(_ node: Self, at i: Offset, base: Offset)
 		    -> C.UTF16View.Element {
 			guard case .leaf(_, let s) = node else {
 				fatalError("In \(#function), no utf16 \(i)")
@@ -925,7 +925,7 @@ public extension Rope.Node {
 		}
 		return transforming(at: i, with: utf16)
 	}
-	func extents(enclosing i0: NodeIndex) -> [Rope.ExtentController] {
+	func extents(enclosing i0: Offset) -> [Rope.ExtentController] {
 		var path: [Rope.ExtentController] = []
 		var i = i0
 		var next = self
@@ -1076,7 +1076,7 @@ public extension Rope.Node {
 		}
 	}
 	*/
-	func element(at i: NodeIndex) -> Element {
+	func element(at i: Offset) -> Element {
 		switch self {
 		case .leaf(_, let s):
 			let idx =
@@ -1183,8 +1183,8 @@ public extension Rope.Node {
 			}
 		})
 	}
-	func subrope(from: NodeIndex, to: NodeIndex, depth: Int = 0) -> Self {
-		assert(NodeIndex.start <= from)
+	func subrope(from: Offset, to: Offset, depth: Int = 0) -> Self {
+		assert(Offset.start <= from)
 		let endIndex = self.endIndex
 		assert(to <= endIndex)
 		// print("enter\(" " * depth) substring \(from):\(to) " +
@@ -1204,7 +1204,7 @@ public extension Rope.Node {
 				return .empty
 			}
 			var l, r: Self
-			if from == NodeIndex.start && idx <= to {
+			if from == Offset.start && idx <= to {
 				l = ropel
 			} else if idx <= from {
 				l = .empty
@@ -1221,7 +1221,7 @@ public extension Rope.Node {
 				r = .empty
 			} else {
 				r = roper.subrope(
-					from: max(NodeIndex.start, from - idx),
+					from: max(Offset.start, from - idx),
 					to: min(endIndex - idx, to - idx),
 					depth: depth + 1)
 			}
@@ -1313,8 +1313,8 @@ public extension Rope.Node {
 			return leftSibling.subrope(to: to, depth: depth + 1)
 		}
 	}
-	func deleting(from start: NodeIndex, to end: NodeIndex) -> Self {
-		return subrope(from: NodeIndex.start, to: start).appending(
+	func deleting(from start: Offset, to end: Offset) -> Self {
+		return subrope(from: Offset.start, to: start).appending(
 		    subrope(from: end, to: endIndex))
 	}
 	func compactMap(_ filter: (Self) -> Self?) -> Self? {
@@ -1345,26 +1345,26 @@ public extension Rope.Node {
 		return subrope(from: range.lowerBound,
 		               to: range.upperBound)?.content ?? Content.empty
 	}
-	subscript(range: Range<NodeIndex>) -> Content {
+	subscript(range: Range<Offset>) -> Content {
 		return subrope(from: range.lowerBound,
 			to: range.upperBound).content
 	}
-	func replacing(range: Range<NodeIndex>, with c: Content) -> Self {
-		let l = subrope(from: NodeIndex.start, to: range.lowerBound)
+	func replacing(range: Range<Offset>, with c: Content) -> Self {
+		let l = subrope(from: Offset.start, to: range.lowerBound)
 		let r = subrope(from: range.upperBound, to: endIndex)
 		return l.appending(Self(content: c)).appending(r)
 	}
 	func inserting(cursor handle: Handle, attributes: Attributes,
-	    at i: NodeIndex) -> Self {
+	    at i: Offset) -> Self {
 		let cursor: Self = .cursor(handle, attributes)
-		return subrope(from: NodeIndex.start, to: i).appending(
+		return subrope(from: Offset.start, to: i).appending(
 		    cursor).appending(subrope(from: i, to: endIndex))
 	}
-	func inserting(content node: Self, at i: NodeIndex) -> Self {
+	func inserting(content node: Self, at i: Offset) -> Self {
 		if case .empty = node {
 			return self
 		}
-		return subrope(from: NodeIndex.start, to: i).appending(
+		return subrope(from: Offset.start, to: i).appending(
 		    node).appending(subrope(from: i, to: endIndex))
 	}
 }

@@ -41,6 +41,7 @@ public class Rope<C : Content> : Collection {
 	}
 	public typealias Content = C
 	public typealias Element = Node
+	public typealias Offset = Node.Offset
 	public enum Index : Comparable {
 	case start(of: Rope)
 	case end(of: Rope)
@@ -60,10 +61,17 @@ public class Rope<C : Content> : Collection {
 	public indirect enum Node {
 	public typealias Content = C
 	public typealias Element = C.Element
+	public struct Offset {
+		public init(utf16Offset offset: Int) {
+			self.utf16Offset = offset
+		}
+		public let utf16Offset: Int
+		public static var start: Offset { Offset(utf16Offset: 0) }
+	}
 	case cursor(Handle, Attributes)
 	case index(Weak<Handle>)
 	case extent(ExtentController, Node)
-	case concat(Node, NodeIndex, UInt, HandleSet, Node, NodeIndex)
+	case concat(Node, Offset, UInt, HandleSet, Node, Offset)
 	case leaf(Attributes, C)
 	case empty
 	}
@@ -172,27 +180,7 @@ public class Rope<C : Content> : Collection {
 			}
 		}
 	}
-	/* TBD tests */
-	public subscript(_ r: Range<NodeIndex>) -> Content {
-		set(newValue) {
-			top = top.replacing(range: r, with: newValue)
-		}
-		get {
-			return top[r]
-		}
-	}
-/*
-	public subscript<I>(_ r: Range<NodeIndex>) -> I
-                where C : Initializable, C.Initializer == I, I : Collection, I : Initializable, I.Initializer == C {
-		set(newValue) {
-			top = top.replacing(range: r, with: C(newValue))
-		}
-		get {
-			return I(top[r])
-		}
-	}
-*/
-	public subscript(i: NodeIndex) -> Content.Element {
+	public subscript(i: Offset) -> Content.Element {
 		return top.element(at: i)
 	}
 	public subscript(r: Range<Index>) -> Element {
@@ -250,14 +238,33 @@ public class Rope<C : Content> : Collection {
 		}
 		return true
 	}
-	public func attributes(at i: NodeIndex)
-	    -> (Attributes, Range<NodeIndex>) {
+	/* TBD tests */
+	public subscript(_ r: Range<Offset>) -> Content {
+		set(newValue) {
+			top = top.replacing(range: r, with: newValue)
+		}
+		get {
+			return top[r]
+		}
+	}
+/*
+	public subscript<I>(_ r: Range<Offset>) -> I
+                where C : Initializable, C.Initializer == I, I : Collection, I : Initializable, I.Initializer == C {
+		set(newValue) {
+			top = top.replacing(range: r, with: C(newValue))
+		}
+		get {
+			return I(top[r])
+		}
+	}
+*/
+	public func attributes(at i: Offset) -> (Attributes, Range<Offset>) {
 		return top.attributes(at: i)
 	}
-	public func setAttributes(_ attrs: Attributes, range: Range<NodeIndex>){
+	public func setAttributes(_ attrs: Attributes, range: Range<Offset>){
 		top = top.settingAttributes(attrs, range: range)
 	}
-	public func clearAttributesOnRange(_ range: Range<NodeIndex>) {
+	public func clearAttributesOnRange(_ range: Range<Offset>) {
 		top = top.clearingAttributes(range: range)
 	}
 }
@@ -275,7 +282,7 @@ extension Rope {
 		init(rope r: Rope) {
 			rope = r
 		}
-                public subscript(i: NodeIndex) -> Unicode.UTF16.CodeUnit {
+                public subscript(i: Offset) -> Unicode.UTF16.CodeUnit {
                         get {
                                 return rope.top.utf16(at: i)
                         }
