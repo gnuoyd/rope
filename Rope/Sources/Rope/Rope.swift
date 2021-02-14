@@ -249,7 +249,8 @@ public class Rope<C : Content> : Collection {
 	}
 /*
 	public subscript<I>(_ r: Range<Offset>) -> I
-                where C : Initializable, C.Initializer == I, I : Collection, I : Initializable, I.Initializer == C {
+	    where C : Initializable, C.Initializer == I, I : Collection,
+	          I : Initializable, I.Initializer == C {
 		set(newValue) {
 			top = top.replacing(range: r, with: C(newValue))
 		}
