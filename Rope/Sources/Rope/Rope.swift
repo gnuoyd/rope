@@ -442,7 +442,9 @@ extension Rope {
 		return l..<r
 	}
 	public func directed(selection s: Range<Index>)
-	    -> (range: Range<Index>, controller: ExtentController?)? {
+	    -> (range: Range<Index>,
+	        narrow: ExtentController?,
+	        wide: ExtentController?)? {
 		guard let (tight, lo, ro) = tightened(selection: s) else {
 			return nil
 		}
@@ -454,7 +456,7 @@ extension Rope {
 		    limit: common.last)!
 		let loosest = rightLoosened(selection: looser,
 		    limit: common.last)!
-		return (range: loosest, controller: common.last)
+		return (range: loosest, narrow: common.last, wide: common.first)
 	}
 }
 

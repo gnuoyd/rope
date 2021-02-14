@@ -65,6 +65,8 @@ class DirectSelection : XCTestCase {
 	var _abc: RSS? = nil
 	var _abcdef: RSS? = nil
 	var _pqrs: RSS? = nil
+	var _wxyz: RSS? = nil
+	// (a)b(c)
 	var abc: RSS {
 		if let r = _abc {
 			return r
@@ -75,11 +77,23 @@ class DirectSelection : XCTestCase {
 		_abc = r
 		return r
 	}
+	// w(x(y(z)))
+	var wxyz: RSS {
+		if let r = _wxyz {
+			return r
+		}
+		let r: RSS = Rope(with: .nodes(.text("w"),
+		    .extent(under: c[0], .text("x"),
+		            .extent(under: c[1], .text("y"),
+			            .extent(under: c[2], .text("z"))))))
+		_wxyz = r
+		return r
+	}
+	// (()(a)b(cd)ef)
 	var abcdef: RSS {
 		if let r = _abcdef {
 			return r
 		}
-		// (()(a)b(cd)ef)
 		let r: RSS = Rope(with:
 		    .extent(under: c[0],
 		        .extent(under: c[1], .empty),
@@ -90,6 +104,7 @@ class DirectSelection : XCTestCase {
 		_abcdef = r
 		return r
 	}
+	// (p(q)r)(s)
 	var pqrs: RSS {
 		if let r = _pqrs {
 			return r
@@ -100,68 +115,183 @@ class DirectSelection : XCTestCase {
 		_pqrs = r
 		return r
 	}
-	func testDirectAbc1() {
+	func testDirectedWxyz1() {
+		let start = wxyz.index(after: wxyz.startIndex)
+		let end = wxyz.index(before: wxyz.endIndex)
+		// w*(x(y(z))*)
+		guard let (range, narrow, wide) =
+		    wxyz.directed(selection: start..<end) else {
+			XCTAssert(false, "\(start..<end) not found")
+			return
+		}
+		// w(*x(y(z))*)
+		let l = wxyz.index(wxyz.startIndex, offsetBy: 2)
+		let r = end
+		XCTAssert(range == l..<r)
+		XCTAssert(narrow == c[0])
+		XCTAssert(wide == c[0])
+	}
+	func testDirectedWxyz2() {
+		let start = wxyz.index(wxyz.startIndex, offsetBy: 2)
+		let end = wxyz.index(before: wxyz.endIndex)
+		// w(*x(y(z))*)
+		guard let (range, narrow, wide) =
+		    wxyz.directed(selection: start..<end) else {
+			XCTAssert(false, "\(start..<end) not found")
+			return
+		}
+		// w(*x(y(z))*)
+		let l = start
+		let r = end
+		XCTAssert(range == l..<r)
+		XCTAssert(narrow == c[0])
+		XCTAssert(wide == c[0])
+	}
+	func testDirectedWxyz3() {
+		let start = wxyz.index(wxyz.startIndex, offsetBy: 3)
+		let end = wxyz.index(before: wxyz.endIndex)
+		// w(x*(y(z))*)
+		guard let (range, narrow, wide) =
+		    wxyz.directed(selection: start..<end) else {
+			XCTAssert(false, "\(start..<end) not found")
+			return
+		}
+		// w(x(*y(z)*))
+		let l = wxyz.index(wxyz.startIndex, offsetBy: 4)
+		let r = wxyz.index(wxyz.endIndex, offsetBy: -2)
+		XCTAssert(range == l..<r)
+		XCTAssert(narrow == c[1])
+		XCTAssert(wide == c[0])
+	}
+	func testDirectedWxyz4() {
+		let start = wxyz.index(wxyz.startIndex, offsetBy: 4)
+		let end = wxyz.index(before: wxyz.endIndex)
+		// w(x(*y(z))*)
+		guard let (range, narrow, wide) =
+		    wxyz.directed(selection: start..<end) else {
+			XCTAssert(false, "\(start..<end) not found")
+			return
+		}
+		// w(x(*y(z)*))
+		let l = start
+		let r = wxyz.index(wxyz.endIndex, offsetBy: -2)
+		XCTAssert(range == l..<r)
+		XCTAssert(narrow == c[1])
+		XCTAssert(wide == c[0])
+	}
+	func testDirectedWxyz5() {
+		let start = wxyz.index(wxyz.startIndex, offsetBy: 5)
+		let end = wxyz.index(before: wxyz.endIndex)
+		// w(x(y*(z))*)
+		guard let (range, narrow, wide) =
+		    wxyz.directed(selection: start..<end) else {
+			XCTAssert(false, "\(start..<end) not found")
+			return
+		}
+		// w(x(y(*z*)))
+		let l = wxyz.index(wxyz.startIndex, offsetBy: 6)
+		let r = wxyz.index(wxyz.endIndex, offsetBy: -3)
+		XCTAssert(range == l..<r)
+		XCTAssert(narrow == c[2])
+		XCTAssert(wide == c[0])
+	}
+	func testDirectedWxyz6() {
+		let start = wxyz.index(wxyz.startIndex, offsetBy: 6)
+		let end = wxyz.index(wxyz.endIndex, offsetBy: -4)
+		// w(x(y(**z)))
+		guard let (range, narrow, wide) =
+		    wxyz.directed(selection: start..<end) else {
+			XCTAssert(false, "\(start..<end) not found")
+			return
+		}
+		// w(x(y(**z)))
+		let l = start
+		let r = end
+		XCTAssert(range == l..<r)
+		XCTAssert(narrow == c[2])
+		XCTAssert(wide == c[0])
+	}
+	func testDirectedAbc1() {
 		let start = abc.index(after: abc.startIndex)
 		let end = abc.index(before: abc.endIndex)
 		// (*a)b(c*)
-		guard let (range, ctlr) = abc.directed(selection: start..<end)
-		    else {
+		guard let (range, narrow, wide) =
+		    abc.directed(selection: start..<end) else {
 			XCTAssert(false, "\(start..<end) not found")
 			return
 		}
 		// *(a)b(c)*
 		XCTAssert(range == abc.startIndex..<abc.endIndex)
-		XCTAssert(ctlr == nil)
+		XCTAssert(narrow == nil)
+		XCTAssert(wide == nil)
 	}
 	func testTightenPqrs1() {
 		let start = pqrs.index(pqrs.startIndex, offsetBy: 2)
 		let end = pqrs.index(pqrs.endIndex, offsetBy: -3)
-		// (p*(a)b)*(c)
+		// (p*(q)r)*(s)
 		guard let (range, lctlrs, rctlrs) =
 		    pqrs.tightened(selection: start..<end) else {
 			XCTAssert(false, "\(start..<end) not found")
 			return
 		}
-		// (p*(a)b*)(c)
+		// (p*(q)r*)(s)
 		let l = start
 		let r = pqrs.index(pqrs.endIndex, offsetBy: -4)
 		XCTAssert(range == l..<r)
 		XCTAssert(lctlrs[...] == c[..<1])
 		XCTAssert(rctlrs[...] == c[..<1])
 	}
-	func testDirectPqrs1() {
+	func testDirectedPqrs1() {
 		let start = pqrs.index(pqrs.startIndex, offsetBy: 2)
 		let end = pqrs.index(pqrs.endIndex, offsetBy: -3)
-		// (p*(a)b)*(c)
-		guard let (range, ctlr) = pqrs.directed(selection: start..<end)
-		    else {
+		// (p*(q)r)*(s)
+		guard let (range, narrow, wide) =
+		    pqrs.directed(selection: start..<end) else {
 			XCTAssert(false, "\(start..<end) not found")
 			return
 		}
-		// (p*(a)b*)(c)
+		// (p*(q)r*)(s)
 		let l = start
 		let r = pqrs.index(pqrs.endIndex, offsetBy: -4)
 		XCTAssert(range == l..<r)
-		XCTAssert(ctlr == c[0])
+		XCTAssert(narrow == c[0])
+		XCTAssert(wide == c[0])
 	}
-	func testDirectAbcdef1() {
+	func testDirectedPqrs2() {
+		let start = pqrs.index(pqrs.startIndex, offsetBy: 2)
+		let end = pqrs.index(pqrs.endIndex, offsetBy: -5)
+		// (p*(q)*r)(s)
+		guard let (range, narrow, wide) =
+		    pqrs.directed(selection: start..<end) else {
+			XCTAssert(false, "\(start..<end) not found")
+			return
+		}
+		// (p(*q*)r)(s)
+		let l = pqrs.index(pqrs.startIndex, offsetBy: 3)
+		let r = pqrs.index(pqrs.endIndex, offsetBy: -6)
+		XCTAssert(range == l..<r)
+		XCTAssert(narrow == c[1])
+		XCTAssert(wide == c[0])
+	}
+	func testDirectedAbcdef1() {
 		let start = abcdef.index(abcdef.startIndex, offsetBy: 3)
 		let end = abcdef.index(abcdef.endIndex, offsetBy: -5)
 		// (()*(a)b(c*d)ef)
-		guard let (range, ctlr) =
+		guard let (range, narrow, wide) =
 		    abcdef.directed(selection: start..<end) else {
 			XCTAssert(false, "\(start..<end) not found")
 			return
 		}
 		// (()*(a)b(c*d)ef)
 		XCTAssert(range == start..<end)
-		XCTAssert(ctlr == c[0])
+		XCTAssert(narrow == c[0])
+		XCTAssert(wide == c[0])
 	}
-	func testDirectAbcdef2() {
+	func testDirectedAbcdef2() {
 		let start = abcdef.index(abcdef.startIndex, offsetBy: 4)
 		let end = abcdef.index(abcdef.endIndex, offsetBy: -5)
 		// (()(*a)b(c*d)ef)
-		guard let (range, ctlr) =
+		guard let (range, narrow, wide) =
 		    abcdef.directed(selection: start..<end) else {
 			XCTAssert(false, "\(start..<end) not found")
 			return
@@ -170,13 +300,14 @@ class DirectSelection : XCTestCase {
 		let l = abcdef.index(abcdef.startIndex, offsetBy: 3)
 		let r = end
 		XCTAssert(range == l..<r)
-		XCTAssert(ctlr == c[0])
+		XCTAssert(narrow == c[0])
+		XCTAssert(wide == c[0])
 	}
-	func testDirectAbcdef3() {
+	func testDirectedAbcdef3() {
 		let start = abcdef.index(abcdef.startIndex, offsetBy: 5)
 		let end = abcdef.index(abcdef.endIndex, offsetBy: -5)
 		// (()(a*)b(c*d)ef)
-		guard let (range, ctlr) =
+		guard let (range, narrow, wide) =
 		    abcdef.directed(selection: start..<end) else {
 			XCTAssert(false, "\(start..<end) not found")
 			return
@@ -185,7 +316,40 @@ class DirectSelection : XCTestCase {
 		let l = start
 		let r = end
 		XCTAssert(range == l..<r)
-		XCTAssert(ctlr == c[0])
+		XCTAssert(narrow == c[0])
+		XCTAssert(wide == c[0])
+	}
+	func testDirectedAbcdef4() {
+		let start = abcdef.index(abcdef.startIndex, offsetBy: 2)
+		let end = abcdef.index(abcdef.endIndex, offsetBy: -5)
+		// ((*)(a)b(c*d)ef)
+		guard let (range, narrow, wide) =
+		    abcdef.directed(selection: start..<end) else {
+			XCTAssert(false, "\(start..<end) not found")
+			return
+		}
+		// (*()(a)b(c*d)ef)
+		let l = abcdef.index(abcdef.startIndex, offsetBy: 1)
+		let r = end
+		XCTAssert(range == l..<r)
+		XCTAssert(narrow == c[0])
+		XCTAssert(wide == c[0])
+	}
+	func testDirectedAbcdef5() {
+		let start = abcdef.index(abcdef.startIndex, offsetBy: 2)
+		let end = abcdef.index(abcdef.endIndex, offsetBy: -4)
+		// ((*)(a)b(cd*)ef)
+		guard let (range, narrow, wide) =
+		    abcdef.directed(selection: start..<end) else {
+			XCTAssert(false, "\(start..<end) not found")
+			return
+		}
+		// (*()(a)b(cd)*ef)
+		let l = abcdef.index(abcdef.startIndex, offsetBy: 1)
+		let r = abcdef.index(abcdef.endIndex, offsetBy: -3)
+		XCTAssert(range == l..<r)
+		XCTAssert(narrow == c[0])
+		XCTAssert(wide == c[0])
 	}
 }
 
