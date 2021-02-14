@@ -41,7 +41,7 @@ extension Rope.ExtentController {
 		return .extent(self, content.subrope(from: from,
 		    to: to, depth: depth))
 	}
-	func rope(_ content: Rope.Node, inserting elt: Rope.Node,
+	func node(_ content: Rope.Node, inserting elt: Rope.Node,
 	    at target: Handle) -> Rope.Node? {
 		guard let subcontent = content.inserting(elt, at: target) else {
 			return nil
@@ -581,7 +581,7 @@ public extension Rope.Node {
 		case .cursor(_, _):
 			return nil
 		case .extent(let ctlr, let r):
-			return ctlr.rope(r, inserting: elt, at: target)
+			return ctlr.node(r, inserting: elt, at: target)
 		case .concat(let l, _, _, _, let r, _):
 			if l.contains(target) {
 				guard let newl = l.inserting(elt, at: target)
