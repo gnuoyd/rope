@@ -1039,43 +1039,6 @@ public extension Rope.Node {
 			return nil
 		}
 	}
-	/*
-	func subrope(from: Rope.Index, rightSibling: Self = .empty,
-	    depth: Int = 0) -> Self? {
-		switch (self, from) {
-		case (_, .end(_)):
-			return .empty
-		case (_, .start(_)):
-			return self.appending(rightSibling)
-		case (.extent(let ctlr, let content), _):
-			guard let subextent = ctlr.subrope(of: content,
-			    from: from, depth: depth) else {
-				return rightSibling.subrope(from: from,
-				    depth: depth)
-			}
-			return subextent.appending(rightSibling)
-		case (.index(let w), .interior(_, _, _, let h))
-		    where w.get() == h:
-			return rightSibling
-		case (.concat(let l, _, _, _, let r, _),
-		      .interior(_, _, _, let h))
-		    where self.contains(h):
-			guard let match = l.subrope(from: from,
-			    rightSibling: r.appending(rightSibling),
-			    depth: depth + 1) else {
-				return r.subrope(from: from,
-				    rightSibling: rightSibling,
-				    depth: depth + 1)
-			    }
-			return match
-		case (.cursor(_, _), _), (.empty, _), (.index(_), _),
-		     (.leaf(_, _), _) where rightSibling == .empty:
-			return nil
-		default:
-			return rightSibling.subrope(from: from, depth: depth)
-		}
-	}
-	*/
 	func element(at i: Offset) -> Element {
 		switch self {
 		case .leaf(_, let s):
