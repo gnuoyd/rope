@@ -1845,7 +1845,42 @@ class TightenSelection: NestedExtentBase {
 	}
 }
 
-// TBD share `rope` with RopeIndexedControllerPaths
+class CompareIndicesAndEndComplicatedRopes: NestedExtentBase {
+	func testEquals() {
+		XCTAssert(
+		    rope.index(after: rope.index(before: rope.endIndex)) ==
+		    rope.endIndex)
+		XCTAssert(
+		    rope.index(rope.index(rope.endIndex, offsetBy: -2),
+		               offsetBy: 2) == rope.endIndex)
+	}
+}
+
+class CompareIndicesAndStartComplicatedRopes: NestedExtentBase {
+	func testEquals() {
+		XCTAssert(
+		    rope.index(before: rope.index(after: rope.startIndex)) ==
+		    rope.startIndex)
+		XCTAssert(
+		    rope.index(rope.index(rope.startIndex, offsetBy: 2),
+		               offsetBy: -2) == rope.startIndex)
+	}
+	/* TBD delete left of index(_, offsetBy: n > 0): an interior
+	 * index is no longer interior if the content to its left was
+	 * deleted.
+	 */
+	func testEdits() {
+		let pqrs = RSS(content: "pqrs")
+		let idx = pqrs.index(pqrs.startIndex, offsetBy: 2)
+		let range = Offset(utf16Offset: 0)..<Offset(utf16Offset: 2)
+		/* Unfortunately, the following removes the .index(_) node
+		 * corresponding to `idx`:
+		 */
+		pqrs[range] = Substring("")
+		XCTAssert(idx == pqrs.startIndex)
+	}
+}
+
 class CompareDisparateIndicesComplicatedRopes: NestedExtentBase {
 	/* All cursor positions:
 	 *   *(abc(def(ghi)))
