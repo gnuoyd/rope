@@ -1868,7 +1868,8 @@ class CompareDisparateIndicesComplicatedRopes: NestedExtentBase {
 	func testEquals() {
 		XCTAssert(rope.index(before: rope.endIndex) ==
 		    rope.index(rope.endIndex, offsetBy: -1))
-		XCTAssert(rope.index(before: rope.index(before: rope.endIndex)) ==
+		XCTAssert(
+		    rope.index(before: rope.index(before: rope.endIndex)) ==
 		    rope.index(rope.endIndex, offsetBy: -2))
 		XCTAssert(rope.index(before: rope.endIndex) ==
 		    rope.index(rope.startIndex, offsetBy: 14))
