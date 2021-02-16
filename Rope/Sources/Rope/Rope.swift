@@ -271,6 +271,15 @@ public class Rope<C : Content> : Collection {
 }
 
 extension Rope {
+	func indices(follow target: Handle) -> Bool? {
+		return top.indices(follow: target)
+	}
+	func indices(precede target: Handle) -> Bool? {
+		return top.indices(precede: target)
+	}
+}
+
+extension Rope {
 	public convenience init(with node: Node) {
 		self.init()
 		top = node
