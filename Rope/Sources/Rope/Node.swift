@@ -1225,7 +1225,7 @@ public extension Rope.Node {
 				return r.subrope(from: from,
 				    rightSibling: rightSibling,
 				    depth: depth + 1)
-			    }
+			}
 			return match
 		case (.cursor(_, _), _), (.empty, _), (.index(_), _),
 		     (.leaf(_, _), _) where rightSibling == .empty:
@@ -1236,30 +1236,28 @@ public extension Rope.Node {
 	}
 	func subrope(leftSibling: Self = .empty, to: Rope.Index,
 	    depth: Int = 0) -> Self? {
-//		Swift.print("enter \(" " * depth)\(#function) leftSibling \(leftSibling) self \(self) to \(to)", terminator: ": ")
+		/*
+		Swift.print("enter \(" " * depth)\(#function) " +
+		            "leftSibling \(leftSibling) self \(self) " +
+			    "to \(to)", terminator: ": ")
+		*/
 		switch (self, to) {
 		case (_, .start(_)):
-//			Swift.print("start match")
 			return .empty
 		case (_, .end(_)):
-//			Swift.print("end match")
 			return leftSibling.appending(self)
 		case (.extent(let ctlr, let content), _):
 			guard let subextent = ctlr.subrope(of: content, to: to,
 			    depth: depth + 1) else {
-//				Swift.print("extent mismatch")
 				return leftSibling.subrope(to: to,
 				                           depth: depth + 1)
 			}
-//			Swift.print("extent match")
 			return leftSibling.appending(subextent)
 		case (.index(let w), .interior(_, _, _, let h))
 		    where w.get() == h:
-//			Swift.print("index match")
 			return leftSibling
 		case (.concat(let l, _, _, _, let r, _),
 		      .interior(_, _, _, let h)) where self.contains(h):
-//			Swift.print("concat match")
 			guard let match = r.subrope(
 			    leftSibling: leftSibling.appending(l),
 			    to: to, depth: depth + 1) else {
@@ -1269,10 +1267,8 @@ public extension Rope.Node {
 			return match
 		case (.cursor(_, _), _), (.empty, _), (.index(_), _),
 		     (.leaf(_, _), _) where leftSibling == .empty:
-//			Swift.print("no match")
 			return nil
 		default:
-//			Swift.print("default match")
 			return leftSibling.subrope(to: to, depth: depth + 1)
 		}
 	}
