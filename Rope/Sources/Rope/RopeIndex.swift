@@ -53,6 +53,13 @@ extension Rope.Index {
 				throw RopeIndexComparisonError.IndexNotFound
 			}
 			return !precedingExist
+		case (.end(_), .interior(_, _, _, let h)),
+		     (.interior(_, _, _, let h), .end(_)):
+			guard let followingExist =
+			    self.owner.indices(follow: h) else {
+				throw RopeIndexComparisonError.IndexNotFound
+			}
+			return !followingExist
 		case (.interior(_, _, _, let h), .interior(_, _, _, let j))
 		    where h == j:
 			return true
