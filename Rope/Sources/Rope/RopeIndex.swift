@@ -4,7 +4,7 @@
 extension Rope.Index {
 	init(utf16Offset i: Int, in rope: Rope) {
 		let h = Handle()
-		rope.node = rope.node.insertingIndex(h, at: i)
+		rope.node = rope.node.inserting(index: h, at: i)
 		self = .interior(of: rope, at: 0, index: 0, handle: h)
 	}
 }

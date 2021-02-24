@@ -307,7 +307,7 @@ public extension Rope.Node {
 			}
 		}
 	}
-	func insertingIndex(_ h: Handle, at utf16Offset: Int) -> Rope.Node {
+	func inserting(index h: Handle, at utf16Offset: Int) -> Rope.Node {
 		switch self {
 		case .cursor(_, _), .index(_), .empty:
 			assert(utf16Offset == 0)
@@ -323,14 +323,15 @@ public extension Rope.Node {
 			        attributes: attrs))
 		case .extent(let ctlr, let n):
 			return Rope.Node(controller: ctlr,
-			            node: n.insertingIndex(h, at: utf16Offset))
+			    node: n.inserting(index: h, at: utf16Offset))
 		case .concat(let l, let idx, _, _, let r, _)
 		    where utf16Offset < idx.utf16Offset:
-			return l.insertingIndex(h, at: utf16Offset).appending(r)
+			return l.inserting(index: h,
+			                   at: utf16Offset).appending(r)
 		case .concat(let l, let idx, _, _, let r, _):
 			return l.appending(
-			    r.insertingIndex(h,
-			        at: utf16Offset - idx.utf16Offset))
+			    r.inserting(index: h,
+			                at: utf16Offset - idx.utf16Offset))
 		}
 	}
 	func inserting(_ j: Handle, one step: DirectedStep, after i: Handle)
