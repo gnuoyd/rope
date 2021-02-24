@@ -1272,10 +1272,12 @@ public extension Rope.Node {
 			return leftSibling.subrope(to: to, depth: depth + 1)
 		}
 	}
+	/*
 	func deleting(from start: Offset, to end: Offset) -> Self {
 		return subrope(from: Offset.start, to: start).appending(
 		    subrope(from: end, to: endIndex))
 	}
+	*/
 	func compactMap(_ filter: (Self) -> Self?) -> Self? {
 		switch self {
 		case .extent(let ctlr, let content):
