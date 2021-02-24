@@ -20,6 +20,16 @@ func *(_ s: String, _ times: Int) -> String {
 }
 
 extension Rope.ExtentController {
+	func subrope(of content: Rope.Node, from: Rope.Node.Offset,
+	    tightly: Bool, depth: Int = 0) -> Rope.Node {
+		let subcontent = content.subrope(from: from, depth: depth)
+		return .extent(self, subcontent)
+	}
+	func subrope(of content: Rope.Node, to: Rope.Node.Offset,
+	    tightly: Bool, depth: Int = 0) -> Rope.Node {
+		let subcontent = content.subrope(to: to, depth: depth)
+		return .extent(self, subcontent)
+	}
 	func subrope(of content: Rope.Node, from: Rope.Index, depth: Int = 0)
 	    -> Rope.Node? {
 		guard let subcontent = content.subrope(from: from, depth: depth)
@@ -35,11 +45,6 @@ extension Rope.ExtentController {
 			return nil
 		}
 		return .extent(self, subcontent)
-	}
-	func subrope(of content: Rope.Node, from: Rope.Node.Offset,
-	    to: Rope.Node.Offset, depth: Int = 0) -> Rope.Node {
-		return .extent(self, content.subrope(from: from,
-		    to: to, depth: depth))
 	}
 	func node(_ content: Rope.Node, inserting elt: Rope.Node,
 	    at target: Handle) -> Rope.Node? {
@@ -1146,58 +1151,92 @@ public extension Rope.Node {
 			}
 		})
 	}
-	func subrope(from: Offset, to: Offset, depth: Int = 0) -> Self {
+	/* Return the subrope that starts at `from`, the UTF16 offset
+	 * from the beginning of `self`, with `rightSibling` appended.
+	 *
+	 * In the subrope, *exclude* all indices, cursors, and other nodes
+	 * that do not affect the UTF16 offset and that are adjacent to
+	 * `from`, if `tightly` is true.  Otherwise, *include* those nodes.
+	 *
+	 * `depth` is just an (unused) diagnostic variable that increases
+	 * at every level of subrope(from:rightSibling:depth:) recursion.
+	 */
+	func subrope(from: Offset, tightly: Bool = false,
+	    rightSibling: Self = .empty, depth: Int = 0) -> Self {
 		assert(Offset.start <= from)
-		let endIndex = self.endIndex
-		assert(to <= endIndex)
-		// print("enter\(" " * depth) substring \(from):\(to) " +
-		//  "on \(self)")
 		switch self {
-		case .index(_):
-			assert(from == to)
-			return .empty
-		case .empty, .cursor(_, _):
-			assert(from == to)
-			return self
+		case .empty, .cursor(_, _), .index(_):
+			assert(Offset.start == from)
+			return tightly ? rightSibling
+			               : self.appending(rightSibling)
 		case .extent(let ctlr, let rope):
-			return ctlr.subrope(of: rope, from: from, to: to,
-			    depth: depth)
-		case .concat(let ropel, let idx, _, _, let roper, _):
-			if from == to {
-				return .empty
-			}
-			var l, r: Self
-			if from == Offset.start && idx <= to {
-				l = ropel
-			} else if idx <= from {
-				l = .empty
-			} else {
-				l = ropel.subrope(
-					from: from,
-					to: min(idx, to),
-					depth: depth + 1)
-			}
-
-			if from <= idx && endIndex <= to {
-				r = roper
-			} else if to <= idx {
-				r = .empty
-			} else {
-				r = roper.subrope(
+			let subextent = ctlr.subrope(of: rope, from: from,
+			    tightly: tightly, depth: depth + 1)
+			return subextent.appending(rightSibling)
+		case .concat(let l, let idx, _, _, let r, _):
+			if idx < from || tightly && idx == from {
+				return r.subrope(
 					from: max(Offset.start, from - idx),
-					to: min(endIndex - idx, to - idx),
+					tightly: tightly,
+					rightSibling: rightSibling,
 					depth: depth + 1)
 			}
-			return l.appending(r)
+			return l.subrope(from: from, tightly: tightly,
+			    rightSibling: r.appending(rightSibling),
+			    depth: depth + 1)
 		case let .leaf(attrs, s):
 			let i = String.Index(utf16Offset: from.utf16Offset,
 			    in: s)
-			let j = String.Index(utf16Offset: to.utf16Offset, in: s)
-			if i >= j {
-				return .empty
+			if i == s.utf16.endIndex {
+				return rightSibling
 			}
-			return .leaf(attrs, s[i..<j])
+			let subleaf: Self =
+			    .leaf(attrs, Content(s.suffix(from: i)))
+			return subleaf.appending(rightSibling)
 		}
+	}
+	/* Append to `leftSibling` and return the subrope that ends at `to`,
+	 * the UTF16 offset from the beginning of `self`.
+	 *
+	 * In the subrope, *exclude* all indices, cursors, and other nodes
+	 * adjacent to `to` that do not increase the UTF16 offset, if `tightly`
+	 * is true.  Otherwise, *include* those nodes.
+	 *
+	 * `depth` is just an (unused) diagnostic variable that increases
+	 * at every level of subrope(from:rightSibling:depth:) recursion.
+	 */
+	func subrope(leftSibling: Self = .empty, to: Offset,
+	    tightly: Bool = false, depth: Int = 0) -> Self {
+		let endIndex = self.endIndex
+		assert(to <= endIndex)
+		switch self {
+		case .empty, .cursor(_, _), .index(_):
+			return tightly ? leftSibling
+			               : leftSibling.appending(self)
+		case .extent(let ctlr, let rope):
+			let subextent = ctlr.subrope(of: rope, to: to,
+			    tightly: tightly, depth: depth + 1)
+			return leftSibling.appending(subextent)
+		case .concat(let l, let idx, _, _, let r, _):
+			if to < idx || tightly && to == idx {
+				return l.subrope(leftSibling: leftSibling,
+				    to: to, tightly: tightly, depth: depth + 1)
+			}
+			return r.subrope(
+				leftSibling: leftSibling.appending(l),
+				to: min(endIndex - idx, to - idx),
+				tightly: tightly, depth: depth + 1)
+		case let .leaf(attrs, s):
+			let i = String.Index(utf16Offset: to.utf16Offset, in: s)
+			if i == s.utf16.startIndex {
+				return leftSibling
+			}
+			return leftSibling.appending(
+			    .leaf(attrs, Self.Content(s.prefix(upTo: i))))
+		}
+	}
+	func subrope(from: Offset, to: Offset) -> Self {
+		return subrope(to: to).subrope(from: from)
 	}
 	func subrope(from: Rope.Index, rightSibling: Self = .empty,
 	    depth: Int = 0) -> Self? {
@@ -1311,8 +1350,8 @@ public extension Rope.Node {
 			to: range.upperBound).content
 	}
 	func replacing(range: Range<Offset>, with c: Content) -> Self {
-		let l = subrope(from: Offset.start, to: range.lowerBound)
-		let r = subrope(from: range.upperBound, to: endIndex)
+		let l = subrope(to: range.lowerBound)
+		let r = subrope(from: range.upperBound)
 		return l.appending(Self(content: c)).appending(r)
 	}
 	func inserting(cursor handle: Handle, attributes: Attributes,
