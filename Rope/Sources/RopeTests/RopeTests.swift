@@ -1865,7 +1865,7 @@ class CompareIndicesAndStartComplicatedRopes: NestedExtentBase {
 		    rope.index(rope.index(rope.startIndex, offsetBy: 2),
 		               offsetBy: -2) == rope.startIndex)
 	}
-	/* TBD delete left of index(_, offsetBy: n > 0): an interior
+	/* Delete left of index(pqrs.startIndex, offsetBy: n > 0): an interior
 	 * index is no longer interior if the content to its left was
 	 * deleted.
 	 */
