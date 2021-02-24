@@ -1854,6 +1854,20 @@ class CompareIndicesAndEndComplicatedRopes: NestedExtentBase {
 		    rope.index(rope.index(rope.endIndex, offsetBy: -2),
 		               offsetBy: 2) == rope.endIndex)
 	}
+	/* Delete right of index(pqrs.endIndex, offsetBy: n < 0): an interior
+	 * index is no longer interior if the content to its right was
+	 * deleted.
+	 */
+	func testEdits() {
+		let pqrs = RSS(content: "pqrs")
+		let idx = pqrs.index(pqrs.endIndex, offsetBy: -2)
+		let range = Offset(utf16Offset: 2)..<Offset(utf16Offset: 4)
+		/* Unfortunately, the following removes the .index(_) node
+		 * corresponding to `idx`:
+		 */
+		pqrs[range] = Substring("")
+		XCTAssert(idx == pqrs.endIndex)
+	}
 }
 
 class CompareIndicesAndStartComplicatedRopes: NestedExtentBase {
