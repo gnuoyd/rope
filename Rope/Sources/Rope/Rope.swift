@@ -9,6 +9,15 @@ case atStart
 case atEnd
 }
 
+extension Range {
+	init<C : Content>(utf16Range r: Range<Rope<C>.Node.Offset>,
+	                   in rope: Rope<C>) where Bound == Rope<C>.Index {
+		let lower = Rope.Index(utf16Offset: r.lowerBound, in: rope)
+		let upper = Rope.Index(utf16Offset: r.upperBound, in: rope)
+		self = lower..<upper
+	}
+}
+
 /* Use cases:
  *
  * Get/set/add/remove attributes on characters.
@@ -244,7 +253,8 @@ public class Rope<C : Content> : Collection {
 			top = top.replacing(range: r, with: newValue)
 		}
 		get {
-			return top[r]
+			let ir = Range(utf16Range: r, in: self)
+			return top[ir]
 		}
 	}
 /*

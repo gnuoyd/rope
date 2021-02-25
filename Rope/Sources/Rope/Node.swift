@@ -307,13 +307,13 @@ public extension Rope.Node {
 			}
 		}
 	}
-	func inserting(index h: Handle, at utf16Offset: Int) -> Rope.Node {
+	func inserting(index h: Handle, at place: Offset) -> Rope.Node {
 		switch self {
 		case .cursor(_, _), .index(_), .empty:
-			assert(utf16Offset == 0)
+			assert(place == .start)
 			return self.appending(Rope.Node(holder: h))
 		case .leaf(let attrs, let content):
-			let idx = String.Index(utf16Offset: utf16Offset,
+			let idx = String.Index(utf16Offset: place.utf16Offset,
 			    in: content)
 			let l = content.prefix(upTo: idx)
 			let r = content.suffix(from: idx)
@@ -323,15 +323,12 @@ public extension Rope.Node {
 			        attributes: attrs))
 		case .extent(let ctlr, let n):
 			return Rope.Node(controller: ctlr,
-			    node: n.inserting(index: h, at: utf16Offset))
-		case .concat(let l, let idx, _, _, let r, _)
-		    where utf16Offset < idx.utf16Offset:
-			return l.inserting(index: h,
-			                   at: utf16Offset).appending(r)
+			    node: n.inserting(index: h, at: place))
+		case .concat(let l, let idx, _, _, let r, _) where place < idx:
+			return l.inserting(index: h, at: place).appending(r)
 		case .concat(let l, let idx, _, _, let r, _):
 			return l.appending(
-			    r.inserting(index: h,
-			                at: utf16Offset - idx.utf16Offset))
+			    r.inserting(index: h, at: place - idx))
 		}
 	}
 	func inserting(_ j: Handle, one step: DirectedStep, after i: Handle)
@@ -1345,10 +1342,6 @@ public extension Rope.Node {
 	subscript(range: Range<Rope.Index>) -> Content {
 		return subrope(from: range.lowerBound,
 		               to: range.upperBound)?.content ?? Content.empty
-	}
-	subscript(range: Range<Offset>) -> Content {
-		return subrope(from: range.lowerBound,
-			to: range.upperBound).content
 	}
 	func replacing(range: Range<Offset>, with c: Content) -> Self {
 		let l = subrope(to: range.lowerBound)

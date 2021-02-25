@@ -998,14 +998,16 @@ class LookupUsingRopeIndicesDerivedFromUTF16Offsets: XCTestCase {
 	}
 	func testIterateElements() {
 		for (i, expected) in expectations.enumerated() {
-			let idx = RSS.Index(utf16Offset: i, in: r)
+			let ofs = Offset(utf16Offset: i)
+			let idx = RSS.Index(utf16Offset: ofs, in: r)
 			let found = r[idx]
 			XCTAssert(found == expected,
 			    "found \(found) expected \(expected)")
 		}
 	}
 	func testEndIndex() {
-		let idx = RSS.Index(utf16Offset: expectations.count, in: r)
+		let ofs = Offset(utf16Offset: expectations.count)
+		let idx = RSS.Index(utf16Offset: ofs, in: r)
 		XCTAssertThrowsError(try r.element(at: idx))
 	}
 }
@@ -1861,7 +1863,7 @@ class CompareIndicesAndEndComplicatedRopes: NestedExtentBase {
 	func testEdits() {
 		let pqrs = RSS(content: "pqrs")
 		let idx = pqrs.index(pqrs.endIndex, offsetBy: -2)
-		let range = Offset(utf16Offset: 2)..<Offset(utf16Offset: 4)
+		let range = Offset.utf16Range(2..<4)
 		/* Unfortunately, the following removes the .index(_) node
 		 * corresponding to `idx`:
 		 */
@@ -1886,7 +1888,7 @@ class CompareIndicesAndStartComplicatedRopes: NestedExtentBase {
 	func testEdits() {
 		let pqrs = RSS(content: "pqrs")
 		let idx = pqrs.index(pqrs.startIndex, offsetBy: 2)
-		let range = Offset(utf16Offset: 0)..<Offset(utf16Offset: 2)
+		let range = Offset.utf16Range(0..<2)
 		/* Unfortunately, the following removes the .index(_) node
 		 * corresponding to `idx`:
 		 */
