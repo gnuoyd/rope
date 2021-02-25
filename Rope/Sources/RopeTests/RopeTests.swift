@@ -1443,7 +1443,8 @@ class NodeAttributes : XCTestCase {
 		let (attrs, frontRange) = newn.attributes(at: Offset(utf16Offset: 0))
 		XCTAssert(NodeAttributes.newAttrsEqual(attrs))
 		XCTAssert(frontRange == Offset.utf16Range(0..<3))
-		let (_, middleRange) = newn.attributes(at: Offset(utf16Offset: 3))
+		let (_, middleRange) =
+		    newn.attributes(at: Offset(utf16Offset: 3))
 		XCTAssert(middleRange == Offset.utf16Range(3..<8))
 	}
 	static func helpTestSettingCentralAttributes(_ oldn: NSS) {
