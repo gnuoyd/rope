@@ -49,7 +49,7 @@ extension Rope.Node.Offset : UTF16Offset {
 }
 
 extension Range where Bound : UTF16Offset {
-	public var utf16NSRange: NSRange {
+	public var nsRange: NSRange {
 		let lower = lowerBound.utf16Offset
 		let upper = upperBound.utf16Offset
 		return NSMakeRange(lower, upper - lower)

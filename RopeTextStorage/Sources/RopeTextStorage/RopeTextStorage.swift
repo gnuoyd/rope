@@ -35,7 +35,7 @@ public class RopeTextStorage: NSTextStorage {
 		let i = Offset(utf16Offset: location)
 		let (attrs, r) = rope.attributes(at: i)
 		if let range = _range {
-			range.initialize(to: r.utf16NSRange)
+			range.initialize(to: r.nsRange)
 		}
 /*
 		Swift.print("\(attrs.count) attributes on " +
