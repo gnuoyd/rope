@@ -115,6 +115,22 @@ class DirectSelection : XCTestCase {
 		_pqrs = r
 		return r
 	}
+	func testDirectedWxyz0() {
+		let start = wxyz.startIndex
+		let end = wxyz.index(before: wxyz.endIndex)
+		// *w(x(y(z))*)
+		guard let (range, narrow, wide) =
+		    wxyz.directed(selection: start..<end) else {
+			XCTAssert(false, "\(start..<end) not found")
+			return
+		}
+		// *w(x(y(z)))*
+		let l = start
+		let r = wxyz.endIndex
+		XCTAssert(range == l..<r)
+		XCTAssert(narrow == nil)
+		XCTAssert(wide == nil)
+	}
 	func testDirectedWxyz1() {
 		let start = wxyz.index(after: wxyz.startIndex)
 		let end = wxyz.index(before: wxyz.endIndex)
