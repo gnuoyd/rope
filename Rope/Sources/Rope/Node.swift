@@ -195,6 +195,10 @@ extension Rope.Node {
 }
 
 public extension Rope.Node {
+	enum Side {
+	case left
+	case right
+	}
 	enum DirectedStep {
 	case rightStep
 	case leftStep
@@ -304,6 +308,49 @@ public extension Rope.Node {
 				return .step(.nodes(newl, r))
 			case let result:
 				return result
+			}
+		}
+	}
+	func inserting(index h: Handle, abutting side: Side,
+	    of offset: Offset) -> Rope.Node {
+		switch self {
+		case .cursor(_, _), .index(_), .empty:
+			assert(offset == .start)
+			switch side {
+			case .left:
+				return Rope.Node(holder: h).appending(self)
+			case .right:
+				return self.appending(Rope.Node(holder: h))
+			}
+		case .leaf(let attrs, let content):
+			let idx = String.Index(utf16Offset: offset.utf16Offset,
+			    in: content)
+			let l = content.prefix(upTo: idx)
+			let r = content.suffix(from: idx)
+			return Rope.Node(content: C.init(l), attributes: attrs)
+			    .appending(Rope.Node(holder: h))
+			    .appending(Rope.Node(content: C.init(r),
+			        attributes: attrs))
+		case .extent(let ctlr, let n):
+			return Rope.Node(controller: ctlr,
+			    node: n.inserting(index: h, abutting: side,
+			        of: offset))
+		case .concat(let l, let middle, _, _, let r, _):
+			if offset < middle {
+				return l.inserting(index: h, abutting: side,
+				    of: offset).appending(r)
+			}
+			if middle < offset {
+				return l.appending(r.inserting(index: h,
+				    abutting: side, of: offset - middle))
+			}
+			switch side {
+			case .left:
+				return l.inserting(index: h, abutting: side,
+				    of: offset).appending(r)
+			case .right:
+				return l.appending(r.inserting(index: h,
+				    abutting: side, of: offset - middle))
 			}
 		}
 	}
@@ -1342,6 +1389,18 @@ public extension Rope.Node {
 	subscript(range: Range<Rope.Index>) -> Content {
 		return subrope(from: range.lowerBound,
 		               to: range.upperBound)?.content ?? Content.empty
+	}
+	/* XXX this will split extents!  Needs to find affected extents,
+	 * split, perform replacement/deletion on each affected extent.
+	 */
+	func replacing(range: Range<Rope.Index>, with c: Content) -> Self? {
+		guard let l = subrope(to: range.lowerBound) else {
+			return nil
+		}
+		guard let r = subrope(from: range.upperBound) else {
+			return nil
+		}
+		return l.appending(Self(content: c)).appending(r)
 	}
 	func replacing(range: Range<Offset>, with c: Content) -> Self {
 		let l = subrope(to: range.lowerBound)

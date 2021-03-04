@@ -2,6 +2,13 @@
 // Copyright (c) 2019, 2020 David Young.  All rights reserved.
 //
 extension Rope.Index {
+	init(abutting utf16Offset: Rope.Node.Offset, on side: Rope.Node.Side,
+	     in rope: Rope) {
+		let h = Handle()
+		rope.node = rope.node.inserting(index: h, abutting: side,
+		    of: utf16Offset)
+		self = .interior(of: rope, at: 0, index: 0, handle: h)
+	}
 	init(utf16Offset: Rope.Node.Offset, in rope: Rope) {
 		let h = Handle()
 		rope.node = rope.node.inserting(index: h, at: utf16Offset)

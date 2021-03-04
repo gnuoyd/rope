@@ -12,8 +12,10 @@ case atEnd
 extension Range {
 	init<C : Content>(utf16Range r: Range<Rope<C>.Node.Offset>,
 	                   in rope: Rope<C>) where Bound == Rope<C>.Index {
-		let lower = Rope.Index(utf16Offset: r.lowerBound, in: rope)
-		let upper = Rope.Index(utf16Offset: r.upperBound, in: rope)
+		let lower = Rope.Index(abutting: r.lowerBound, on: .right,
+		    in: rope)
+		let upper = Rope.Index(abutting: r.upperBound, on: .left,
+		    in: rope)
 		self = lower..<upper
 	}
 }
@@ -250,7 +252,12 @@ public class Rope<C : Content> : Collection {
 	/* TBD tests */
 	public subscript(_ r: Range<Offset>) -> Content {
 		set(newValue) {
-			top = top.replacing(range: r, with: newValue)
+			let ir = Range(utf16Range: r, in: self)
+			guard let newtop = top.replacing(range: ir,
+			    with: newValue) else {
+				fatalError("No such range")
+			}
+			top = newtop
 		}
 		get {
 			let ir = Range(utf16Range: r, in: self)
