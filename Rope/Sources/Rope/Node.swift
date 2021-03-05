@@ -1026,15 +1026,13 @@ public extension Rope.Node {
 		switch (i, self) {
 		case (.start(_), _), (.end(_), _):
 			return controllers
-		case (.interior(_, _, _, let h), .index(let w))
-		    where w.get() == h:
+		case (.interior(_, let h), .index(let w)) where w.get() == h:
 			return controllers
-		case (.interior(_, _, _, let h),
-		      .concat(let l, _, _, _, let r, _))
+		case (.interior(_, let h), .concat(let l, _, _, _, let r, _))
 		     where self.contains(h):
 		     	return l.extents(enclosing: i, in: controllers) ??
 		     	       r.extents(enclosing: i, in: controllers)
-		case (.interior(_, _, _, _), .extent(let ctlr, let content)):
+		case (.interior(_, _), .extent(let ctlr, let content)):
 			return content.extents(enclosing: i,
 			    in: controllers + [ctlr])
 		default:
@@ -1052,11 +1050,10 @@ public extension Rope.Node {
 		case (.extent(let ctlr, let content), _):
 			return content.extentsOpening(at: i,
 			                              in: controllers + [ctlr])
-		case (.index(let w), .interior(_, _, _, let h))
-		    where w.get() == h:
+		case (.index(let w), .interior(_, let h)) where w.get() == h:
 			return controllers
 		case (.concat(let l, let midx, _, let hids, let r, _),
-		      .interior(_, _, _, let h)):
+		      .interior(_, let h)):
 		        guard hids.contains(h.id) else {
 				return nil
 			}
@@ -1088,11 +1085,10 @@ public extension Rope.Node {
 		case (.extent(let ctlr, let content), _):
 			return content.extentsClosing(at: i,
 			                              in: controllers + [ctlr])
-		case (.index(let w), .interior(_, _, _, let h))
-		    where w.get() == h:
+		case (.index(let w), .interior(_, let h)) where w.get() == h:
 			return controllers
 		case (.concat(let l, let midx, _, let hids, let r, let endx),
-		      .interior(_, _, _, let h)):
+		      .interior(_, let h)):
 		        guard hids.contains(h.id) else {
 				return nil
 			}
@@ -1332,11 +1328,9 @@ public extension Rope.Node {
 				    depth: depth)
 			}
 			return subextent.appending(rightSibling)
-		case (.index(let w), .interior(_, _, _, let h))
-		    where w.get() == h:
+		case (.index(let w), .interior(_, let h)) where w.get() == h:
 			return rightSibling
-		case (.concat(let l, _, _, _, let r, _),
-		      .interior(_, _, _, let h))
+		case (.concat(let l, _, _, _, let r, _), .interior(_, let h))
 		    where self.contains(h):
 			guard let match = l.subrope(from: from,
 			    rightSibling: r.appending(rightSibling),
@@ -1372,11 +1366,10 @@ public extension Rope.Node {
 				                           depth: depth + 1)
 			}
 			return leftSibling.appending(subextent)
-		case (.index(let w), .interior(_, _, _, let h))
-		    where w.get() == h:
+		case (.index(let w), .interior(_, let h)) where w.get() == h:
 			return leftSibling
 		case (.concat(let l, _, _, _, let r, _),
-		      .interior(_, _, _, let h)) where self.contains(h):
+		      .interior(_, let h)) where self.contains(h):
 			guard let match = r.subrope(
 			    leftSibling: leftSibling.appending(l),
 			    to: to, depth: depth + 1) else {

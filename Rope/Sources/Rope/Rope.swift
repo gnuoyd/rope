@@ -56,7 +56,7 @@ public class Rope<C : Content> : Collection {
 	public enum Index : Comparable {
 	case start(of: Rope)
 	case end(of: Rope)
-	case interior(of: Rope, at: UInt64, index: UInt64, handle: Handle)
+	case interior(of: Rope, handle: Handle)
 	}
 	public class ExtentController : Handle {
 		public override var id: Id { return .extent(_id) }
@@ -88,7 +88,6 @@ public class Rope<C : Content> : Collection {
 	}
 
 	private var top: Node
-	public var generation: UInt64 = 0
 	public var startIndex: Index {
 		/* There are at least three index positions, start and
 		 * end, if there is even a solitary extent.  Need to return
@@ -131,27 +130,21 @@ public class Rope<C : Content> : Collection {
 				return .end(of: self)
 			}
 			top = n
-			return .interior(of: self, at: generation,
-			                 index: 0, handle: h)
+			return .interior(of: self, handle: h)
 		case .end(_):
 			fatalError("No index after .endIndex")
-		case .interior(_, _, let m, let h):
+		case .interior(_, let h):
 			let j = Handle()
 			switch top.inserting(j, one: .rightStep, after: h) {
 			case .inchOut:
-				fatalError(
-				    ".interior(\(m), \(h)) already at end?")
+				fatalError(".interior(_, \(h)) already at end?")
 			case .absent:
-				fatalError(
-				    ".interior(\(m), \(h)) is absent")
+				fatalError(".interior(_, \(h)) is absent")
 			case .stepOut:
 				return .end(of: self)
 			case .step(let node):
 				top = node
-				return .interior(of: self,
-				                 at: generation,
-						 index: m + 1,
-						 handle: j)
+				return .interior(of: self, handle: j)
 			}
 		}
 	}
@@ -169,25 +162,20 @@ public class Rope<C : Content> : Collection {
 				return .start(of: self)
 			}
 			top = n
-			return .interior(of: self, at: generation,
-			                 index: 0, handle: h)
-		case .interior(_, _, let m, let h):
+			return .interior(of: self, handle: h)
+		case .interior(_, let h):
 			let j = Handle()
 			switch top.inserting(j, one: .leftStep, after: h) {
 			case .inchOut:
 				fatalError(
-				    ".interior(\(m), \(h)) already at start?")
+				    ".interior(_, \(h)) already at start?")
 			case .absent:
-				fatalError(
-				    ".interior(\(m), \(h)) is absent")
+				fatalError(".interior(_, \(h)) is absent")
 			case .stepOut:
 				return .start(of: self)
 			case .step(let node):
 				top = node
-				return .interior(of: self,
-				                 at: generation,
-						 index: m + 1,
-						 handle: j)
+				return .interior(of: self, handle: j)
 			}
 		}
 	}
@@ -219,7 +207,7 @@ public class Rope<C : Content> : Collection {
 				throw RopeNoSuchElement.atStart
 			}
 			return node
-		case .interior(_, _, _, let h):
+		case .interior(_, let h):
 			let result = top.element(at: h)
 			guard case .step(let node) = result else {
 				throw RopeNoSuchElement.onInterior
@@ -241,7 +229,7 @@ public class Rope<C : Content> : Collection {
 			top = .nodes(elt, top)
 		case .end(_):
 			top = .nodes(top, elt)
-		case .interior(_, _, _, let h):
+		case .interior(_, let h):
 			guard let newtop = top.inserting(elt, at: h) else {
 				return false
 			}

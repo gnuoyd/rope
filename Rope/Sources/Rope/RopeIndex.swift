@@ -7,12 +7,12 @@ extension Rope.Index {
 		let h = Handle()
 		rope.node = rope.node.inserting(index: h, abutting: side,
 		    of: utf16Offset)
-		self = .interior(of: rope, at: 0, index: 0, handle: h)
+		self = .interior(of: rope, handle: h)
 	}
 	init(utf16Offset: Rope.Node.Offset, in rope: Rope) {
 		let h = Handle()
 		rope.node = rope.node.inserting(index: h, at: utf16Offset)
-		self = .interior(of: rope, at: 0, index: 0, handle: h)
+		self = .interior(of: rope, handle: h)
 	}
 }
 
@@ -24,7 +24,7 @@ case IndexNotFound
 extension Rope.Index {
         public var owner: Rope {
 		switch self {
-		case .start(let r), .end(let r), .interior(let r, _, _, _):
+		case .start(let r), .end(let r), .interior(let r, _):
 			return r
 		}
 	}
@@ -53,24 +53,24 @@ extension Rope.Index {
 		switch (self, other) {
 		case (.start(_), .start(_)), (.end(_), .end(_)):
 			return true
-		case (.start(_), .interior(_, _, _, let h)),
-		     (.interior(_, _, _, let h), .start(_)):
+		case (.start(_), .interior(_, let h)),
+		     (.interior(_, let h), .start(_)):
 			guard let precedingExist =
 			    self.owner.indices(precede: h) else {
 				throw RopeIndexComparisonError.IndexNotFound
 			}
 			return !precedingExist
-		case (.end(_), .interior(_, _, _, let h)),
-		     (.interior(_, _, _, let h), .end(_)):
+		case (.end(_), .interior(_, let h)),
+		     (.interior(_, let h), .end(_)):
 			guard let followingExist =
 			    self.owner.indices(follow: h) else {
 				throw RopeIndexComparisonError.IndexNotFound
 			}
 			return !followingExist
-		case (.interior(_, _, _, let h), .interior(_, _, _, let j))
+		case (.interior(_, let h), .interior(_, let j))
 		    where h == j:
 			return true
-		case (.interior(_, _, _, let h1), .interior(_, _, _, let h2)):
+		case (.interior(_, let h1), .interior(_, let h2)):
 			guard let precedes = self.owner.index(h1, precedes: h2),
 			      let follows = self.owner.index(h2, precedes: h1)
 			      else {
@@ -94,8 +94,8 @@ extension Rope.Index {
 			return false
 		case (_, .end(_)):
 			return true
-		case (.interior(_, _, _, let h1),
-		      .interior(_, _, _, let h2)):
+		case (.interior(_, let h1),
+		      .interior(_, let h2)):
 			guard let precedes = self.owner.index(h1, precedes: h2)
 			    else {
 				throw RopeIndexComparisonError.IndexNotFound
