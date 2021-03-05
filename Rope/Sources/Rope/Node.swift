@@ -98,7 +98,7 @@ infix operator ~: ComparisonPrecedence
 infix operator !~: ComparisonPrecedence
 
 /* Return true iff `lhs` is equal to `rhs`, ignoring embedded indices,
- * text attributes, and the *number* of leaves.  The *content* of leaves must
+ * text attributes, and the *number* of leaves.  The *text* of leaves must
  * the same.
  */
 extension Rope.Node where Content == Substring {
@@ -118,7 +118,6 @@ extension Rope.Node where Content == Substring {
 				lresidue = l
 				rresidue = nil
 			case (.cursor(let l, _), .cursor(let r, _)):
-				// XXX doesn't match attributes
 				if l != r {
 					return false
 				}
@@ -135,7 +134,6 @@ extension Rope.Node where Content == Substring {
 				lresidue = nil
 				rresidue = nil
 			case (.leaf(let lattr, let l), .leaf(let rattr, let r)):
-				// XXX doesn't match attributes
 				if l == r {
 					lresidue = nil
 					rresidue = nil
