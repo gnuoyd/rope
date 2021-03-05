@@ -533,7 +533,7 @@ public extension Rope.Node {
 public extension Rope.Node {
 	func attributes(at i: Offset, base: Offset)
 	    -> (Attributes, Range<Offset>) {
-		guard case .leaf(let attrs, _) = self, i < endIndex else {
+		guard case .leaf(let attrs, _) = self, Offset.start <= i, i < endIndex else {
 			fatalError("Index out of bounds")
 		}
 		return (attrs, base..<base + endIndex)
