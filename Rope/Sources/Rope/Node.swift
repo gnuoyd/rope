@@ -784,6 +784,10 @@ public extension Rope.Node {
 	}
 	private init(left: Self, right: Self) {
 		switch (left, right) {
+		case (_, .index(let w)) where w.get() == nil:
+			self = left
+		case (.index(let w), _) where w.get() == nil:
+			self = right
 		case (_, .empty):
 			self = left
 		case (.empty, _):
@@ -1110,10 +1114,22 @@ public extension Rope.Node {
 	}
 	func appending(_ rope: Self) -> Self {
 		switch (self, rope) {
+		case (.index(let w), _) where w.get() == nil:
+			return rope
+		case (_, .index(let w)) where w.get() == nil:
+			return self
 		case (.empty, _):
 			return rope
 		case (_, .empty):
 			return self
+		case (.concat(let l, _, _, _,
+		              .concat(let r, _, _, _,
+			              .index(let w), _), _), _) where
+		    w.get() == nil:
+			return l.appending(r.appending(rope))
+		case (.concat(let l, _, _, _, .index(let w), _), _) where
+		    w.get() == nil:
+			return l.appending(rope)
 		case (.concat(let l, _, _, _,
 		              .leaf(let pat, let p), _),
 		      .leaf(let qat, let q)) where pat.isEmpty && qat.isEmpty:
