@@ -87,7 +87,22 @@ public class Rope<C : Content> : Collection {
 	case empty
 	}
 
-	private var top: Node
+	private var mutations: UInt = 0
+	private var rebalanceInterval: UInt = 32
+	private var _top: Node
+	private var top: Node {
+		get {
+			return _top
+		}
+		set {
+			mutations += 1
+			if mutations.isMultiple(of: rebalanceInterval) {
+				_top = newValue.cleaned()?.rebalanced() ?? .empty
+			} else {
+				_top = newValue
+			}
+		}
+	}
 	public var startIndex: Index {
 		/* There are at least three index positions, start and
 		 * end, if there is even a solitary extent.  Need to return
@@ -101,7 +116,7 @@ public class Rope<C : Content> : Collection {
 	public var endIndex: Index { return .end(of: self) }
 
 	public init() {
-		top = .empty
+		_top = .empty
 	}
 	public var node: Node {
 		get {
@@ -116,7 +131,7 @@ public class Rope<C : Content> : Collection {
 	}
 	public init<T>(content t: T) where C : Initializable,
 	    C.Initializer == T, T : Collection {
-		top = Node(content: t)
+		_top = Node(content: t)
 	}
 	public func index(after i: Index) -> Index {
 		guard i.owner === self else {
