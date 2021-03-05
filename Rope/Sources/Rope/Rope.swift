@@ -279,8 +279,13 @@ public class Rope<C : Content> : Collection {
 	public func attributes(at i: Offset) -> (Attributes, Range<Offset>) {
 		return top.attributes(at: i)
 	}
-	public func setAttributes(_ attrs: Attributes, range: Range<Offset>){
-		top = top.settingAttributes(attrs, range: range)
+	public func setAttributes(_ attrs: Attributes, range r: Range<Offset>){
+		let ir = Range(utf16Range: r, in: self)
+		guard let newtop = top.settingAttributes(attrs, range: ir)
+		    else {
+			return
+		}
+		top = newtop
 	}
 	public func clearAttributesOnRange(_ range: Range<Offset>) {
 		top = top.clearingAttributes(range: range)

@@ -546,6 +546,20 @@ public extension Rope.Node {
 				node.attributes(at: i, base: base)
 		}
 	}
+	func transforming(range: Range<Rope.Index>, with fn: (Self) -> Self)
+	    -> Self? {
+		guard let l = subrope(to: range.lowerBound) else {
+			return nil
+		}
+		guard let m = subrope(from: range.lowerBound,
+		                      to: range.upperBound) else {
+			return nil
+		}
+		guard let r = subrope(from: range.upperBound) else {
+			return nil
+		}
+		return l.appending(fn(m)).appending(r)
+	}
 	func transforming(range: Range<Offset>, with fn: (Self) -> Self)
 	    -> Self {
 		let l = subrope(from: Offset.start, to: range.lowerBound)
@@ -598,6 +612,12 @@ public extension Rope.Node {
 			return .leaf(attrs, content)
 		case .empty, .index(_):
 			return self
+		}
+	}
+	func settingAttributes(_ attrs: Attributes, range r: Range<Rope.Index>)
+	    -> Self? {
+		return transforming(range: r) { node in
+			node.settingAttributes(attrs)
 		}
 	}
 	func settingAttributes(_ attrs: Attributes, range: Range<Offset>)
