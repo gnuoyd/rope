@@ -253,7 +253,7 @@ public class Rope<C : Content> : Collection {
 	public subscript(_ r: Range<Offset>) -> Content {
 		set(newValue) {
 			let ir = Range(utf16Range: r, in: self)
-			guard let newtop = top.replacing(range: ir,
+			guard let newtop = top.replacing(ir,
 			    with: newValue) else {
 				fatalError("No such range")
 			}
@@ -269,7 +269,7 @@ public class Rope<C : Content> : Collection {
 	    where C : Initializable, C.Initializer == I, I : Collection,
 	          I : Initializable, I.Initializer == C {
 		set(newValue) {
-			top = top.replacing(range: r, with: C(newValue))
+			top = top.replacing(r, with: C(newValue))
 		}
 		get {
 			return I(top[r])

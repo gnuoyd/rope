@@ -1408,7 +1408,7 @@ public extension Rope.Node {
 	/* XXX this will split extents!  Needs to find affected extents,
 	 * split, perform replacement/deletion on each affected extent.
 	 */
-	func replacing(range: Range<Rope.Index>, with c: Content) -> Self? {
+	func replacing(_ range: Range<Rope.Index>, with c: Content) -> Self? {
 		guard let l = subrope(to: range.lowerBound) else {
 			return nil
 		}
@@ -1417,7 +1417,7 @@ public extension Rope.Node {
 		}
 		return l.appending(Self(content: c)).appending(r)
 	}
-	func replacing(range: Range<Offset>, with c: Content) -> Self {
+	func replacing(_ range: Range<Offset>, with c: Content) -> Self {
 		let l = subrope(to: range.lowerBound)
 		let r = subrope(from: range.upperBound)
 		return l.appending(Self(content: c)).appending(r)
