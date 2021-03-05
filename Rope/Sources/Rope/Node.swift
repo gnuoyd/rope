@@ -1138,11 +1138,10 @@ public extension Rope.Node {
 				return nil
 			}
 			return .extent(ctlr, nn)
-		case .index(let w):
-			guard let handle = w.get() else {
-				return nil
-			}
-			return Self(holder: handle)
+		case .index(let w) where w.get() == nil:
+			return nil
+		case .index(_):
+			return self
 		case .concat(let l, _, _, _, let r, _):
 			guard let nl = l.cleaned() else {
 				return r.cleaned()
