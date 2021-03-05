@@ -1166,10 +1166,8 @@ public extension Rope.Node {
 		case .empty, .cursor(_, _), .leaf(_, _):
 			return self
 		case .extent(let ctlr, let n):
-			guard let nn = n.cleaned() else {
-				return nil
-			}
-			return .extent(ctlr, nn)
+			let nn = n.cleaned()
+			return .extent(ctlr, nn ?? .empty)
 		case .index(let w) where w.get() == nil:
 			return nil
 		case .index(_):
@@ -1179,7 +1177,7 @@ public extension Rope.Node {
 				return r.cleaned()
 			}
 			guard let nr = r.cleaned() else {
-				return nil
+				return nl
 			}
 			return .nodes(nl, nr)
 		}
