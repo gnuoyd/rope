@@ -5,6 +5,21 @@ import Foundation
 
 public typealias Attributes = [NSAttributedString.Key : Any]
 
+infix operator ~: ComparisonPrecedence
+infix operator !~: ComparisonPrecedence
+
+extension Dictionary where Key == NSAttributedString.Key, Value == Any {
+	static func ~(_ lhs: Self, _ rhs: Self) -> Bool {
+		/* All empty attributed strings are equal, so compare two
+		 * non-empty strings containing the same text to see if
+		 * the attributes differ or not.
+		 */
+		let l = NSAttributedString(string: "x", attributes: lhs)
+		let r = NSAttributedString(string: "x", attributes: rhs)
+		return l.isEqual(to: r)
+	}
+}
+
 func *(_ s: String, _ times: Int) -> String {
 	if times < 0 {
 		return String(s.reversed()) * -times
@@ -94,9 +109,6 @@ public extension Rope.Node {
 	}
 }
 
-infix operator ~: ComparisonPrecedence
-infix operator !~: ComparisonPrecedence
-
 /* Return true iff `lhs` is equal to `rhs`, ignoring embedded indices,
  * text attributes, and the *number* of leaves.  The *text* of leaves must
  * the same.
@@ -169,10 +181,9 @@ extension Rope.Node where Content == Substring {
 extension Rope.Node {
 	public static func == (_ l: Self, _ r: Self) -> Bool {
 		switch (l, r) {
-		case (.cursor(let lHandle, _),
-		      .cursor(let rHandle, _)):
-			// XXX doesn't match attributes
-			return lHandle == rHandle
+		case (.cursor(let lHandle, let lattrs),
+		      .cursor(let rHandle, let rattrs)):
+			return lHandle == rHandle && lattrs ~ rattrs
 		case (.index(let lWeakHandle), .index(let rWeakHandle)):
 			return lWeakHandle.get() == rWeakHandle.get()
 		case (.extent(let lCtlr, let lNode),
@@ -181,9 +192,8 @@ extension Rope.Node {
 		case (.concat(let lNode1, _, _, _, let lNode2, _),
 		      .concat(let rNode1, _, _, _, let rNode2, _)):
 			return lNode1 == rNode1 && lNode2 == rNode2
-		case (.leaf(_, let lContent), .leaf(_, let rContent)):
-			// XXX doesn't match attributes
-			return lContent == rContent
+		case (.leaf(let lattrs, let lContent), .leaf(let rattrs, let rContent)):
+			return lContent == rContent && lattrs ~ rattrs
 		case (.empty, .empty):
 			return true
 		default:
@@ -1146,11 +1156,11 @@ public extension Rope.Node {
 			return l.appending(rope)
 		case (.concat(let l, _, _, _,
 		              .leaf(let pat, let p), _),
-		      .leaf(let qat, let q)) where pat.isEmpty && qat.isEmpty:
-			return .nodes(l, .leaf([:], p + q))
+		      .leaf(let qat, let q)) where pat ~ qat:
+			return .nodes(l, .leaf(pat, p + q))
 		case (.leaf(let pat, let p), .leaf(let qat, let q)) where
-		    pat.isEmpty && qat.isEmpty:
-			return .leaf([:], p + q)
+		    pat ~ qat:
+			return .leaf(pat, p + q)
 		default:
 			return .nodes(self, rope)
 		}

@@ -1379,85 +1379,49 @@ class NodeSubropes : XCTestCase {
 	}
 }
 
+extension NSAttributedString.Key {
+	public static let odor: Self = Self(rawValue: "odor")
+	public static let taste: Self = Self(rawValue: "taste")
+	public static let personality: Self = Self(rawValue: "personality")
+}
+
 class NodeAttributes : XCTestCase {
 	typealias Key = NSAttributedString.Key
-	static let frontAttrs: Attributes = [Key.cursor : true]
-	static let middleAttrs: Attributes = [Key.expansion : true]
-	static let backAttrs: Attributes = [Key.font : true]
-	static let newAttrs: Attributes = [Key.cursor : false, Key.font : false]
+	static let frontAttrs: Attributes = [Key.odor : true]
+	static let middleAttrs: Attributes = [Key.taste : true]
+	static let backAttrs: Attributes = [Key.personality : true]
+	static let newAttrs: Attributes =
+	    [Key.odor : false, Key.personality : false]
 	static let abc: NSS = .text("abc", attributes: frontAttrs)
 	static let defgh: NSS = .text("defgh", attributes: middleAttrs)
 	static let ijkl: NSS = .text("ijkl", attributes: backAttrs)
 	let n: NSS = .nodes(abc, defgh, ijkl)
 
-	static func frontAttrsEqual(_ attrs: Attributes) -> Bool {
-		guard attrs.count == 1 else {
-			return false
-		}
-		guard let val = attrs[Key.cursor] as? Bool else {
-			return false
-		}
-		return val
-	}
-	static func middleAttrsEqual(_ attrs: Attributes) -> Bool {
-		guard attrs.count == 1 else {
-			return false
-		}
-		guard let val = attrs[Key.expansion] as? Bool else {
-			return false
-		}
-		return val
-	}
-	static func backAttrsEqual(_ attrs: Attributes) -> Bool {
-		guard attrs.count == 1 else {
-			return false
-		}
-		guard let val = attrs[Key.font] as? Bool else {
-			return false
-		}
-		return val
-	}
-	static func newAttrsEqual(_ attrs: Attributes) -> Bool {
-		guard attrs.count == 2 else {
-			return false
-		}
-		guard let font = attrs[Key.font] as? Bool else {
-			return false
-		}
-		guard !font else {
-			return false
-		}
-		guard let cursor = attrs[Key.cursor] as? Bool else {
-			return false
-		}
-		return !cursor
-	}
-
 	func testFrontAttributes() {
 		let (attrs, range) = n.attributes(at: Offset.start)
-		XCTAssert(NodeAttributes.frontAttrsEqual(attrs))
+		XCTAssert(Self.frontAttrs ~ attrs)
 		XCTAssert(range == Offset.utf16RangeTo(3))
 	}
 	func testMiddleAttributes() {
 		let (attrs, range) = n.attributes(at: Offset(utf16Offset: 3))
-		XCTAssert(NodeAttributes.middleAttrsEqual(attrs))
+		XCTAssert(Self.middleAttrs ~ attrs)
 		XCTAssert(range == Offset.utf16Range(3..<8))
 	}
 	func testBackAttributes() {
 		let (attrs, range) = n.attributes(at: Offset(utf16Offset: 8))
-		XCTAssert(NodeAttributes.backAttrsEqual(attrs))
+		XCTAssert(Self.backAttrs ~ attrs)
 		XCTAssert(range == Offset.utf16Range(8..<12))
 	}
 	func testLastAttributes() {
 		let (attrs, range) = n.attributes(at: Offset(utf16Offset: 11))
-		XCTAssert(NodeAttributes.backAttrsEqual(attrs))
+		XCTAssert(Self.backAttrs ~ attrs)
 		XCTAssert(range == Offset.utf16Range(8..<12))
 	}
 	func testSettingFrontAndMiddleAttributes() {
 		let newn = n.settingAttributes(NodeAttributes.newAttrs,
 		    range: Offset.utf16Range(0..<8))
 		let (attrs, frontRange) = newn.attributes(at: Offset(utf16Offset: 0))
-		XCTAssert(NodeAttributes.newAttrsEqual(attrs))
+		XCTAssert(Self.newAttrs ~ attrs)
 		XCTAssert(frontRange == Offset.utf16Range(0..<3))
 		let (_, middleRange) =
 		    newn.attributes(at: Offset(utf16Offset: 3))
@@ -1470,36 +1434,38 @@ class NodeAttributes : XCTestCase {
 		let (frontAttrs, frontRange) =
 		    newn.attributes(at: Offset(utf16Offset: 0))
 		XCTAssert(frontRange == Offset.utf16Range(0..<2))
-		XCTAssert(NodeAttributes.frontAttrsEqual(frontAttrs))
+		XCTAssert(Self.frontAttrs ~ frontAttrs)
 
 		let (midAttrs1, midRange1) =
 		    newn.attributes(at: Offset(utf16Offset: 2))
 		XCTAssert(midRange1 == Offset.utf16Range(2..<3))
-		XCTAssert(NodeAttributes.newAttrsEqual(midAttrs1))
+		XCTAssert(Self.newAttrs ~ midAttrs1)
 
 		let (midAttrs2, midRange2) =
 		    newn.attributes(at: Offset(utf16Offset: 3))
 		XCTAssert(midRange2 == Offset.utf16Range(3..<8))
-		XCTAssert(NodeAttributes.newAttrsEqual(midAttrs2))
+		XCTAssert(Self.newAttrs ~ midAttrs2)
 
 		let (midAttrs3, midRange3) =
 		    newn.attributes(at: Offset(utf16Offset: 8))
 		XCTAssert(midRange3 == Offset.utf16Range(8..<9))
-		XCTAssert(NodeAttributes.newAttrsEqual(midAttrs3))
+		XCTAssert(Self.newAttrs ~ midAttrs3)
 
 		let (backAttrs, backRange) =
 		    newn.attributes(at: Offset(utf16Offset: 9))
 		XCTAssert(backRange == Offset.utf16Range(9..<12))
-		XCTAssert(NodeAttributes.backAttrsEqual(backAttrs))
+		XCTAssert(Self.backAttrs ~ backAttrs)
 	}
 	func testSettingCentralAttributes() {
 		NodeAttributes.helpTestSettingCentralAttributes(n)
 	}
+/*
 	func testSettingCentralAttributesWithCursor() {
 		let ctlr = ECSS()
 		let contn: NSS = .extent(under: ctlr, n)
 		NodeAttributes.helpTestSettingCentralAttributes(contn)
 	}
+*/
 	func testSettingCentralAttributesWithExtent() {
 		let ctlr = ECSS()
 		let contn: NSS = .extent(under: ctlr, n)
@@ -1509,14 +1475,14 @@ class NodeAttributes : XCTestCase {
 		let newn = n.settingAttributes(NodeAttributes.newAttrs,
 		    range: Offset.utf16Range(8..<12))
 		let (attrs, range) = newn.attributes(at: Offset(utf16Offset: 8))
-		XCTAssert(NodeAttributes.newAttrsEqual(attrs))
-		XCTAssert(range == Offset.utf16Range(8..<12))
+		XCTAssert(Self.newAttrs ~ attrs)
+		XCTAssert(range == Offset.utf16Range(8..<12), "actual range \(range) newn \(newn.debugDescription) n \(n.debugDescription)")
 	}
 	func testSettingLastAttributes() {
 		let newn = n.settingAttributes(NodeAttributes.newAttrs,
 		    range: Offset.utf16Range(11..<12))
 		let (attrs, range) = newn.attributes(at: Offset(utf16Offset: 11))
-		XCTAssert(NodeAttributes.newAttrsEqual(attrs))
+		XCTAssert(Self.newAttrs ~ attrs)
 		XCTAssert(range == Offset.utf16Range(11..<12))
 		let (_, abuttingRange) = newn.attributes(at: Offset(utf16Offset: 8))
 		XCTAssert(abuttingRange == Offset.utf16Range(8..<11))
