@@ -97,7 +97,8 @@ public class Rope<C : Content> : Collection {
 		set {
 			mutations += 1
 			if mutations.isMultiple(of: rebalanceInterval) {
-				_top = newValue.cleaned()?.rebalanced() ?? .empty
+				_top =
+				    newValue.cleaned()?.rebalanced() ?? .empty
 			} else {
 				_top = newValue
 			}
