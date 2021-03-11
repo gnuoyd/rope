@@ -124,7 +124,7 @@ public class Rope<C : Content> : Collection {
 	case cursor(Handle, Attributes)
 	case index(Weak<Handle>)
 	case extent(ExtentController, Node)
-	case concat(Node, Offset, UInt, HandleSet, Node, Offset)
+	case concat(Node, Offset, UInt, HandleSet, Node, Dimensions)
 	case leaf(Attributes, C)
 	case empty
 	}

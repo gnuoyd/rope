@@ -731,14 +731,15 @@ public extension Rope.Node {
 			return false
 		case .extent(_, let rope):
 			return rope.contains(target) ? true : nil
-		case .concat(let l, let midx, _, _, let r, let eidx):
+		case .concat(let l, let midx, _, _, let r, let w):
 			switch l.indices(follow: target) {
 			case nil:
 				return r.indices(follow: target)
 			case true?:
 				return true
 			case false?:
-				return r.hids.extentCount > 0 || midx != eidx
+				return r.hids.extentCount > 0 ||
+				       midx != w.utf16Offset
 			}
 		case .cursor(_, _), .leaf(_, _), .empty:
 			return nil
@@ -825,7 +826,7 @@ public extension Rope.Node {
 			self = .concat(left, left.endIndex,
 				       1 + max(left.depth, right.depth),
 				       left.hids.union(right.hids), right,
-				       left.endIndex + right.endIndex)
+				       left.dimensions + right.dimensions)
 		}
 	}
 	init(content c: C, attributes attrs: Attributes = [:]) {
@@ -961,10 +962,30 @@ public extension Rope.Node {
 			return self.endIndex
 		}
 	}
+	var dimensions: Dimensions {
+		switch self {
+		case Self.concat(_, _, _, _, _, let dims):
+			return dims
+		case .extent(_, let rope):
+			return rope.dimensions + Dimensions(jots: 2)
+		case .leaf(_, let s):
+			let endOffset = s.endIndex.utf16Offset(in: s)
+			let startOffset = s.startIndex.utf16Offset(in: s)
+			return Dimensions(
+			    utf16Offset: Offset(of: endOffset - startOffset))
+		case .empty:
+			return Dimensions.zero
+		case .cursor(_, _), .index(_):
+			return Dimensions(jots: 1)
+		}
+	}
+	var halfPerimeter: Int {
+		return dimensions.halfPerimeter
+	}
 	var endIndex: Offset {
 		switch self {
-		case Self.concat(_, _, _, _, _, let idx):
-			return idx
+		case Self.concat(_, _, _, _, _, let w):
+			return w.utf16Offset
 		case .extent(_, let rope):
 			return rope.endIndex
 		case .leaf(_, let s):
@@ -1094,7 +1115,7 @@ public extension Rope.Node {
 			                              in: controllers + [ctlr])
 		case (.index(let w), .interior(_, let h)) where w.get() == h:
 			return controllers
-		case (.concat(let l, let midx, _, let hids, let r, let endx),
+		case (.concat(let l, let midx, _, let hids, let r, let w),
 		      .interior(_, let h)):
 		        guard hids.contains(h.id) else {
 				return nil
@@ -1108,7 +1129,8 @@ public extension Rope.Node {
 			 * not close at `i`. Rather, they close at an index
 			 * on the right.  So leave them out of the list.
 			 */
-			guard midx == endx && r.hids.extentCount == 0 else {
+			guard midx == w.utf16Offset &&
+			      r.hids.extentCount == 0 else {
 				return l.extentsClosing(at: i)
 			}
 			return l.extentsClosing(at: i, in: controllers)
@@ -1165,7 +1187,7 @@ public extension Rope.Node {
 		}
 	}
 	var balanced: Bool {
-		return endIndex.utf16Offset >= fibonacci(index: depth + 2)
+		return halfPerimeter >= fibonacci(index: depth + 2)
 	}
 	// Return this Node with all of the expired indices removed. 
 	func cleaned() -> Self? {
@@ -1200,9 +1222,9 @@ public extension Rope.Node {
 			break
 		}
 		var slot: [Self?] = []
-		let totlen = endIndex
+		let totlen = halfPerimeter
 		for fn in Fibonacci(from: 2) {
-			if fn > totlen.utf16Offset {
+			if fn > totlen {
 				break
 			}
 			slot.append(nil)
@@ -1215,7 +1237,7 @@ public extension Rope.Node {
 					tree = .nodes(left, tree)
 					slot[slot.count - i - 1] = nil
 				}
-				if fip3 >= tree.endIndex.utf16Offset {
+				if fip3 >= tree.halfPerimeter {
 					n = i
 					break
 				}
