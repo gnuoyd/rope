@@ -575,7 +575,7 @@ class UTF16IndexedControllerPaths: XCTestCase {
 		return newe
 	}
 	let indices: [Offset] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map { i in
-	    Offset(utf16Offset: i)
+	    Offset(of: i)
 	}
 	func testControllerPaths() {
 		for (i, expected) in zip(indices, expectations) {
@@ -1014,7 +1014,7 @@ class LookupUsingRopeIndicesDerivedFromUTF16Offsets: XCTestCase {
 	}
 	func testIterateElements() {
 		for (i, expected) in expectations.enumerated() {
-			let ofs = Offset(utf16Offset: i)
+			let ofs = Offset(of: i)
 			let idx = RSS.Index(utf16Offset: ofs, in: r)
 			let found = r[idx]
 			XCTAssert(found == expected,
@@ -1022,7 +1022,7 @@ class LookupUsingRopeIndicesDerivedFromUTF16Offsets: XCTestCase {
 		}
 	}
 	func testEndIndex() {
-		let ofs = Offset(utf16Offset: expectations.count)
+		let ofs = Offset(of: expectations.count)
 		let idx = RSS.Index(utf16Offset: ofs, in: r)
 		XCTAssertThrowsError(try r.element(at: idx))
 	}
@@ -1359,23 +1359,23 @@ class NodeSubropes : XCTestCase {
 	}
 
 	func testLeadingSubnode() {
-		XCTAssert(n.subrope(from: Offset(utf16Offset: 0), to: Offset(utf16Offset: 3)).content == "abc")
+		XCTAssert(n.subrope(from: 0, to: Offset(of: 3)).content == "abc")
 	}
 
 	func testCrossingFirstTwoSubnodes() {
-		XCTAssert(n.subrope(from: Offset(utf16Offset: 0), to: Offset(utf16Offset: 5)).content == "abcde")
+		XCTAssert(n.subrope(from: 0, to: Offset(of: 5)).content == "abcde")
 	}
 
 	func testSecondSubnode() {
-		XCTAssert(n.subrope(from: Offset(utf16Offset: 3), to: Offset(utf16Offset: 8)).content == "defgh")
+		XCTAssert(n.subrope(from: Offset(of: 3), to: Offset(of: 8)).content == "defgh")
 	}
 
 	func testTrailingTwoSubnodes() {
-		XCTAssert(n.subrope(from: Offset(utf16Offset: 3), to: Offset(utf16Offset: 12)).content == "defghijkl")
+		XCTAssert(n.subrope(from: Offset(of: 3), to: Offset(of: 12)).content == "defghijkl")
 	}
 
 	func testCrossingLastTwoSubnodes() {
-		XCTAssert(n.subrope(from: Offset(utf16Offset: 4), to: Offset(utf16Offset: 9)).content == "efghi")
+		XCTAssert(n.subrope(from: Offset(of: 4), to: Offset(of: 9)).content == "efghi")
 	}
 }
 
@@ -1398,61 +1398,60 @@ class NodeAttributes : XCTestCase {
 	let n: NSS = .nodes(abc, defgh, ijkl)
 
 	func testFrontAttributes() {
-		let (attrs, range) = n.attributes(at: Offset.start)
+		let (attrs, range) = n.attributes(at: 0)
 		XCTAssert(Self.frontAttrs ~ attrs)
 		XCTAssert(range == Offset.utf16RangeTo(3))
 	}
 	func testMiddleAttributes() {
-		let (attrs, range) = n.attributes(at: Offset(utf16Offset: 3))
+		let (attrs, range) = n.attributes(at: Offset(of: 3))
 		XCTAssert(Self.middleAttrs ~ attrs)
 		XCTAssert(range == Offset.utf16Range(3..<8))
 	}
 	func testBackAttributes() {
-		let (attrs, range) = n.attributes(at: Offset(utf16Offset: 8))
+		let (attrs, range) = n.attributes(at: Offset(of: 8))
 		XCTAssert(Self.backAttrs ~ attrs)
 		XCTAssert(range == Offset.utf16Range(8..<12))
 	}
 	func testLastAttributes() {
-		let (attrs, range) = n.attributes(at: Offset(utf16Offset: 11))
+		let (attrs, range) = n.attributes(at: Offset(of: 11))
 		XCTAssert(Self.backAttrs ~ attrs)
 		XCTAssert(range == Offset.utf16Range(8..<12))
 	}
 	func testSettingFrontAndMiddleAttributes() {
 		let newn = n.settingAttributes(NodeAttributes.newAttrs,
 		    range: Offset.utf16Range(0..<8))
-		let (attrs, frontRange) = newn.attributes(at: Offset(utf16Offset: 0))
+		let (attrs, frontRange) = newn.attributes(at: 0)
 		XCTAssert(Self.newAttrs ~ attrs)
 		XCTAssert(frontRange == Offset.utf16Range(0..<3))
 		let (_, middleRange) =
-		    newn.attributes(at: Offset(utf16Offset: 3))
+		    newn.attributes(at: Offset(of: 3))
 		XCTAssert(middleRange == Offset.utf16Range(3..<8))
 	}
 	static func helpTestSettingCentralAttributes(_ oldn: NSS) {
 		let newn = oldn.settingAttributes(NodeAttributes.newAttrs,
 		    range: Offset.utf16Range(2..<9))
 
-		let (frontAttrs, frontRange) =
-		    newn.attributes(at: Offset(utf16Offset: 0))
+		let (frontAttrs, frontRange) = newn.attributes(at: 0)
 		XCTAssert(frontRange == Offset.utf16Range(0..<2))
 		XCTAssert(Self.frontAttrs ~ frontAttrs)
 
 		let (midAttrs1, midRange1) =
-		    newn.attributes(at: Offset(utf16Offset: 2))
+		    newn.attributes(at: Offset(of: 2))
 		XCTAssert(midRange1 == Offset.utf16Range(2..<3))
 		XCTAssert(Self.newAttrs ~ midAttrs1)
 
 		let (midAttrs2, midRange2) =
-		    newn.attributes(at: Offset(utf16Offset: 3))
+		    newn.attributes(at: Offset(of: 3))
 		XCTAssert(midRange2 == Offset.utf16Range(3..<8))
 		XCTAssert(Self.newAttrs ~ midAttrs2)
 
 		let (midAttrs3, midRange3) =
-		    newn.attributes(at: Offset(utf16Offset: 8))
+		    newn.attributes(at: Offset(of: 8))
 		XCTAssert(midRange3 == Offset.utf16Range(8..<9))
 		XCTAssert(Self.newAttrs ~ midAttrs3)
 
 		let (backAttrs, backRange) =
-		    newn.attributes(at: Offset(utf16Offset: 9))
+		    newn.attributes(at: Offset(of: 9))
 		XCTAssert(backRange == Offset.utf16Range(9..<12))
 		XCTAssert(Self.backAttrs ~ backAttrs)
 	}
@@ -1474,17 +1473,17 @@ class NodeAttributes : XCTestCase {
 	func testSettingBackAttributes() {
 		let newn = n.settingAttributes(NodeAttributes.newAttrs,
 		    range: Offset.utf16Range(8..<12))
-		let (attrs, range) = newn.attributes(at: Offset(utf16Offset: 8))
+		let (attrs, range) = newn.attributes(at: Offset(of: 8))
 		XCTAssert(Self.newAttrs ~ attrs)
 		XCTAssert(range == Offset.utf16Range(8..<12), "actual range \(range) newn \(newn.debugDescription) n \(n.debugDescription)")
 	}
 	func testSettingLastAttributes() {
 		let newn = n.settingAttributes(NodeAttributes.newAttrs,
 		    range: Offset.utf16Range(11..<12))
-		let (attrs, range) = newn.attributes(at: Offset(utf16Offset: 11))
+		let (attrs, range) = newn.attributes(at: Offset(of: 11))
 		XCTAssert(Self.newAttrs ~ attrs)
 		XCTAssert(range == Offset.utf16Range(11..<12))
-		let (_, abuttingRange) = newn.attributes(at: Offset(utf16Offset: 8))
+		let (_, abuttingRange) = newn.attributes(at: Offset(of: 8))
 		XCTAssert(abuttingRange == Offset.utf16Range(8..<11))
 	}
 }

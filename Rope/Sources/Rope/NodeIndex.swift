@@ -5,24 +5,24 @@ import Foundation   // for NSRange
 
 extension Rope.Node.Offset {
 	public static func utf16Range(_ range: NSRange) -> Range<Self> {
-		let lower = Self(utf16Offset: range.location)
-		let upper = Self(utf16Offset: NSMaxRange(range))
+		let lower = Self(of: range.location)
+		let upper = Self(of: NSMaxRange(range))
 		return lower..<upper
 	}
 	public static func utf16Range(_ range: Range<Int>) -> Range<Self> {
-		let lower = Self(utf16Offset: range.lowerBound)
-		let upper = Self(utf16Offset: range.upperBound)
+		let lower = Self(of: range.lowerBound)
+		let upper = Self(of: range.upperBound)
 		return lower..<upper
 	}
 	public static func utf16RangeTo(_ upperBound: Int) -> Range<Self> {
-		let upper = Self(utf16Offset: upperBound)
-		return Self.start..<upper
+		let upper = Self(of: upperBound)
+		return 0..<upper
 	}
 	public static func +(_ l: Self, _ r: Self) -> Self {
-		return Self(utf16Offset: l.utf16Offset + r.utf16Offset)
+		return Self(of: l.utf16Offset + r.utf16Offset)
 	}
 	static func -(_ l: Self, _ r: Self) -> Self {
-		return Self(utf16Offset: l.utf16Offset - r.utf16Offset)
+		return Self(of: l.utf16Offset - r.utf16Offset)
 	}
 }
 

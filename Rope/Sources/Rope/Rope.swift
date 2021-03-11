@@ -20,6 +20,52 @@ extension Range {
 	}
 }
 
+extension Rope.Node {
+	public struct Dimensions {
+		public let jots: Int
+		public let utf16Offset: Offset
+		public static var zero: Dimensions {
+			return Dimensions(jots: 0, utf16Offset: 0)
+		}
+		public init(jots: Int = 0, utf16Offset: Offset = 0) {
+			self.jots = jots
+			self.utf16Offset = utf16Offset
+		}
+		public var halfPerimeter: Int {
+			guard case .offset(let n) = utf16Offset else {
+				return jots
+			}
+			return jots + n
+		}
+	}
+}
+
+extension Rope.Node.Dimensions {
+	public static func +(_ l: Self, _ r: Self) -> Self {
+		return Self(jots: l.jots + r.jots,
+		            utf16Offset: l.utf16Offset + r.utf16Offset)
+	}
+}
+
+extension Rope.Node.Offset : ExpressibleByIntegerLiteral {
+	public typealias IntegerLiteralType = Int
+	public init(integerLiteral n: Self.IntegerLiteralType) {
+		self = .offset(n)
+	}
+}
+
+extension Rope.Node.Offset {
+	public init(of n: Int) {
+		self = .offset(n)
+	}
+	public var utf16Offset: Int {
+		switch self {
+		case .offset(let n):
+			return n
+		}
+	}
+}
+
 /* Use cases:
  *
  * Get/set/add/remove attributes on characters.
@@ -72,12 +118,8 @@ public class Rope<C : Content> : Collection {
 	public indirect enum Node {
 	public typealias Content = C
 	public typealias Element = C.Element
-	public struct Offset {
-		public init(utf16Offset offset: Int) {
-			self.utf16Offset = offset
-		}
-		public let utf16Offset: Int
-		public static var start: Offset { Offset(utf16Offset: 0) }
+	public enum Offset {
+		case offset(Int)
 	}
 	case cursor(Handle, Attributes)
 	case index(Weak<Handle>)
