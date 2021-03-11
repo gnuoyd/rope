@@ -32,7 +32,7 @@ public class RopeTextStorage: NSTextStorage {
 	override public func attributes(at location: Int,
 	    effectiveRange _range: NSRangePointer?)
 	    -> [NSAttributedString.Key : Any] {
-		let i = Offset(utf16Offset: location)
+		let i = Offset(of: location)
 		let (attrs, r) = rope.attributes(at: i)
 		if let range = _range {
 			range.initialize(to: r.nsRange)
