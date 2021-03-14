@@ -45,10 +45,10 @@ extension Rope.ExtentController {
 		let subcontent = content.subrope(to: to, depth: depth)
 		return .extent(self, subcontent)
 	}
-	func subrope(of content: Rope.Node, from: Rope.Index, depth: Int = 0)
-	    -> Rope.Node? {
-		guard let subcontent = content.subrope(from: from, depth: depth)
-		    else {
+	func subrope(of content: Rope.Node, after boundary: Rope.Index,
+	    depth: Int = 0) -> Rope.Node? {
+		guard let subcontent = content.subrope(after: boundary,
+		    depth: depth) else {
 			return nil
 		}
 		return .extent(self, subcontent)
@@ -560,11 +560,11 @@ public extension Rope.Node {
 		guard let l = subrope(to: range.lowerBound) else {
 			return nil
 		}
-		guard let m = subrope(from: range.lowerBound,
+		guard let m = subrope(after: range.lowerBound,
 		                      to: range.upperBound) else {
 			return nil
 		}
-		guard let r = subrope(from: range.upperBound) else {
+		guard let r = subrope(after: range.upperBound) else {
 			return nil
 		}
 		return l.appending(fn(m)).appending(r)
@@ -1341,17 +1341,17 @@ public extension Rope.Node {
 	func subrope(from: Offset, to: Offset) -> Self {
 		return subrope(to: to).subrope(from: from)
 	}
-	func subrope(from: Rope.Index, rightSibling: Self = .empty,
+	func subrope(after boundary: Rope.Index, rightSibling: Self = .empty,
 	    depth: Int = 0) -> Self? {
-		switch (self, from) {
+		switch (self, boundary) {
 		case (_, .end(_)):
 			return .empty
 		case (_, .start(_)):
 			return self.appending(rightSibling)
 		case (.extent(let ctlr, let content), _):
 			guard let subextent = ctlr.subrope(of: content,
-			    from: from, depth: depth) else {
-				return rightSibling.subrope(from: from,
+			    after: boundary, depth: depth) else {
+				return rightSibling.subrope(after: boundary,
 				    depth: depth)
 			}
 			return subextent.appending(rightSibling)
@@ -1359,10 +1359,10 @@ public extension Rope.Node {
 			return rightSibling
 		case (.concat(let l, _, _, _, let r, _), .interior(_, let h))
 		    where self.contains(h):
-			guard let match = l.subrope(from: from,
+			guard let match = l.subrope(after: boundary,
 			    rightSibling: r.appending(rightSibling),
 			    depth: depth + 1) else {
-				return r.subrope(from: from,
+				return r.subrope(after: boundary,
 				    rightSibling: rightSibling,
 				    depth: depth + 1)
 			}
@@ -1371,7 +1371,8 @@ public extension Rope.Node {
 		     (.leaf(_, _), _) where rightSibling == .empty:
 			return nil
 		default:
-			return rightSibling.subrope(from: from, depth: depth)
+			return rightSibling.subrope(after: boundary, depth:
+			    depth)
 		}
 	}
 	func subrope(leftSibling: Self = .empty, to: Rope.Index,
@@ -1435,14 +1436,15 @@ public extension Rope.Node {
 			return filter(node)
 		}
 	}
-	func subrope(from: Rope.Index, to: Rope.Index, depth: Int = 0) ->Self? {
-		guard let suffix = subrope(from: from, depth: depth) else {
+	func subrope(after l: Rope.Index, to r: Rope.Index, depth: Int = 0)
+	    -> Self? {
+		guard let suffix = subrope(after: l, depth: depth) else {
 			return nil
 		}
-		return suffix.subrope(to: to, depth: depth)
+		return suffix.subrope(to: r, depth: depth)
 	}
 	subscript(range: Range<Rope.Index>) -> Content {
-		return subrope(from: range.lowerBound,
+		return subrope(after: range.lowerBound,
 		               to: range.upperBound)?.content ?? Content.empty
 	}
 	/* XXX this will split extents!  Needs to find affected extents,
@@ -1452,7 +1454,7 @@ public extension Rope.Node {
 		guard let l = subrope(to: range.lowerBound) else {
 			return nil
 		}
-		guard let r = subrope(from: range.upperBound) else {
+		guard let r = subrope(after: range.upperBound) else {
 			return nil
 		}
 		return l.appending(Self(content: c)).appending(r)
