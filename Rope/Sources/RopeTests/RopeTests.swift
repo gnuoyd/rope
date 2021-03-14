@@ -11,7 +11,8 @@ typealias Offset = NSS.Offset
 
 infix operator ⨯: MultiplicationPrecedence
 
-func ⨯<L, R, Lseq : Sequence, Rseq : Sequence>(_ l: Lseq, _ r: Rseq) -> LazySequence<FlattenSequence<LazyMapSequence<Lseq, LazyMapSequence<Rseq, (L, R)>>>>  where Lseq.Element == L, Rseq.Element == R {
+func ⨯<L, R, Lseq : Sequence, Rseq : Sequence>(_ l: Lseq, _ r: Rseq)
+    -> LazySequence<FlattenSequence<LazyMapSequence<Lseq, LazyMapSequence<Rseq, (L, R)>>>>  where Lseq.Element == L, Rseq.Element == R {
 	return l.lazy.flatMap({ lelt in r.lazy.map({ relt in (lelt, relt) })})
 }
 
@@ -34,7 +35,8 @@ class IndexOrder: XCTestCase {
 		let rope: RSS = Rope(content: "pqrstuvwxyz")
 		let indices = rope.indices.enumerated()
 		for (l, r) in indices ⨯ indices {
-			XCTAssert((l.offset < r.offset) == (l.element < r.element))
+			XCTAssert((l.offset < r.offset) ==
+			          (l.element < r.element))
 		}
 	}
 }
@@ -1313,7 +1315,8 @@ class HandleHolding : XCTestCase {
 			indices?.append(i)
 		}
 		print(emptyRope.node)
-		XCTAssert(emptyRope.node.cleaned()?.leaves.filter(HandleHolding.isIndex).count == 11)
+		XCTAssert(emptyRope.node.cleaned()?.leaves.filter(
+		    HandleHolding.isIndex).count == 11)
 	}
 
 	func testCleanedReleasingIndices() {
@@ -1325,7 +1328,8 @@ class HandleHolding : XCTestCase {
 		}
 		print(emptyRope.node)
 		indices = nil
-		XCTAssert(emptyRope.node.cleaned()?.leaves.filter(HandleHolding.isIndex).count == 0)
+		XCTAssert(emptyRope.node.cleaned()?.leaves.filter(
+		    HandleHolding.isIndex).count == 0)
 	}
 
 	func testReleasingIndices() {
@@ -1340,7 +1344,8 @@ class HandleHolding : XCTestCase {
 		print(rope.node.leaves)
 		print(rope.node.leaves.filter(HandleHolding.isNilIndex))
 
-		XCTAssert(rope.node.leaves.filter(HandleHolding.isNilIndex).count == 11)
+		XCTAssert(rope.node.leaves.filter(
+		    HandleHolding.isNilIndex).count == 11)
 	}
 
 	func testPerformanceExample() {
@@ -1359,23 +1364,28 @@ class NodeSubropes : XCTestCase {
 	}
 
 	func testLeadingSubnode() {
-		XCTAssert(n.subrope(from: 0, to: Offset(of: 3)).content == "abc")
+		let section = n.subrope(from: 0, to: Offset(of: 3))
+		XCTAssert(section.content == "abc")
 	}
 
 	func testCrossingFirstTwoSubnodes() {
-		XCTAssert(n.subrope(from: 0, to: Offset(of: 5)).content == "abcde")
+		let section = n.subrope(from: 0, to: Offset(of: 5))
+		XCTAssert(section.content == "abcde")
 	}
 
 	func testSecondSubnode() {
-		XCTAssert(n.subrope(from: Offset(of: 3), to: Offset(of: 8)).content == "defgh")
+		let section = n.subrope(from: Offset(of: 3), to: Offset(of: 8))
+		XCTAssert(section.content == "defgh")
 	}
 
 	func testTrailingTwoSubnodes() {
-		XCTAssert(n.subrope(from: Offset(of: 3), to: Offset(of: 12)).content == "defghijkl")
+		let section = n.subrope(from: Offset(of: 3), to: Offset(of: 12))
+		XCTAssert(section.content == "defghijkl")
 	}
 
 	func testCrossingLastTwoSubnodes() {
-		XCTAssert(n.subrope(from: Offset(of: 4), to: Offset(of: 9)).content == "efghi")
+		let section = n.subrope(from: Offset(of: 4), to: Offset(of: 9))
+		XCTAssert(section.content == "efghi")
 	}
 }
 
@@ -1475,7 +1485,9 @@ class NodeAttributes : XCTestCase {
 		    range: Offset.utf16Range(8..<12))
 		let (attrs, range) = newn.attributes(at: Offset(of: 8))
 		XCTAssert(Self.newAttrs ~ attrs)
-		XCTAssert(range == Offset.utf16Range(8..<12), "actual range \(range) newn \(newn.debugDescription) n \(n.debugDescription)")
+		XCTAssert(range == Offset.utf16Range(8..<12),
+		    "actual range \(range) newn \(newn.debugDescription) " +
+		    "n \(n.debugDescription)")
 	}
 	func testSettingLastAttributes() {
 		let newn = n.settingAttributes(NodeAttributes.newAttrs,
@@ -1491,7 +1503,8 @@ class NodeAttributes : XCTestCase {
 class AppendInsertRemoveReplace : XCTestCase {
 	func testReplace() {
 		
-		// let rope: RSS = Rope(content: "This is the original content.")
+		// let rope: RSS = Rope(content:
+		// "This is the original content.")
 		let str: String = "This is the original content."
 	
 		print(str.firstIndex(of: " is") ?? -1)
