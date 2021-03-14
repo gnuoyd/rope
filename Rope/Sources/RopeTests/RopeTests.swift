@@ -1364,27 +1364,30 @@ class NodeSubropes : XCTestCase {
 	}
 
 	func testLeadingSubnode() {
-		let section = n.subrope(from: 0, to: Offset(of: 3))
+		let section = n.subrope(from: 0, upTo: Offset(of: 3))
 		XCTAssert(section.content == "abc")
 	}
 
 	func testCrossingFirstTwoSubnodes() {
-		let section = n.subrope(from: 0, to: Offset(of: 5))
+		let section = n.subrope(from: 0, upTo: Offset(of: 5))
 		XCTAssert(section.content == "abcde")
 	}
 
 	func testSecondSubnode() {
-		let section = n.subrope(from: Offset(of: 3), to: Offset(of: 8))
+		let section = n.subrope(from: Offset(of: 3),
+                                        upTo: Offset(of: 8))
 		XCTAssert(section.content == "defgh")
 	}
 
 	func testTrailingTwoSubnodes() {
-		let section = n.subrope(from: Offset(of: 3), to: Offset(of: 12))
+		let section = n.subrope(from: Offset(of: 3),
+		                        upTo: Offset(of: 12))
 		XCTAssert(section.content == "defghijkl")
 	}
 
 	func testCrossingLastTwoSubnodes() {
-		let section = n.subrope(from: Offset(of: 4), to: Offset(of: 9))
+		let section = n.subrope(from: Offset(of: 4),
+		                        upTo: Offset(of: 9))
 		XCTAssert(section.content == "efghi")
 	}
 }

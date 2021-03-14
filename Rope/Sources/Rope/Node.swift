@@ -40,9 +40,9 @@ extension Rope.ExtentController {
 		let subcontent = content.subrope(from: from, depth: depth)
 		return .extent(self, subcontent)
 	}
-	func subrope(of content: Rope.Node, to: Rope.Node.Offset,
+	func subrope(of content: Rope.Node, upTo boundary: Rope.Node.Offset,
 	    tightly: Bool, depth: Int = 0) -> Rope.Node {
-		let subcontent = content.subrope(to: to, depth: depth)
+		let subcontent = content.subrope(upTo: boundary, depth: depth)
 		return .extent(self, subcontent)
 	}
 	func subrope(of content: Rope.Node, after boundary: Rope.Index,
@@ -571,9 +571,9 @@ public extension Rope.Node {
 	}
 	func transforming(range: Range<Offset>, with fn: (Self) -> Self)
 	    -> Self {
-		let l = subrope(from: 0, to: range.lowerBound)
-		let m = subrope(from: range.lowerBound, to: range.upperBound)
-		let r = subrope(from: range.upperBound, to: endIndex)
+		let l = subrope(from: 0, upTo: range.lowerBound)
+		let m = subrope(from: range.lowerBound, upTo: range.upperBound)
+		let r = subrope(from: range.upperBound, upTo: endIndex)
 		return l.appending(fn(m)).appending(r)
 	}
 	func settingAttributes(_ attrs: Attributes) -> Self {
@@ -1308,29 +1308,31 @@ public extension Rope.Node {
 	 * `depth` is just an (unused) diagnostic variable that increases
 	 * at every level of subrope(from:rightSibling:depth:) recursion.
 	 */
-	func subrope(leftSibling: Self = .empty, to: Offset,
+	func subrope(leftSibling: Self = .empty, upTo boundary: Offset,
 	    tightly: Bool = false, depth: Int = 0) -> Self {
 		let endIndex = self.endIndex
-		assert(to <= endIndex)
+		assert(boundary <= endIndex)
 		switch self {
 		case .empty, .cursor(_, _), .index(_):
 			return tightly ? leftSibling
 			               : leftSibling.appending(self)
 		case .extent(let ctlr, let rope):
-			let subextent = ctlr.subrope(of: rope, to: to,
+			let subextent = ctlr.subrope(of: rope, upTo: boundary,
 			    tightly: tightly, depth: depth + 1)
 			return leftSibling.appending(subextent)
 		case .concat(let l, let idx, _, _, let r, _):
-			if to < idx || tightly && to == idx {
+			if boundary < idx || tightly && boundary == idx {
 				return l.subrope(leftSibling: leftSibling,
-				    to: to, tightly: tightly, depth: depth + 1)
+				    upTo: boundary, tightly: tightly,
+				    depth: depth + 1)
 			}
 			return r.subrope(
 				leftSibling: leftSibling.appending(l),
-				to: min(endIndex - idx, to - idx),
+				upTo: min(endIndex - idx, boundary - idx),
 				tightly: tightly, depth: depth + 1)
 		case let .leaf(attrs, s):
-			let i = String.Index(utf16Offset: to.utf16Offset, in: s)
+			let i = String.Index(utf16Offset: boundary.utf16Offset,
+			    in: s)
 			if i == s.utf16.startIndex {
 				return leftSibling
 			}
@@ -1338,8 +1340,8 @@ public extension Rope.Node {
 			    .leaf(attrs, Self.Content(s.prefix(upTo: i))))
 		}
 	}
-	func subrope(from: Offset, to: Offset) -> Self {
-		return subrope(to: to).subrope(from: from)
+	func subrope(from l: Offset, upTo r: Offset) -> Self {
+		return subrope(upTo: r).subrope(from: l)
 	}
 	func subrope(after boundary: Rope.Index, rightSibling: Self = .empty,
 	    depth: Int = 0) -> Self? {
@@ -1415,8 +1417,8 @@ public extension Rope.Node {
 	}
 	/*
 	func deleting(from start: Offset, to end: Offset) -> Self {
-		return subrope(from: 0, to: start).appending(
-		    subrope(from: end, to: endIndex))
+		return subrope(from: 0, upTo: start).appending(
+		    subrope(from: end, upTo: endIndex))
 	}
 	*/
 	func compactMap(_ filter: (Self) -> Self?) -> Self? {
@@ -1461,21 +1463,24 @@ public extension Rope.Node {
 		return l.appending(Self(content: c)).appending(r)
 	}
 	func replacing(_ range: Range<Offset>, with c: Content) -> Self {
-		let l = subrope(to: range.lowerBound)
+		let l = subrope(upTo: range.lowerBound)
 		let r = subrope(from: range.upperBound)
 		return l.appending(Self(content: c)).appending(r)
 	}
+	/* TBD tighten up cursor placement?  Check if any nodes are
+	 * excluded or doubly-included?
+	 */
 	func inserting(cursor handle: Handle, attributes: Attributes,
 	    at i: Offset) -> Self {
 		let cursor: Self = .cursor(handle, attributes)
-		return subrope(from: 0, to: i).appending(
-		    cursor).appending(subrope(from: i, to: endIndex))
+		return subrope(from: 0, upTo: i).appending(
+		    cursor).appending(subrope(from: i, upTo: endIndex))
 	}
 	func inserting(content node: Self, at i: Offset) -> Self {
 		if case .empty = node {
 			return self
 		}
-		return subrope(from: 0, to: i).appending(
-		    node).appending(subrope(from: i, to: endIndex))
+		return subrope(from: 0, upTo: i).appending(
+		    node).appending(subrope(from: i, upTo: endIndex))
 	}
 }
