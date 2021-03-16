@@ -2,6 +2,8 @@
 // Copyright (c) 2019, 2020 David Young.  All rights reserved.
 //
 
+public typealias Label = Handle
+
 public class Handle : Hashable {
 	public enum Id : Hashable {
 	typealias Number = UInt64

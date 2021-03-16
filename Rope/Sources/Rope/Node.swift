@@ -220,10 +220,9 @@ public extension Rope.Node {
 		case (.step(let newr), .leftStep):
 			return .step(.nodes(sibling, newr))
 		case (.stepOut, .rightStep):
-			return .step(.nodes(self, Rope.Node(holder: j),
-			                    sibling))
+			return .step(.nodes(self, .index(label: j), sibling))
 		case (.stepOut, .leftStep):
-			return .step(.nodes(sibling, Rope.Node(holder: j),
+			return .step(.nodes(sibling, .index(label: j),
 			                    self))
 		case (.inchOut, .rightStep):
 			switch sibling.inserting(j, after: .rightStep) {
@@ -255,19 +254,19 @@ public extension Rope.Node {
 		/* A step into an extent is a full step. */
 		case (.extent(let ctlr, let n), .rightStep):
 			// *(...) -> (*...)
-			return .step(.extent(under: ctlr, Rope.Node(holder: j),
+			return .step(.extent(under: ctlr, .index(label: j),
 			                            n))
 		case (.extent(let ctlr, let n), .leftStep):
 			// (...)* -> (...*)
 			return .step(.extent(under: ctlr, n,
-			                            Rope.Node(holder: j)))
+			                            .index(label: j)))
 		case (.leaf(let attrs, let content), .rightStep):
 			switch content.firstAndRest {
 			case (_, let rest)? where rest.isEmpty:
 				return .stepOut
 			case (let first, let rest)?:
 				return .step(.nodes(.leaf(attrs, first),
-				                    Rope.Node(holder: j),
+				                    .index(label: j),
 						    .leaf(attrs, rest)))
 			default:
 				/* XXX Empty leaves shouldn't exist. */
@@ -279,7 +278,7 @@ public extension Rope.Node {
 				return .stepOut
 			case (let rest, let last)?:
 				return .step(.nodes(.leaf(attrs, rest),
-				                    Rope.Node(holder: j),
+				                    .index(label: j),
 						    .leaf(attrs, last)))
 			default:
 				/* XXX Empty leaves shouldn't exist. */
@@ -291,7 +290,7 @@ public extension Rope.Node {
 			case .step(let newl):
 				return .step(.nodes(newl, r))
 			case .stepOut:
-				return .step(.nodes(l, Rope.Node(holder: j), r))
+				return .step(.nodes(l, .index(label: j), r))
 			case .inchOut, .absent:
 				break
 			}
@@ -307,7 +306,7 @@ public extension Rope.Node {
 			case .step(let newr):
 				return .step(.nodes(l, newr))
 			case .stepOut:
-				return .step(.nodes(l, Rope.Node(holder: j), r))
+				return .step(.nodes(l, .index(label: j), r))
 			case .inchOut, .absent:
 				break
 			}
@@ -326,9 +325,9 @@ public extension Rope.Node {
 			assert(offset == 0)
 			switch side {
 			case .left:
-				return Rope.Node(holder: h).appending(self)
+				return Self.index(label: h).appending(self)
 			case .right:
-				return self.appending(Rope.Node(holder: h))
+				return self.appending(.index(label: h))
 			}
 		case .leaf(let attrs, let content):
 			let idx = String.Index(utf16Offset: offset.utf16Offset,
@@ -336,7 +335,7 @@ public extension Rope.Node {
 			let l = content.prefix(upTo: idx)
 			let r = content.suffix(from: idx)
 			return Rope.Node(content: C.init(l), attributes: attrs)
-			    .appending(Rope.Node(holder: h))
+			    .appending(.index(label: h))
 			    .appending(Rope.Node(content: C.init(r),
 			        attributes: attrs))
 		case .extent(let ctlr, let n):
@@ -366,14 +365,14 @@ public extension Rope.Node {
 		switch self {
 		case .cursor(_, _), .index(_), .empty:
 			assert(place == 0)
-			return self.appending(Rope.Node(holder: h))
+			return self.appending(.index(label: h))
 		case .leaf(let attrs, let content):
 			let idx = String.Index(utf16Offset: place.utf16Offset,
 			    in: content)
 			let l = content.prefix(upTo: idx)
 			let r = content.suffix(from: idx)
 			return Rope.Node(content: C.init(l), attributes: attrs)
-			    .appending(Rope.Node(holder: h))
+			    .appending(.index(label: h))
 			    .appending(Rope.Node(content: C.init(r),
 			        attributes: attrs))
 		case .extent(let ctlr, let n):
@@ -400,10 +399,10 @@ public extension Rope.Node {
 				return .stepOut
 			case (.stepOut, .rightStep):
 				return .step(.extent(under: ctlr,
-				    n, Rope.Node(holder: j)))
+				    n, .index(label: j)))
 			case (.stepOut, .leftStep):
 				return .step(.extent(under: ctlr,
-				    Rope.Node(holder: j), n))
+				    .index(label: j), n))
 			case (.step(let newn), _):
 				return .step(.extent(ctlr, newn))
 			case (.absent, _):
@@ -413,7 +412,7 @@ public extension Rope.Node {
 		    where w.get() == i:
 			switch r.inserting(j, after: .rightStep) {
 			case .step(let newr):
-				return .step(.nodes(Rope.Node(holder: i), newr))
+				return .step(.nodes(.index(label: i), newr))
 			case let result:
 				return result
 			}
@@ -421,7 +420,7 @@ public extension Rope.Node {
 		    where w.get() == i:
 			switch l.inserting(j, after: .leftStep) {
 			case .step(let newl):
-				return .step(.nodes(newl, Rope.Node(holder: i)))
+				return .step(.nodes(newl, .index(label: i)))
 			case let result:
 				return result
 			}
@@ -809,8 +808,8 @@ public extension Rope.Node {
 	init(controller ctlr: Rope.ExtentController, node n: Self) {
 		self = .extent(ctlr, n)
 	}
-	init(holder: Handle) {
-		self = .index(Weak(holder))
+	init(label: Handle) {
+		self = .index(Weak(label))
 	}
 	private init(left: Self, right: Self) {
 		switch (left, right) {
@@ -913,6 +912,9 @@ public extension Rope.Node {
 		content.reduce(.empty) { (l: Self, r: Self) in
 		    Self(left: l, right: r)
 		}
+	}
+	static func index(label l: Handle) -> Self {
+		return Self(label: l)
 	}
 	static func nodes(_ content: Self...) -> Self {
 		return tree(from: content)
