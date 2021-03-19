@@ -62,7 +62,7 @@ extension Rope.ExtentController {
 		return .extent(self, subcontent)
 	}
 	func node(_ content: Rope.Node, inserting elt: Rope.Node,
-	    at target: Handle) -> Rope.Node? {
+	    at target: Label) -> Rope.Node? {
 		guard let subcontent = content.inserting(elt, at: target) else {
 			return nil
 		}
@@ -181,11 +181,11 @@ extension Rope.Node where Content == Substring {
 extension Rope.Node {
 	public static func == (_ l: Self, _ r: Self) -> Bool {
 		switch (l, r) {
-		case (.cursor(let lHandle, let lattrs),
-		      .cursor(let rHandle, let rattrs)):
-			return lHandle == rHandle && lattrs ~ rattrs
-		case (.index(let lWeakHandle), .index(let rWeakHandle)):
-			return lWeakHandle.get() == rWeakHandle.get()
+		case (.cursor(let lLabel, let lattrs),
+		      .cursor(let rLabel, let rattrs)):
+			return lLabel == rLabel && lattrs ~ rattrs
+		case (.index(let lWeakLabel), .index(let rWeakLabel)):
+			return lWeakLabel.get() == rWeakLabel.get()
 		case (.extent(let lCtlr, let lNode),
 		      .extent(let rCtlr, let rNode)):
 			return lCtlr == rCtlr && lNode == rNode
@@ -211,7 +211,7 @@ public extension Rope.Node {
 	case rightStep
 	case leftStep
 	}
-	func inserting(_ j: Handle, one step: DirectedStep, after i: Handle,
+	func inserting(_ j: Label, one step: DirectedStep, after i: Label,
 	    sibling: Rope.Node) -> Step {
 		let result = inserting(j, one: step, after: i)
 		switch (result, step) {
@@ -244,7 +244,7 @@ public extension Rope.Node {
 			return .absent
 		}
 	}
-	func inserting(_ j: Handle, after step: DirectedStep) -> Step {
+	func inserting(_ j: Label, after step: DirectedStep) -> Step {
 		switch (self, step) {
 		/* A step over a cursor, index, or empty string is NOT
 		 * a full step.
@@ -318,7 +318,7 @@ public extension Rope.Node {
 			}
 		}
 	}
-	func inserting(index h: Handle, abutting side: Side,
+	func inserting(index h: Label, abutting side: Side,
 	    of offset: Offset) -> Rope.Node {
 		switch self {
 		case .cursor(_, _), .index(_), .empty:
@@ -361,7 +361,7 @@ public extension Rope.Node {
 			}
 		}
 	}
-	func inserting(index h: Handle, at place: Offset) -> Rope.Node {
+	func inserting(index h: Label, at place: Offset) -> Rope.Node {
 		switch self {
 		case .cursor(_, _), .index(_), .empty:
 			assert(place == 0)
@@ -385,7 +385,7 @@ public extension Rope.Node {
 			    r.inserting(index: h, at: place - idx))
 		}
 	}
-	func inserting(_ j: Handle, one step: DirectedStep, after i: Handle)
+	func inserting(_ j: Label, one step: DirectedStep, after i: Label)
 	    -> Step {
 		switch (self, step) {
 		case (.index(let w), _) where w.get() == i:
@@ -426,13 +426,13 @@ public extension Rope.Node {
 			}
 		case (.concat(let l, _, _, _, let r, _), _):
 			let id = i.id
-			switch (l.hids.contains(id), r.hids.contains(id),
+			switch (l.labels.contains(id), r.labels.contains(id),
 				step) {
 			case (false, false, _):
 				return .absent
 			case (true, true, _):
-				assert(l.hids.contains(id) !=
-				       r.hids.contains(id))
+				assert(l.labels.contains(id) !=
+				       r.labels.contains(id))
 				return .inchOut
 			case (true, false, .rightStep):
 				return l.inserting(j, one: .rightStep, after: i,
@@ -490,7 +490,7 @@ public extension Rope.Node {
 			return result
 		}
 	}
-	func element(at i: Handle, sibling r: Rope.Node) -> ElementResult {
+	func element(at i: Label, sibling r: Rope.Node) -> ElementResult {
 		switch element(at: i) {
 		case .inchOut:
 			return r.firstElement()
@@ -501,7 +501,7 @@ public extension Rope.Node {
 	/* TBD extract `performing` from `inserting(_:,one:,after:)`
 	 * and element(at:) ?
 	 */
-	func element(at i: Handle) -> ElementResult {
+	func element(at i: Label) -> ElementResult {
 		switch self {
 		case .index(let w) where w.get() == i:
 			/* The index matches: inch out so that the caller
@@ -525,7 +525,7 @@ public extension Rope.Node {
 			return r.firstElement()
 		case .concat(let l, _, _, _, let r, _):
 			let id = i.id
-			switch (l.hids.contains(id), r.hids.contains(id)) {
+			switch (l.labels.contains(id), r.labels.contains(id)) {
 			case (false, false):
 				return .absent
 			case (true, true):
@@ -649,10 +649,10 @@ public extension Rope.Node {
 }
 
 public extension Rope.Node {
-	func inserting(_ elt: Self, at target: Handle) -> Self? {
+	func inserting(_ elt: Self, at target: Label) -> Self? {
 		switch self {
 		case .index(let w):
-			guard let handle = w.get(), handle == target else {
+			guard let label = w.get(), label == target else {
 				return nil
 			}
 			return elt
@@ -683,45 +683,45 @@ public extension Rope.Node {
 }
 
 public extension Rope.Node {
-	// TBD introduce a property for all Handles but the
-	// index Handles?
-	var hids: HandleSet {
+	// TBD introduce a property for all Labels but the
+	// index Labels?
+	var labels: LabelSet {
 		switch self {
 		case .index(let w):
-			guard let handle = w.get() else {
+			guard let label = w.get() else {
 				return []
 			}
-			return [handle.id]
-		case .cursor(let handle, _):
-			return [handle.id]
+			return [label.id]
+		case .cursor(let label, _):
+			return [label.id]
 		case .extent(let ctlr, let rope):
-			return rope.hids.union([ctlr.id])
-		case .concat(_, _, _, let hids, _, _):
-			return hids
+			return rope.labels.union([ctlr.id])
+		case .concat(_, _, _, let labels, _, _):
+			return labels
 		case .leaf(_, _), .empty:
 			return []
 		}
 	}
-	func contains(_ target: Handle) -> Bool {
+	func contains(_ target: Label) -> Bool {
 		switch self {
 		case .index(let w):
-			guard let handle = w.get() else {
+			guard let label = w.get() else {
 				return false
 			}
-			return handle == target
+			return label == target
 		case .cursor(target, _):
 			return true
 		case .extent(_, let rope):
 			return rope.contains(target)
-		case .concat(_, _, _, let hids, _, _):
-			return hids.contains(target.id)
+		case .concat(_, _, _, let labels, _, _):
+			return labels.contains(target.id)
 		case .leaf(_, _), .empty:
 			return false
 		case .cursor(_, _):
 			return false
 		}
 	}
-	func indices(follow target: Handle) -> Bool? {
+	func indices(follow target: Label) -> Bool? {
 		switch self {
 		case .index(let w):
 			if w.get() != target {
@@ -737,14 +737,14 @@ public extension Rope.Node {
 			case true?:
 				return true
 			case false?:
-				return r.hids.extentCount > 0 ||
+				return r.labels.extentCount > 0 ||
 				       midx != w.utf16Offset
 			}
 		case .cursor(_, _), .leaf(_, _), .empty:
 			return nil
 		}
 	}
-	func indices(precede target: Handle) -> Bool? {
+	func indices(precede target: Label) -> Bool? {
 		switch self {
 		case .index(let w):
 			if w.get() != target {
@@ -760,13 +760,13 @@ public extension Rope.Node {
 			case true?:
 				return true
 			case false?:
-				return l.hids.extentCount > 0 || 0 != midx
+				return l.labels.extentCount > 0 || 0 != midx
 			}
 		case .cursor(_, _), .leaf(_, _), .empty:
 			return nil
 		}
 	}
-	func index(_ h1: Handle, precedes h2: Handle) -> Bool? {
+	func index(_ h1: Label, precedes h2: Label) -> Bool? {
 		switch self {
 		case .index(_):
 			return nil
@@ -774,11 +774,11 @@ public extension Rope.Node {
 			return nil
 		case .extent(_, let rope):
 			return rope.index(h1, precedes: h2)
-		case .concat(let l, _, _, let hids, let r, _):
+		case .concat(let l, _, _, let labels, let r, _):
 			/* I'm not sure if short-circuiting here actually
 			 * saves us much work.  Benchmark and see?
 			 */
-			guard hids.contains(h1.id) && hids.contains(h2.id)
+			guard labels.contains(h1.id) && labels.contains(h2.id)
 			    else {
 				return nil
 			}
@@ -808,7 +808,7 @@ public extension Rope.Node {
 	init(controller ctlr: Rope.ExtentController, node n: Self) {
 		self = .extent(ctlr, n)
 	}
-	init(label: Handle) {
+	init(label: Label) {
 		self = .index(Weak(label))
 	}
 	private init(left: Self, right: Self) {
@@ -824,7 +824,7 @@ public extension Rope.Node {
 		default:
 			self = .concat(left, left.endIndex,
 				       1 + max(left.depth, right.depth),
-				       left.hids.union(right.hids), right,
+				       left.labels.union(right.labels), right,
 				       left.dimensions + right.dimensions)
 		}
 	}
@@ -913,7 +913,7 @@ public extension Rope.Node {
 		    Self(left: l, right: r)
 		}
 	}
-	static func index(label l: Handle) -> Self {
+	static func index(label l: Label) -> Self {
 		return Self(label: l)
 	}
 	static func nodes(_ content: Self...) -> Self {
@@ -1082,9 +1082,9 @@ public extension Rope.Node {
 			                              in: controllers + [ctlr])
 		case (.index(let w), .interior(_, let h)) where w.get() == h:
 			return controllers
-		case (.concat(let l, let midx, _, let hids, let r, _),
+		case (.concat(let l, let midx, _, let labels, let r, _),
 		      .interior(_, let h)):
-		        guard hids.contains(h.id) else {
+		        guard labels.contains(h.id) else {
 				return nil
 			}
 			if let c = l.extentsOpening(at: i, in: controllers) {
@@ -1096,7 +1096,7 @@ public extension Rope.Node {
 			 * not open at `i`. Rather, they open at an index
 			 * on the left.  So leave them out of the list.
 			 */
-			guard 0 == midx && l.hids.extentCount == 0 else {
+			guard 0 == midx && l.labels.extentCount == 0 else {
 				return r.extentsOpening(at: i)
 			}
 			return r.extentsOpening(at: i, in: controllers)
@@ -1117,9 +1117,9 @@ public extension Rope.Node {
 			                              in: controllers + [ctlr])
 		case (.index(let w), .interior(_, let h)) where w.get() == h:
 			return controllers
-		case (.concat(let l, let midx, _, let hids, let r, let w),
+		case (.concat(let l, let midx, _, let labels, let r, let w),
 		      .interior(_, let h)):
-		        guard hids.contains(h.id) else {
+		        guard labels.contains(h.id) else {
 				return nil
 			}
 			if let c = r.extentsClosing(at: i, in: controllers) {
@@ -1132,7 +1132,7 @@ public extension Rope.Node {
 			 * on the right.  So leave them out of the list.
 			 */
 			guard midx == w.utf16Offset &&
-			      r.hids.extentCount == 0 else {
+			      r.labels.extentCount == 0 else {
 				return l.extentsClosing(at: i)
 			}
 			return l.extentsClosing(at: i, in: controllers)
@@ -1472,9 +1472,9 @@ public extension Rope.Node {
 	/* TBD tighten up cursor placement?  Check if any nodes are
 	 * excluded or doubly-included?
 	 */
-	func inserting(cursor handle: Handle, attributes: Attributes,
+	func inserting(cursor label: Label, attributes: Attributes,
 	    at i: Offset) -> Self {
-		let cursor: Self = .cursor(handle, attributes)
+		let cursor: Self = .cursor(label, attributes)
 		return subrope(from: 0, upTo: i).appending(
 		    cursor).appending(subrope(from: i, upTo: endIndex))
 	}

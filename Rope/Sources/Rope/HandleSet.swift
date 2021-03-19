@@ -1,5 +1,5 @@
-public struct HandleSet : SetAlgebra, ExpressibleByArrayLiteral {
-	public typealias Element = Handle.Id
+public struct LabelSet : SetAlgebra, ExpressibleByArrayLiteral {
+	public typealias Element = Label.Id
 	var content: Set<Element>
 	var _cursorCount: Int = 0
 	var _extentCount: Int = 0

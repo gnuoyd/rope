@@ -415,8 +415,8 @@ class IndexOffsetBy : XCTestCase {
 }
 
 class RopeIndexedControllerPaths: NestedExtentBase {
-	var _expectations: [[Handle]]? = nil
-	var expectations: [[Handle]] {
+	var _expectations: [[Label]]? = nil
+	var expectations: [[Label]] {
 		if let olde = _expectations {
 			return olde
 		}
@@ -424,7 +424,7 @@ class RopeIndexedControllerPaths: NestedExtentBase {
 		// 000000000000000
 		//     1111111111
 		//         22222
-		let newe: [[Handle]] = [
+		let newe: [[Label]] = [
 		    [],			// *(abc(def(ghi)))
 		    [c[0]],		// (*abc(def(ghi)))
 		    [c[0]],		// (a*bc(def(ghi)))
@@ -558,12 +558,12 @@ class UTF16IndexedControllerPaths: XCTestCase {
 		_tree = t
 		return t
 	}
-	var _expectations: [[Handle]]? = nil
-	var expectations: [[Handle]] {
+	var _expectations: [[Label]]? = nil
+	var expectations: [[Label]] {
 		if let olde = _expectations {
 			return olde
 		}
-		let newe: [[Handle]] = [[c[0]],
+		let newe: [[Label]] = [[c[0]],
 					[c[0]],
 					[c[0]],
 					[c[0], c[1]],
@@ -1211,7 +1211,7 @@ class FibonacciTests : XCTestCase {
 	}
 }
 
-class HandleHolding : XCTestCase {
+class LabelHolding : XCTestCase {
 
 /*
 	override func setUp() {
@@ -1227,10 +1227,10 @@ class HandleHolding : XCTestCase {
 	 * object is the reference held by a Weak struct,
 	 * w, then trying to retrieve the object with w.get() yields nil.
 	 */
-	func testReleaseHandle() {
-		var h = Handle()
+	func testReleaseLabel() {
+		var h = Label()
 		let w = Weak(h)
-		h = Handle()
+		h = Label()
 		XCTAssert(w.get() == nil)
 	}
 
@@ -1239,11 +1239,11 @@ class HandleHolding : XCTestCase {
 	 * w and x, then trying to retrieve the object with w.get() and
 	 * x.get() yields nil.
 	 */
-	func testReleaseTwoHandles() {
-		var h = Handle()
+	func testReleaseTwoLabels() {
+		var h = Label()
 		let w = Weak(h)
 		let x = Weak(h)
-		h = Handle()
+		h = Label()
 		XCTAssert(w.get() == nil)
 		XCTAssert(x.get() == nil)
 	}
@@ -1252,23 +1252,23 @@ class HandleHolding : XCTestCase {
 	 * object, o, that is also held by a Weak struct, w, then the
 	 * object retrieved by w.get() is o.
 	 */
-	func testHoldHandle() {
-		let h = Handle()
+	func testHoldLabel() {
+		let h = Label()
 		let w = Weak(h)
 		XCTAssert(w.get() == h)
 	}
 
 	func testStepAndHoldIndex() {
 		let first: NSS = .text("abc")
-		let handle = Handle()
+		let label = Label()
 		guard case .step(let second) =
-		    first.inserting(handle, after: .rightStep) else {
+		    first.inserting(label, after: .rightStep) else {
 			XCTFail("inserting(_,after:) failed")
 			return
 		}
 		XCTAssert(second.leaves.map { (x: RSS.Node) -> Bool in
 			if case .index(let w) = x {
-				return w.get() == handle
+				return w.get() == label
 			} else {
 				return false
 			}
@@ -1277,16 +1277,16 @@ class HandleHolding : XCTestCase {
 
 	func testStepAndReleaseIndex() {
 		let first: NSS = .text("abc")
-		var handle = Handle()
+		var label = Label()
 		guard case .step(let second) =
-		    first.inserting(handle, after: .rightStep) else {
+		    first.inserting(label, after: .rightStep) else {
 			XCTFail("inserting(_,after:) failed")
 			return
 		}
-		handle = Handle()
+		label = Label()
 		XCTAssert(!second.leaves.map { (x: RSS.Node) -> Bool in
 			if case .index(let w) = x {
-				return w.get() == handle
+				return w.get() == label
 			} else {
 				return false
 			}
@@ -1316,7 +1316,7 @@ class HandleHolding : XCTestCase {
 		}
 		print(emptyRope.node)
 		XCTAssert(emptyRope.node.cleaned()?.leaves.filter(
-		    HandleHolding.isIndex).count == 11)
+		    LabelHolding.isIndex).count == 11)
 	}
 
 	func testCleanedReleasingIndices() {
@@ -1329,7 +1329,7 @@ class HandleHolding : XCTestCase {
 		print(emptyRope.node)
 		indices = nil
 		XCTAssert(emptyRope.node.cleaned()?.leaves.filter(
-		    HandleHolding.isIndex).count == 0)
+		    LabelHolding.isIndex).count == 0)
 	}
 
 	func testReleasingIndices() {
@@ -1342,10 +1342,10 @@ class HandleHolding : XCTestCase {
 
 		indices = nil
 		print(rope.node.leaves)
-		print(rope.node.leaves.filter(HandleHolding.isNilIndex))
+		print(rope.node.leaves.filter(LabelHolding.isNilIndex))
 
 		XCTAssert(rope.node.leaves.filter(
-		    HandleHolding.isNilIndex).count == 11)
+		    LabelHolding.isNilIndex).count == 11)
 	}
 
 	func testPerformanceExample() {
@@ -1542,22 +1542,22 @@ class CommonPrefix : XCTestCase {
 	}
 }
 
-class HandleSets : XCTestCase {
+class LabelSets : XCTestCase {
 	func testInit() {
-		let set = HandleSet()
+		let set = LabelSet()
 		XCTAssert(set.cursorCount == 0)
 		XCTAssert(set.extentCount == 0)
 		XCTAssert(set.indexCount == 0)
 	}
 	func testSeqInit() {
-		let ids: [Handle.Id] = [.cursor(0), .extent(1), .index(2)]
-		let set = HandleSet(ids)
+		let ids: [Label.Id] = [.cursor(0), .extent(1), .index(2)]
+		let set = LabelSet(ids)
 		XCTAssert(set.cursorCount == 1)
 		XCTAssert(set.extentCount == 1)
 		XCTAssert(set.indexCount == 1)
 	}
 	func testLiteralInit() {
-		let set: [HandleSet] = [[.cursor(0), .extent(0), .index(0)],
+		let set: [LabelSet] = [[.cursor(0), .extent(0), .index(0)],
 		                         [.cursor(0), .extent(0), .index(0),
 					  .index(1)],
 		                         [.cursor(0), .cursor(1), .extent(0),
@@ -1578,7 +1578,7 @@ class HandleSets : XCTestCase {
 		XCTAssert(set[3].indexCount == 1)
 	}
 	func testUnion() {
-		let set: [HandleSet] = [[.cursor(0), .extent(0), .index(0)],
+		let set: [LabelSet] = [[.cursor(0), .extent(0), .index(0)],
 		                         [.cursor(0), .extent(0), .index(0),
 					  .index(1)],
 		                         [.cursor(0), .cursor(1), .extent(0),
@@ -1601,7 +1601,7 @@ class HandleSets : XCTestCase {
 		XCTAssert(p.indexCount == 2)
 	}
 	func testIntersection() {
-		let overlap: [HandleSet] = [[.cursor(0), .extent(0), .index(0)],
+		let overlap: [LabelSet] = [[.cursor(0), .extent(0), .index(0)],
 		                         [.cursor(0), .extent(0), .index(0),
 					  .index(1)],
 		                         [.cursor(0), .cursor(1), .extent(0),
@@ -1619,7 +1619,7 @@ class HandleSets : XCTestCase {
 		XCTAssert(overlap[2].intersection(overlap[3]).extentCount == 1)
 		XCTAssert(overlap[2].intersection(overlap[3]).indexCount == 1)
 
-		let disj: [HandleSet] = [[.cursor(0), .extent(0), .index(0)],
+		let disj: [LabelSet] = [[.cursor(0), .extent(0), .index(0)],
 		                         [.cursor(4), .extent(4), .index(4),
 					  .index(8)],
 		                         [.cursor(8), .cursor(12), .extent(8),
@@ -1638,7 +1638,7 @@ class HandleSets : XCTestCase {
 		XCTAssert(disj[2].intersection(disj[3]).indexCount == 0)
 	}
 	func testSymmetricDifference() {
-		let overlap: [HandleSet] = [
+		let overlap: [LabelSet] = [
 		    [.cursor(0), .extent(0), .index(0)],		// 0
 		    [.cursor(0), .extent(0), .index(0), .index(1)],	// 1
 		    [.cursor(0), .cursor(1), .extent(0), .index(0)],	// 2
@@ -1659,7 +1659,7 @@ class HandleSets : XCTestCase {
 		XCTAssert(diff2.extentCount == 1)
 		XCTAssert(diff2.indexCount == 0)
 
-		let disj: [HandleSet] = [
+		let disj: [LabelSet] = [
 		    [.cursor(0), .extent(0), .index(0)],		// 0
 		    [.cursor(4), .extent(4), .index(4), .index(8)],	// 1
 		    [.cursor(8), .cursor(12), .extent(8), .index(12)],	// 2
@@ -1684,7 +1684,7 @@ class HandleSets : XCTestCase {
 		XCTAssert(diff5.indexCount == 2)
 	}
 	func testInsert() {
-		var set: HandleSet = [.cursor(0)]
+		var set: LabelSet = [.cursor(0)]
 
 		XCTAssert(set.cursorCount == 1)
 		XCTAssert(set.insert(.cursor(0)) == (false, .cursor(0)))
@@ -1695,7 +1695,7 @@ class HandleSets : XCTestCase {
 		XCTAssert(set.indexCount == 0)
 	}
 	func testRemove() {
-		var set: HandleSet = [.cursor(0)]
+		var set: LabelSet = [.cursor(0)]
 
 		XCTAssert(set.cursorCount == 1)
 		XCTAssert(set.remove(.cursor(1)) == nil)
@@ -1706,7 +1706,7 @@ class HandleSets : XCTestCase {
 		XCTAssert(set.indexCount == 0)
 	}
 	func testUpdate() {
-		var set: HandleSet = [.cursor(0)]
+		var set: LabelSet = [.cursor(0)]
 
 		XCTAssert(set.cursorCount == 1)
 		XCTAssert(set.update(with: .cursor(0)) == .cursor(0))

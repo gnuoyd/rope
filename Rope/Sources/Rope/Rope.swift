@@ -102,9 +102,9 @@ public class Rope<C : Content> : Collection {
 	public enum Index : Comparable {
 	case start(of: Rope)
 	case end(of: Rope)
-	case interior(of: Rope, handle: Handle)
+	case interior(of: Rope, label: Label)
 	}
-	public class ExtentController : Handle {
+	public class ExtentController : Label {
 		public override var id: Id { return .extent(_id) }
 	}
 
@@ -121,10 +121,10 @@ public class Rope<C : Content> : Collection {
 	public enum Offset {
 		case offset(Int)
 	}
-	case cursor(Handle, Attributes)
-	case index(Weak<Handle>)
+	case cursor(Label, Attributes)
+	case index(Weak<Label>)
 	case extent(ExtentController, Node)
-	case concat(Node, Offset, UInt, HandleSet, Node, Dimensions)
+	case concat(Node, Offset, UInt, LabelSet, Node, Dimensions)
 	case leaf(Attributes, C)
 	case empty
 	}
@@ -151,7 +151,8 @@ public class Rope<C : Content> : Collection {
 		 * end, if there is even a solitary extent.  Need to return
 		 * .start(of: self) in that case.
 		 */
-		if top.startIndex == top.endIndex && top.hids.extentCount == 0 {
+		if top.startIndex == top.endIndex &&
+		   top.labels.extentCount == 0 {
 			return .end(of: self)
 		}
 		return .start(of: self)
@@ -169,7 +170,7 @@ public class Rope<C : Content> : Collection {
 			top = newValue
 		}
 	}
-	public func index(_ h1: Handle, precedes h2: Handle) -> Bool? {
+	public func index(_ h1: Label, precedes h2: Label) -> Bool? {
 		return top.index(h1, precedes: h2)
 	}
 	public init<T>(content t: T) where C : Initializable,
@@ -182,17 +183,17 @@ public class Rope<C : Content> : Collection {
 		}
 		switch i {
 		case .start(_):
-			let h = Handle()
+			let h = Label()
 			guard case .step(let n) =
 			    top.inserting(h, after: .rightStep) else {
 				return .end(of: self)
 			}
 			top = n
-			return .interior(of: self, handle: h)
+			return .interior(of: self, label: h)
 		case .end(_):
 			fatalError("No index after .endIndex")
 		case .interior(_, let h):
-			let j = Handle()
+			let j = Label()
 			switch top.inserting(j, one: .rightStep, after: h) {
 			case .inchOut:
 				fatalError(".interior(_, \(h)) already at end?")
@@ -202,7 +203,7 @@ public class Rope<C : Content> : Collection {
 				return .end(of: self)
 			case .step(let node):
 				top = node
-				return .interior(of: self, handle: j)
+				return .interior(of: self, label: j)
 			}
 		}
 	}
@@ -214,15 +215,15 @@ public class Rope<C : Content> : Collection {
 		case .start(_):
 			fatalError("No index before .startIndex")
 		case .end(_):
-			let h = Handle()
+			let h = Label()
 			guard case .step(let n) =
 			    top.inserting(h, after: .leftStep) else {
 				return .start(of: self)
 			}
 			top = n
-			return .interior(of: self, handle: h)
+			return .interior(of: self, label: h)
 		case .interior(_, let h):
-			let j = Handle()
+			let j = Label()
 			switch top.inserting(j, one: .leftStep, after: h) {
 			case .inchOut:
 				fatalError(
@@ -233,7 +234,7 @@ public class Rope<C : Content> : Collection {
 				return .start(of: self)
 			case .step(let node):
 				top = node
-				return .interior(of: self, handle: j)
+				return .interior(of: self, label: j)
 			}
 		}
 	}
@@ -339,10 +340,10 @@ public class Rope<C : Content> : Collection {
 }
 
 extension Rope {
-	func indices(follow target: Handle) -> Bool? {
+	func indices(follow target: Label) -> Bool? {
 		return top.indices(follow: target)
 	}
-	func indices(precede target: Handle) -> Bool? {
+	func indices(precede target: Label) -> Bool? {
 		return top.indices(precede: target)
 	}
 }

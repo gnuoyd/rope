@@ -4,15 +4,15 @@
 extension Rope.Index {
 	init(abutting utf16Offset: Rope.Node.Offset, on side: Rope.Node.Side,
 	     in rope: Rope) {
-		let h = Handle()
+		let h = Label()
 		rope.node = rope.node.inserting(index: h, abutting: side,
 		    of: utf16Offset)
-		self = .interior(of: rope, handle: h)
+		self = .interior(of: rope, label: h)
 	}
 	init(utf16Offset: Rope.Node.Offset, in rope: Rope) {
-		let h = Handle()
+		let h = Label()
 		rope.node = rope.node.inserting(index: h, at: utf16Offset)
-		self = .interior(of: rope, handle: h)
+		self = .interior(of: rope, label: h)
 	}
 }
 
