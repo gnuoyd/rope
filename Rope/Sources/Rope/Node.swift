@@ -1059,9 +1059,9 @@ public extension Rope.Node {
 		case (.interior(_, let h), .index(let w)) where w.get() == h:
 			return controllers
 		case (.interior(_, let h), .concat(let l, _, _, _, let r, _))
-		     where self.contains(h):
-		     	return l.extentsEnclosing(i, in: controllers) ??
-		     	       r.extentsEnclosing(i, in: controllers)
+		    where self.contains(h):
+			return l.extentsEnclosing(i, in: controllers) ??
+			       r.extentsEnclosing(i, in: controllers)
 		case (.interior(_, _), .extent(let ctlr, let content)):
 			return content.extentsEnclosing(i,
 			    in: controllers + [ctlr])
