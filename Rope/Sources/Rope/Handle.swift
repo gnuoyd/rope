@@ -4,10 +4,10 @@
 
 public class Label : Hashable {
 	public enum Id : Hashable {
-	typealias Number = UInt64
-	case cursor(UInt64)
-	case extent(UInt64)
-	case index(UInt64)
+	public typealias Number = UInt64
+	case cursor(Number)
+	case extent(Number)
+	case index(Number)
 	}
 	static var nextNumber: Id.Number = 0
 	var _id: Id.Number
