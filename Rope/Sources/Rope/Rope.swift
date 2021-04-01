@@ -376,8 +376,8 @@ extension Rope {
 }
 
 extension Rope {
-	func extents(enclosing i: Index) -> [ExtentController]? {
-		return top.extents(enclosing: i)
+	func extentsEnclosing(_ i: Index) -> [ExtentController]? {
+		return top.extentsEnclosing(i)
 	}
 	public func extentsClosing(at i: Index)
 	    -> [ExtentController]? {
@@ -396,9 +396,9 @@ extension Rope {
 			return nil
 		}
 		let j = index(after: i)
-		switch (extents(enclosing: i)?.count,
+		switch (extentsEnclosing(i)?.count,
 			dir,
-		        extents(enclosing: j)?.count) {
+		        extentsEnclosing(j)?.count) {
 		case (let ni?, .in, let nj?) where ni < nj:
 			return j
 		case (let ni?, .out, let nj?) where ni > nj:
@@ -413,9 +413,9 @@ extension Rope {
 			return nil
 		}
 		let j = index(before: i)
-		switch (extents(enclosing: i),
+		switch (extentsEnclosing(i),
 			dir,
-		        extents(enclosing: j)) {
+		        extentsEnclosing(j)) {
 		case (let ei?, .in, let ej?) where ei.count < ej.count:
 			bottom = ej.last
 			return j
@@ -448,12 +448,12 @@ extension Rope {
 	        rightControllers: [ExtentController])? {
 		var (l, r) = (selection.lowerBound, selection.upperBound)
 		var lo, ro: [ExtentController]
-		/* TBD move extents(enclosing:) calls out of loop, use
+		/* TBD move extentsEnclosing() calls out of loop, use
 		 * index(after/before: ..., climbing: .in, bottom: ...) to
 		 * get the next deeper extent at each step
 		 */
 		while true {
-			switch (extents(enclosing: l), extents(enclosing: r)) {
+			switch (extentsEnclosing(l), extentsEnclosing(r)) {
 			case (let _lo?, let _ro?):
 				lo = _lo
 				ro = _ro
@@ -485,7 +485,7 @@ extension Rope {
 		let l = s.lowerBound
 		var r = s.upperBound
 		var bottom: ExtentController?
-		guard let extents = extents(enclosing: r) else {
+		guard let extents = extentsEnclosing(r) else {
 			return nil
 		}
 		if extents.last == limit {
@@ -505,7 +505,7 @@ extension Rope {
 		var l = s.lowerBound
 		let r = s.upperBound
 		var bottom: ExtentController?
-		guard let extents = extents(enclosing: l) else {
+		guard let extents = extentsEnclosing(l) else {
 			return nil
 		}
 		if extents.last == limit {

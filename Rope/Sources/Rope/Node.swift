@@ -1029,7 +1029,7 @@ public extension Rope.Node {
 		}
 		return transforming(at: i, with: utf16)
 	}
-	func extents(enclosing i0: Offset) -> [Rope.ExtentController] {
+	func extentsEnclosing(_ i0: Offset) -> [Rope.ExtentController] {
 		var path: [Rope.ExtentController] = []
 		var i = i0
 		var next = self
@@ -1050,7 +1050,7 @@ public extension Rope.Node {
 			}
 		}
 	}
-	func extents(enclosing i: Rope.Index,
+	func extentsEnclosing(_ i: Rope.Index,
 	                      in controllers: [Rope.ExtentController] = [])
 	    -> [Rope.ExtentController]? {
 		switch (i, self) {
@@ -1060,10 +1060,10 @@ public extension Rope.Node {
 			return controllers
 		case (.interior(_, let h), .concat(let l, _, _, _, let r, _))
 		     where self.contains(h):
-		     	return l.extents(enclosing: i, in: controllers) ??
-		     	       r.extents(enclosing: i, in: controllers)
+		     	return l.extentsEnclosing(i, in: controllers) ??
+		     	       r.extentsEnclosing(i, in: controllers)
 		case (.interior(_, _), .extent(let ctlr, let content)):
-			return content.extents(enclosing: i,
+			return content.extentsEnclosing(i,
 			    in: controllers + [ctlr])
 		default:
 			return nil
