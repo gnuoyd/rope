@@ -540,6 +540,45 @@ extension Rope {
 }
 
 extension Rope {
+	public func firstIndex(inExtent target: Label) -> Index? {
+		let label = Label()
+		guard let newtop = top.insertingFirstIndex(label,
+		    inExtent: target) else {
+			return nil
+		}
+		top = newtop
+		return .interior(of: self, label: label)
+	}
+	public func lastIndex(inExtent target: Label) -> Index? {
+		let label = Label()
+		guard let newtop = top.insertingLastIndex(label,
+		    inExtent: target) else {
+			return nil
+		}
+		top = newtop
+		return .interior(of: self, label: label)
+	}
+	public func index(afterExtent target: Label) -> Index? {
+		let label = Label()
+		guard let newtop = top.insertingIndex(label,
+		    afterExtent: target) else {
+			return nil
+		}
+		top = newtop
+		return .interior(of: self, label: label)
+	}
+	public func index(beforeExtent target: Label) -> Index? {
+		let label = Label()
+		guard let newtop = top.insertingIndex(label,
+		    beforeExtent: target) else {
+			return nil
+		}
+		top = newtop
+		return .interior(of: self, label: label)
+	}
+}
+
+extension Rope {
 	public func index(_ i: Index, offsetBy _times: Int) -> Index {
 		var times = _times
 		var result: Index = i

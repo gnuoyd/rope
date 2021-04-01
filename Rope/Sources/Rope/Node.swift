@@ -1485,4 +1485,62 @@ public extension Rope.Node {
 		return subrope(from: 0, upTo: i).appending(
 		    node).appending(subrope(from: i, upTo: endIndex))
 	}
+	func transformingExtent(withLabel target: Label,
+	    with f: (_: Rope.ExtentController, _: Self) -> Self) -> Self? {
+		switch self {
+		case .cursor(_, _), .empty, .index(_), .leaf(_, _):
+			return nil
+		case .extent(let ctlr, let content) where ctlr == target:
+			return f(ctlr, content)
+		case .extent(let ctlr, let n):
+			guard let newn = n.transformingExtent(withLabel: target,
+			    with: f) else {
+				return nil
+			}
+			return .extent(under: ctlr, newn)
+		case .concat(let l, _, _, let labels, let r, _):
+			guard labels.contains(target.id) else {
+				return nil
+			}
+			if let newl = l.transformingExtent(
+			    withLabel: target, with: f) {
+				return .nodes(newl, r)
+			} else if let newr = r.transformingExtent(
+			    withLabel: target, with: f) {
+				return .nodes(l, newr)
+			} else {
+				return nil
+			}
+		}
+	}
+	func insertingFirstIndex(_ label: Label, inExtent target: Label)
+	    -> Self? {
+		return transformingExtent(withLabel: target) {
+		    (ctlr, content) in
+		        .extent(under: ctlr, .index(label: label), content)
+		}
+	}
+	func insertingLastIndex(_ label: Label, inExtent target: Label)
+	    -> Self? {
+		return transformingExtent(withLabel: target) {
+		    (ctlr, content) in
+			.extent(under: ctlr, content, .index(label: label))
+		}
+	}
+	func insertingIndex(_ label: Label, afterExtent target: Label)
+	    -> Self? {
+		return transformingExtent(withLabel: target) {
+		    (ctlr, content) in
+			.nodes(.extent(under: ctlr, content),
+			       .index(label: label))
+		}
+	}
+	func insertingIndex(_ label: Label, beforeExtent target: Label)
+	    -> Self? {
+		return transformingExtent(withLabel: target) {
+		    (ctlr, content) in
+			.nodes(.index(label: label),
+			       .extent(under: ctlr, content))
+		}
+	}
 }

@@ -62,6 +62,74 @@ class NestedExtentBase : XCTestCase {
 	}
 }
 
+class IndexedExtentBase : XCTestCase {
+	let c = [ECSS(), ECSS(), ECSS()]
+	static let indices: ClosedRange<Int> = 0...9
+	let l = Array<Label>(indices.map { _ in Label() })
+	var _rope: RSS? = nil
+	var rope: RSS {
+		if let r = _rope {
+			return r
+		}
+		// (abc(def(ghi)))
+		// 000000000000000
+		//     1111111111
+		//         22222
+		// *(*abc*(*def*(*ghi*)*)*)*
+		let r: RSS = Rope(
+		    with: .nodes(.index(label: l[0]),
+		                 .extent(under: c[0],
+		                     .index(label: l[1]),
+				     .text("abc"),
+				     .index(label: l[2]),
+				     .extent(under: c[1],
+				         .index(label: l[3]),
+				         .text("def"),
+				         .index(label: l[4]),
+					 .extent(under: c[2],
+					     .index(label: l[5]),
+					     .text("ghi"),
+					     .index(label: l[6])),
+					 .index(label: l[7])),
+					 .index(label: l[8])),
+				 .index(label: l[9])))
+		_rope = r
+		return r
+	}
+	func testInsertingFirstIndex() {
+		XCTAssert(rope.firstIndex(inExtent: c[0]) ==
+		          .interior(of: rope, label: l[1]))
+		XCTAssert(rope.firstIndex(inExtent: c[1]) ==
+		          .interior(of: rope, label: l[3]))
+		XCTAssert(rope.firstIndex(inExtent: c[2]) ==
+		          .interior(of: rope, label: l[5]))
+	}
+	func testInsertingLastIndex() {
+		XCTAssert(rope.lastIndex(inExtent: c[0]) ==
+		          .interior(of: rope, label: l[8]))
+		XCTAssert(rope.lastIndex(inExtent: c[1]) ==
+		          .interior(of: rope, label: l[7]))
+		XCTAssert(rope.lastIndex(inExtent: c[2]) ==
+		          .interior(of: rope, label: l[6]))
+	}
+	func testInsertingIndexAfter() {
+		XCTAssert(rope.index(afterExtent: c[0]) ==
+		          .interior(of: rope, label: l[9]))
+		XCTAssert(rope.index(afterExtent: c[1]) ==
+		          .interior(of: rope, label: l[8]))
+		XCTAssert(rope.index(afterExtent: c[2]) ==
+		          .interior(of: rope, label: l[7]))
+	}
+	func testInsertingIndexBefore() {
+		XCTAssert(rope.index(beforeExtent: c[0]) ==
+		          .interior(of: rope, label: l[0]))
+		XCTAssert(rope.index(beforeExtent: c[1]) ==
+		          .interior(of: rope, label: l[2]))
+		XCTAssert(rope.index(beforeExtent: c[2]) ==
+		          .interior(of: rope, label: l[4]))
+	}
+}
+
 class DirectSelection : XCTestCase {
 	let c = [ECSS(), ECSS(), ECSS(), ECSS()]
 	var _abc: RSS? = nil
