@@ -1464,6 +1464,78 @@ public extension Rope.Node {
 		}
 		return l.appending(Self(content: c)).appending(r)
 	}
+/*
+	func replacing(_ range: Range<Rope.Index>, with c: Content) -> Self? {
+		switch (extentsEnclosing(range.lowerBound),
+			extentsEnclosing(range.upperBound)) {
+		case (let loEncl, let upEncl) where !loEncl.isEmpty,:
+			if l.first == u.first
+		}
+	}
+*/
+	func headExtentAndTail(leftSibling: Self = .empty)
+	    -> (Self, Self?, Self) {
+		switch self {
+		case .cursor(_, _), .leaf(_, _), .index(_), .empty:
+			return (leftSibling.appending(self), nil, .empty)
+		case .extent(_, _):
+			return (leftSibling, self, .empty)
+		case .concat(let l, _, _, _, let r, _):
+			if case let (head, extent?, tail) =
+			    l.headExtentAndTail() {
+				return (leftSibling.appending(head),
+					extent, tail.appending(r))
+			} else {
+				return r.headExtentAndTail(
+				    leftSibling: leftSibling.appending(l))
+			}
+		}
+	}
+	func indexingFirstExtent(label: Label, leftSibling: Self = .empty)
+	    -> Self? {
+		switch self {
+		case .cursor(_, _), .leaf(_, _), .index(_), .empty:
+			return nil
+		case .extent(_, _):
+			return leftSibling.appending(
+			    .index(label: label)).appending(self)
+		case .concat(let l, _, _, _, let r, _):
+			if let inserted = l.indexingFirstExtent(
+			    label: label, leftSibling: leftSibling) {
+				return inserted.appending(r)
+			}
+			return r.indexingFirstExtent(label: label,
+			    leftSibling: leftSibling.appending(l))
+		}
+	}
+	func indexingFirstExtent(after index: Rope.Index,
+	    label: Label) -> Self? {
+		/* If extents enclose `index`, then we are about to split
+		 * an extent.  That mustn't happen.  Instead, the operation
+		 * that the caller would like to perform
+		 * (delete, insert, replace, ...) should be forwarded to the
+		 * first enclosing extent.  Return nil to prevent a split
+		 * from occurring.
+		 */
+		guard extentsEnclosing(index)?.isEmpty ?? false else {
+			return nil
+		}
+		switch index {
+		case .interior(_, let h):
+			guard let l = subrope(upTo: index),
+			      let r = subrope(after: index) else {
+				return nil
+			}
+			return r.indexingFirstExtent(label: label,
+				leftSibling: l.appending(.index(label: h)))
+		case .start(_):
+			// left of .start(_) is .empty
+			return indexingFirstExtent(label: label)
+		case .end(_):
+			// right of .end(_) is .empty
+			return self.appending(.index(label: label))
+		}
+	}
 	func replacing(_ range: Range<Offset>, with c: Content) -> Self {
 		let l = subrope(upTo: range.lowerBound)
 		let r = subrope(from: range.upperBound)

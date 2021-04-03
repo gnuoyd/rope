@@ -190,7 +190,7 @@ class DirectSelection : XCTestCase {
 		let end = wxyz.index(before: wxyz.endIndex)
 		// *w(x(y(z))*)
 		guard let (range, narrow, wide) =
-		    wxyz.directed(selection: start..<end) else {
+		    wxyz.directedSelection(start..<end) else {
 			XCTAssert(false, "\(start..<end) not found")
 			return
 		}
@@ -206,7 +206,7 @@ class DirectSelection : XCTestCase {
 		let end = wxyz.index(before: wxyz.endIndex)
 		// w*(x(y(z))*)
 		guard let (range, narrow, wide) =
-		    wxyz.directed(selection: start..<end) else {
+		    wxyz.directedSelection(start..<end) else {
 			XCTAssert(false, "\(start..<end) not found")
 			return
 		}
@@ -222,7 +222,7 @@ class DirectSelection : XCTestCase {
 		let end = wxyz.index(before: wxyz.endIndex)
 		// w(*x(y(z))*)
 		guard let (range, narrow, wide) =
-		    wxyz.directed(selection: start..<end) else {
+		    wxyz.directedSelection(start..<end) else {
 			XCTAssert(false, "\(start..<end) not found")
 			return
 		}
@@ -238,7 +238,7 @@ class DirectSelection : XCTestCase {
 		let end = wxyz.index(before: wxyz.endIndex)
 		// w(x*(y(z))*)
 		guard let (range, narrow, wide) =
-		    wxyz.directed(selection: start..<end) else {
+		    wxyz.directedSelection(start..<end) else {
 			XCTAssert(false, "\(start..<end) not found")
 			return
 		}
@@ -254,7 +254,7 @@ class DirectSelection : XCTestCase {
 		let end = wxyz.index(before: wxyz.endIndex)
 		// w(x(*y(z))*)
 		guard let (range, narrow, wide) =
-		    wxyz.directed(selection: start..<end) else {
+		    wxyz.directedSelection(start..<end) else {
 			XCTAssert(false, "\(start..<end) not found")
 			return
 		}
@@ -270,7 +270,7 @@ class DirectSelection : XCTestCase {
 		let end = wxyz.index(before: wxyz.endIndex)
 		// w(x(y*(z))*)
 		guard let (range, narrow, wide) =
-		    wxyz.directed(selection: start..<end) else {
+		    wxyz.directedSelection(start..<end) else {
 			XCTAssert(false, "\(start..<end) not found")
 			return
 		}
@@ -286,7 +286,7 @@ class DirectSelection : XCTestCase {
 		let end = wxyz.index(wxyz.endIndex, offsetBy: -4)
 		// w(x(y(**z)))
 		guard let (range, narrow, wide) =
-		    wxyz.directed(selection: start..<end) else {
+		    wxyz.directedSelection(start..<end) else {
 			XCTAssert(false, "\(start..<end) not found")
 			return
 		}
@@ -302,7 +302,7 @@ class DirectSelection : XCTestCase {
 		let end = abc.index(before: abc.endIndex)
 		// (*a)b(c*)
 		guard let (range, narrow, wide) =
-		    abc.directed(selection: start..<end) else {
+		    abc.directedSelection(start..<end) else {
 			XCTAssert(false, "\(start..<end) not found")
 			return
 		}
@@ -316,7 +316,7 @@ class DirectSelection : XCTestCase {
 		let end = pqrs.index(pqrs.endIndex, offsetBy: -3)
 		// (p*(q)r)*(s)
 		guard let (range, lctlrs, rctlrs) =
-		    pqrs.tightened(selection: start..<end) else {
+		    pqrs.tightenedSelection(start..<end) else {
 			XCTAssert(false, "\(start..<end) not found")
 			return
 		}
@@ -332,7 +332,7 @@ class DirectSelection : XCTestCase {
 		let end = pqrs.index(pqrs.endIndex, offsetBy: -3)
 		// (p*(q)r)*(s)
 		guard let (range, narrow, wide) =
-		    pqrs.directed(selection: start..<end) else {
+		    pqrs.directedSelection(start..<end) else {
 			XCTAssert(false, "\(start..<end) not found")
 			return
 		}
@@ -348,7 +348,7 @@ class DirectSelection : XCTestCase {
 		let end = pqrs.index(pqrs.endIndex, offsetBy: -5)
 		// (p*(q)*r)(s)
 		guard let (range, narrow, wide) =
-		    pqrs.directed(selection: start..<end) else {
+		    pqrs.directedSelection(start..<end) else {
 			XCTAssert(false, "\(start..<end) not found")
 			return
 		}
@@ -364,7 +364,7 @@ class DirectSelection : XCTestCase {
 		let end = abcdef.index(abcdef.endIndex, offsetBy: -5)
 		// (()*(a)b(c*d)ef)
 		guard let (range, narrow, wide) =
-		    abcdef.directed(selection: start..<end) else {
+		    abcdef.directedSelection(start..<end) else {
 			XCTAssert(false, "\(start..<end) not found")
 			return
 		}
@@ -378,7 +378,7 @@ class DirectSelection : XCTestCase {
 		let end = abcdef.index(abcdef.endIndex, offsetBy: -5)
 		// (()(*a)b(c*d)ef)
 		guard let (range, narrow, wide) =
-		    abcdef.directed(selection: start..<end) else {
+		    abcdef.directedSelection(start..<end) else {
 			XCTAssert(false, "\(start..<end) not found")
 			return
 		}
@@ -394,7 +394,7 @@ class DirectSelection : XCTestCase {
 		let end = abcdef.index(abcdef.endIndex, offsetBy: -5)
 		// (()(a*)b(c*d)ef)
 		guard let (range, narrow, wide) =
-		    abcdef.directed(selection: start..<end) else {
+		    abcdef.directedSelection(start..<end) else {
 			XCTAssert(false, "\(start..<end) not found")
 			return
 		}
@@ -410,7 +410,7 @@ class DirectSelection : XCTestCase {
 		let end = abcdef.index(abcdef.endIndex, offsetBy: -5)
 		// ((*)(a)b(c*d)ef)
 		guard let (range, narrow, wide) =
-		    abcdef.directed(selection: start..<end) else {
+		    abcdef.directedSelection(start..<end) else {
 			XCTAssert(false, "\(start..<end) not found")
 			return
 		}
@@ -426,7 +426,7 @@ class DirectSelection : XCTestCase {
 		let end = abcdef.index(abcdef.endIndex, offsetBy: -4)
 		// ((*)(a)b(cd*)ef)
 		guard let (range, narrow, wide) =
-		    abcdef.directed(selection: start..<end) else {
+		    abcdef.directedSelection(start..<end) else {
 			XCTAssert(false, "\(start..<end) not found")
 			return
 		}
@@ -1792,10 +1792,10 @@ class TightenSelection: NestedExtentBase {
 		let start = rope.startIndex
 		let end = rope.endIndex
 		let outer = start..<end
-		let result = rope.tightened(selection: outer)
+		let result = rope.tightenedSelection(outer)
 		guard let (tightened, lctlrs, rctlrs) = result else {
 			XCTAssert(false,
-			    "expected non-nil .tightened(selection:)")
+			    "expected non-nil .tightenedSelection()")
 			return
 		}
 		let l = rope.index(after: rope.startIndex)
@@ -1810,10 +1810,10 @@ class TightenSelection: NestedExtentBase {
 		let start = rope.index(rope.startIndex, offsetBy: 4)
 		let end = rope.index(rope.endIndex, offsetBy: -1)
 		let outer = start..<end
-		let result = rope.tightened(selection: outer)
+		let result = rope.tightenedSelection(outer)
 		guard let (tightened, lctlrs, rctlrs) = result else {
 			XCTAssert(false,
-			    "expected non-nil .tightened(selection:)")
+			    "expected non-nil .tightenedSelection()")
 			return
 		}
 		let l = rope.index(rope.startIndex, offsetBy: 5)
@@ -1828,10 +1828,10 @@ class TightenSelection: NestedExtentBase {
 		let start = rope.index(rope.startIndex, offsetBy: 8)
 		let end = rope.index(rope.endIndex, offsetBy: -2)
 		let outer = start..<end
-		let result = rope.tightened(selection: outer)
+		let result = rope.tightenedSelection(outer)
 		guard let (tightened, lctlrs, rctlrs) = result else {
 			XCTAssert(false,
-			    "expected non-nil .tightened(selection:)")
+			    "expected non-nil .tightenedSelection()")
 			return
 		}
 		let l = rope.index(rope.startIndex, offsetBy: 9)
@@ -1864,10 +1864,10 @@ class TightenSelection: NestedExtentBase {
 		let start = rope.startIndex
 		let end = rope.index(rope.endIndex, offsetBy: -1)
 		let outer = start..<end
-		let result = rope.tightened(selection: outer)
+		let result = rope.tightenedSelection(outer)
 		guard let (tightened, lctlrs, rctlrs) = result else {
 			XCTAssert(false,
-			    "expected non-nil .tightened(selection:)")
+			    "expected non-nil .tightenedSelection()")
 			return
 		}
 		let l = rope.index(rope.startIndex, offsetBy: 1)
@@ -1882,10 +1882,10 @@ class TightenSelection: NestedExtentBase {
 		let start = rope.index(rope.startIndex, offsetBy: 1)
 		let end = rope.endIndex
 		let outer = start..<end
-		let result = rope.tightened(selection: outer)
+		let result = rope.tightenedSelection(outer)
 		guard let (tightened, lctlrs, rctlrs) = result else {
 			XCTAssert(false,
-			    "expected non-nil .tightened(selection:)")
+			    "expected non-nil .tightenedSelection()")
 			return
 		}
 		let l = start
@@ -1900,10 +1900,10 @@ class TightenSelection: NestedExtentBase {
 		let start = rope.index(rope.startIndex, offsetBy: 1)
 		let end = rope.index(rope.endIndex, offsetBy: -1)
 		let outer = start..<end
-		let result = rope.tightened(selection: outer)
+		let result = rope.tightenedSelection(outer)
 		guard let (tightened, lctlrs, rctlrs) = result else {
 			XCTAssert(false,
-			    "expected non-nil .tightened(selection:)")
+			    "expected non-nil .tightenedSelection()")
 			return
 		}
 		// (*abc(def(ghi))*)

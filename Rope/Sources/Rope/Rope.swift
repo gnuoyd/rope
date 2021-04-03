@@ -442,7 +442,7 @@ public func commonPrefix<S>(_ s1: S, _ s2: S)
 }
 
 extension Rope {
-	public func tightened(selection: Range<Index>)
+	public func tightenedSelection(_ selection: Range<Index>)
 	    -> (range: Range<Index>,
 	        leftControllers: [ExtentController],
 	        rightControllers: [ExtentController])? {
@@ -480,7 +480,7 @@ extension Rope {
 			}
 		}
 	}
-	public func rightLoosened(selection s: Range<Index>,
+	public func rightLoosenedSelection(_ s: Range<Index>,
 	    limit: ExtentController?) -> Range<Index>? {
 		let l = s.lowerBound
 		var r = s.upperBound
@@ -500,7 +500,7 @@ extension Rope {
 		}
 		return l..<r
 	}
-	public func leftLoosened(selection s: Range<Index>,
+	public func leftLoosenedSelection(_ s: Range<Index>,
 	    limit: ExtentController?) -> Range<Index>? {
 		var l = s.lowerBound
 		let r = s.upperBound
@@ -520,20 +520,19 @@ extension Rope {
 		}
 		return l..<r
 	}
-	public func directed(selection s: Range<Index>)
+	public func directedSelection(_ s: Range<Index>)
 	    -> (range: Range<Index>,
 	        narrow: ExtentController?,
 	        wide: ExtentController?)? {
-		guard let (tight, lo, ro) = tightened(selection: s) else {
+		guard let (tight, lo, ro) = tightenedSelection(s) else {
 			return nil
 		}
 		/* Loosen `tight` inside the innermost controller and
 		 * return the loosened range.
 		 */
 		let common = commonPrefix(lo, ro)
-		let looser = leftLoosened(selection: tight,
-		    limit: common.last)!
-		let loosest = rightLoosened(selection: looser,
+		let looser = leftLoosenedSelection(tight, limit: common.last)!
+		let loosest = rightLoosenedSelection(looser,
 		    limit: common.last)!
 		return (range: loosest, narrow: common.last, wide: common.first)
 	}
