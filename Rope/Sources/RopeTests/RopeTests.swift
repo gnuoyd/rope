@@ -52,11 +52,13 @@ class NestedExtentBase : XCTestCase {
 		// 000000000000000
 		//     1111111111
 		//         22222
-		let r: RSS = Rope(with: .extent(under: c[0],
-		                     .nodes(.text("abc"),
-				     .extent(under: c[1],
-				         .text("def"),
-					 .extent(under: c[2], .text("ghi"))))))
+		let r: RSS = Rope(with:
+		    .extent(under: c[0],
+		            .text("abc"),
+			    .extent(under: c[1],
+			            .text("def"),
+				    .extent(under: c[2],
+				            .text("ghi")))))
 		_rope = r
 		return r
 	}
