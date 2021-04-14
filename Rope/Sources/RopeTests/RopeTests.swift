@@ -484,6 +484,147 @@ class IndexOffsetBy : XCTestCase {
 	}
 }
 
+class SegmentingAtExtent : XCTestCase {
+	let c: [ECSS] = [ECSS(), ECSS(), ECSS(), ECSS()]
+	var _extentInExtent: NSS? = nil
+	var _extentInCenter: NSS? = nil
+	var _multipleExtentsInCenter: NSS? = nil
+	var _extentOnLeft: NSS? = nil
+	var _extentOnRight: NSS? = nil
+	var _innermostExtent: NSS? = nil
+	var _innerExtent: NSS? = nil
+	var _otherExtent: NSS? = nil
+	var innermostExtent: NSS {
+		if let n = _innermostExtent {
+			return n
+		}
+		let n: NSS = .extent(under: c[2], .text("ghi"))
+		_innermostExtent = n
+		return n
+	}
+	var innerExtent: NSS {
+		if let n = _innerExtent {
+			return n
+		}
+		let n: NSS = .extent(under: c[1], .text("def"), innermostExtent)
+		_innerExtent = n
+		return n
+	}
+	var otherExtent: NSS {
+		if let n = _otherExtent {
+			return n
+		}
+		let n: NSS = .extent(under: c[3], .text("012"))
+		_otherExtent = n
+		return n
+	}
+	var extentInExtent: NSS {
+		if let n = _extentInExtent {
+			return n
+		}
+		let n: NSS = .extent(under: c[0], .text("abc"), innerExtent)
+		_extentInExtent = n
+		return n
+	}
+	var extentOnRight: NSS {
+		if let n = _extentOnRight {
+			return n
+		}
+		let n: NSS = .nodes(.text("abc"), innerExtent)
+		_extentOnRight = n
+		return n
+	}
+	var extentOnLeft: NSS {
+		if let n = _extentOnLeft {
+			return n
+		}
+		let n: NSS = .nodes(innerExtent, .text("jkl"))
+		_extentOnLeft = n
+		return n
+	}
+	var multipleExtentsInCenter: NSS {
+		if let n = _multipleExtentsInCenter {
+			return n
+		}
+		let n: NSS = .nodes(.text("abc"), innerExtent, otherExtent,
+		                    .text("jkl"))
+		_multipleExtentsInCenter = n
+		return n
+	}
+	var extentInCenter: NSS {
+		if let n = _extentInCenter {
+			return n
+		}
+		let n: NSS = .nodes(.text("abc"), innerExtent, .text("jkl"))
+		_extentInCenter = n
+		return n
+	}
+	func testSegmentingEmbeddedExtents() {
+		XCTAssert(nil == extentInExtent.segmenting(atExtent: c[1]))
+		XCTAssert(nil == extentInExtent.segmenting(atExtent: c[2]))
+	}
+	func testSegmentingExtent() {
+		guard let (l, m, r) =
+		    extentInExtent.segmenting(atExtent: c[0]) else {
+			XCTFail("no such extent controller")
+			return;
+		}
+		XCTAssert(l == .empty)
+		XCTAssert(m == extentInExtent)
+		XCTAssert(r == .empty)
+	}
+	func testSegmentingExtentOnLeft() {
+		guard let (l, m, r) =
+		    extentOnLeft.segmenting(atExtent: c[1]) else {
+			XCTFail("no such extent controller")
+			return;
+		}
+		XCTAssert(l == .empty)
+		XCTAssert(m == innerExtent)
+		XCTAssert(r == .text("jkl"))
+	}
+	func testSegmentingExtentOnRight() {
+		guard let (l, m, r) =
+		    extentOnRight.segmenting(atExtent: c[1]) else {
+			XCTFail("no such extent controller")
+			return;
+		}
+		XCTAssert(l == .text("abc"))
+		XCTAssert(m == innerExtent)
+		XCTAssert(r == .empty)
+	}
+	func testSegmentingExtentInCenter() {
+		guard let (l, m, r) =
+		    extentInCenter.segmenting(atExtent: c[1]) else {
+			XCTFail("no such extent controller")
+			return;
+		}
+		XCTAssert(l == .text("abc"))
+		XCTAssert(m == innerExtent)
+		XCTAssert(r == .text("jkl"))
+	}
+	func testSegmentingMultipleExtentsInCenter1() {
+		guard let (l, m, r) =
+		    multipleExtentsInCenter.segmenting(atExtent: c[1]) else {
+			XCTFail("no such extent controller")
+			return;
+		}
+		XCTAssert(l == .text("abc"))
+		XCTAssert(m == innerExtent)
+		XCTAssert(r == .nodes(otherExtent, .text("jkl")))
+	}
+	func testSegmentingMultipleExtentsInCenter2() {
+		guard let (l, m, r) =
+		    multipleExtentsInCenter.segmenting(atExtent: c[3]) else {
+			XCTFail("no such extent controller")
+			return;
+		}
+		XCTAssert(l == .nodes(.text("abc"), innerExtent))
+		XCTAssert(m == otherExtent)
+		XCTAssert(r == .text("jkl"))
+	}
+}
+
 class RopeIndexedControllerPaths: NestedExtentBase {
 	var _expectations: [[Label]]? = nil
 	var expectations: [[Label]] {

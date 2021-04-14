@@ -1473,6 +1473,27 @@ public extension Rope.Node {
 		}
 	}
 */
+	/* TBD write a test */
+	func segmenting(atExtent target: Rope.ExtentController,
+	    leftSibling: Self = .empty) -> (Self, Self, Self)? {
+		switch self {
+		case .extent(target, _):
+			return (leftSibling, self, .empty)
+		case .concat(let l, _, _, _, let r, _):
+			if case let (head, extent, tail)? =
+			    l.segmenting(atExtent: target) {
+				return (leftSibling.appending(head),
+					extent, tail.appending(r))
+			} else {
+				return r.segmenting(atExtent: target,
+				    leftSibling: leftSibling.appending(l))
+			}
+		case .cursor(_, _), .empty, .extent(_, _), .index(_),
+		     .leaf(_, _):
+			return nil
+		}
+	}
+	/* TBD write a test---or remove disused function */
 	func headExtentAndTail(leftSibling: Self = .empty)
 	    -> (Self, Self?, Self) {
 		switch self {
