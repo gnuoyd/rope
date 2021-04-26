@@ -4,7 +4,7 @@
 public protocol Content : Initializable, StringProtocol {
 	associatedtype SubSequence
 	associatedtype Element
-	subscript(r: Range<String.Index>) -> Self { get }
+	subscript(r: Range<String.Index>) -> Self.SubSequence { get }
 	var isEmpty: Bool { get }
 	static var empty: Self { get }
 	var length: Int { get }
