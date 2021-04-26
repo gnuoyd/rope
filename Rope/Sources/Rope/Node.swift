@@ -1037,16 +1037,16 @@ public extension Rope.Node {
 			switch next {
 			case .leaf(_, _), .cursor(_, _), .empty, .index(_):
 				return path
-			case .concat(let ropel, let idx, _, _, let roper, _):
+			case .concat(let l, let idx, _, _, let r, _):
 				if i < idx {
-					next = ropel
+					next = l
 				} else {
 					i = i - idx
-					next = roper
+					next = r
 				}
-			case .extent(let ctlr, let rope):
+			case .extent(let ctlr, let content):
 				path.append(ctlr)
-				next = rope
+				next = content
 			}
 		}
 	}
