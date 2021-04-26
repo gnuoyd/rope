@@ -5,7 +5,7 @@ import AppKit
 import Rope
 
 public class RopeTextStorage: NSTextStorage {
-    typealias Offset = Rope<Substring>.Node.Offset
+	typealias Offset = Rope<Substring>.Node.Offset
 	let rope: Rope<Substring>
 	let _string: RopeString
 	public override init() {
@@ -49,7 +49,7 @@ public class RopeTextStorage: NSTextStorage {
 		beginEditing()
 		// TBD make sure `str` is the most efficient representation
 		// to add to Rope<Substring> ?
-        rope[Offset.utf16Range(range)] = Substring(str)
+		rope[Offset.utf16Range(range)] = Substring(str)
 		let actions = NSTextStorageEditActions.editedCharacters.union(
 		    .editedAttributes)
 		edited(actions, range: range,
