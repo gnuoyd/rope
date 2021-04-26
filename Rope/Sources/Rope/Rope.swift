@@ -276,6 +276,7 @@ public class Rope<C : Content> : Collection {
 			throw RopeNoSuchElement.atEnd
 		}
 	}
+/*
 	public func insert(_ elt: Element, at i: Index) -> Bool {
 		guard self === i.owner else {
 			return false
@@ -296,6 +297,7 @@ public class Rope<C : Content> : Collection {
 		}
 		return true
 	}
+*/
 	/* TBD tests */
 	public subscript(_ r: Range<Offset>) -> Content {
 		set(newValue) {

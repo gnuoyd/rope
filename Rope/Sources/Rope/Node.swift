@@ -63,10 +63,18 @@ extension Rope.ExtentController {
 	}
 	func node(_ content: Rope.Node, inserting elt: Rope.Node,
 	    at target: Label) -> Rope.Node? {
-		guard let subcontent = content.inserting(elt, at: target) else {
+		guard let augmented = content.inserting(elt, at: target) else {
 			return nil
 		}
-		return .extent(self, subcontent)
+		return .extent(self, augmented)
+	}
+	func replacing(_ range: Range<Rope.Index>, in content: Rope.Node,
+	    with replacement: Rope.Node.Content) -> Rope.Node? {
+		guard let replaced = content.replacing(range,
+		    with: replacement) else {
+			return nil
+		}
+		return .extent(self, replaced)
 	}
 }
 
@@ -649,6 +657,16 @@ public extension Rope.Node {
 }
 
 public extension Rope.Node {
+	func inserting(_ elt: Self, at target: Rope.Index) -> Self? {
+		switch target {
+		case .start(_):
+			return .nodes(elt, self)
+		case .end(_):
+			return .nodes(self, elt)
+		case .interior(_, let l):
+			return inserting(elt, at: l)
+		}
+	}
 	func inserting(_ elt: Self, at target: Label) -> Self? {
 		switch self {
 		case .index(let w):
@@ -1379,6 +1397,48 @@ public extension Rope.Node {
 			    depth)
 		}
 	}
+	func splitting(leftSibling: Self = .empty, at boundary: Rope.Index,
+	    indexOn side: Side, rightSibling: Self = .empty, depth: Int = 0)
+	    -> (Self, Self)? {
+		switch (self, boundary) {
+		case (_, .start(_)):
+			return (leftSibling, self.appending(rightSibling))
+		case (_, .end(_)):
+			return (leftSibling.appending(self), rightSibling)
+		case (.index(let w), .interior(_, let h))
+		    where w.get() == h:
+			if side == .right {
+				return (leftSibling,
+				        self.appending(rightSibling))
+			}
+			return (leftSibling.appending(self), rightSibling)
+		case (.concat(let l, _, _, _, let r, _),
+		      .interior(_, let h)) where self.contains(h):
+			return r.splitting(
+			    leftSibling: leftSibling.appending(l),
+			    at: boundary,
+			    indexOn: side,
+			    rightSibling: rightSibling, depth: depth + 1)
+			?? l.splitting(leftSibling: leftSibling,
+			           at: boundary,
+				   indexOn: side,
+				   rightSibling: r.appending(rightSibling),
+				   depth: depth + 1)
+		case (.cursor(_, _), _), (.empty, _), (.index(_), _),
+		     (.leaf(_, _), _) where rightSibling == .empty:
+			return nil
+		default:
+			return rightSibling.splitting(leftSibling:
+			    leftSibling.appending(self), at: boundary,
+			    indexOn: side, depth: depth + 1)
+		}
+	}
+	func splitting(before boundary: Rope.Index) -> (Self, Self)? {
+		return splitting(at: boundary, indexOn: .right)
+	}
+	func splitting(after boundary: Rope.Index) -> (Self, Self)? {
+		return splitting(at: boundary, indexOn: .left)
+	}
 	func subrope(leftSibling: Self = .empty, upTo boundary: Rope.Index,
 	    depth: Int = 0) -> Self? {
 		/*
@@ -1455,6 +1515,7 @@ public extension Rope.Node {
 	/* XXX this will split extents!  Needs to find affected extents,
 	 * split, perform replacement/deletion on each affected extent.
 	 */
+/*
 	func replacing(_ range: Range<Rope.Index>, with c: Content) -> Self? {
 		guard let l = subrope(upTo: range.lowerBound) else {
 			return nil
@@ -1464,16 +1525,116 @@ public extension Rope.Node {
 		}
 		return l.appending(Self(content: c)).appending(r)
 	}
-/*
-	func replacing(_ range: Range<Rope.Index>, with c: Content) -> Self? {
-		switch (extentsEnclosing(range.lowerBound),
-			extentsEnclosing(range.upperBound)) {
-		case (let loEncl, let upEncl) where !loEncl.isEmpty,:
-			if l.first == u.first
+*/
+	func replacing(_ range: Range<Rope.Index>, with replacement: Content)
+	    -> Self? {
+		let owner = range.lowerBound.owner
+		switch (extentsEnclosing(range.lowerBound)?.first,
+			extentsEnclosing(range.upperBound)?.first) {
+		case (nil, nil):
+			/* Deal with an empty `range` where the lowerBound
+			 * is right of the upperBound---it can happen---but
+			 * nevertheless the bounds are equal.
+			 */
+			if range.isEmpty {
+				return inserting(.text(replacement), at:
+				    range.lowerBound)
+			}
+			/* Important: don't discard any embedded indices at
+			 * `range` boundaries!  Instead, use
+			 * splitting(after:) and splitting(before:) to
+			 * preserve embedded indices for reuse.
+			 */
+			guard let (head, rest) =
+			    splitting(after: range.lowerBound) else {
+				Swift.print("\(#function): no such lower bound")
+				return nil
+			}
+			guard let (middle, tail) =
+			    rest.splitting(before: range.upperBound) else {
+				Swift.print("\(#function): no such upper bound")
+				return nil
+			}
+			/* Important: perform .replacing() on extents in the
+			 * range so that they get an opportunity to cancel if
+			 * they are read-only.
+			 */
+			switch middle.segmentingAtAnyExtent() {
+			case (_, nil, _):
+				return head.appending(
+				    Self(content: replacement)).appending(tail)
+			case (_, .extent(let ctlr, let m), let r):
+				Swift.print("\(#function): segmented at extent")
+				guard let _ = ctlr.replacing(
+				    owner.startIndex..<owner.endIndex,
+				    in: m, with: Content.empty) else {
+					return nil
+				}
+				guard let rReplaced = r.replacing(
+				    owner.startIndex..<owner.endIndex,
+				    with: Content.empty) else {
+					return nil
+				}
+				return head.appending(
+				    Self(content: replacement)).appending(
+				    rReplaced).appending(tail)
+			case (_, _?, _):
+				Swift.print("\(#function): non-extent center")
+				// m wasn't an extent for some reason
+				return nil
+			}
+		case (let loExt?, let hiExt?) where loExt == hiExt:
+			/* Deal with an empty `range` where the lowerBound
+			 * is right of the upperBound---it can happen---but
+			 * nevertheless the bounds are equal.
+			 */
+			if range.isEmpty {
+				return inserting(.text(replacement), at:
+				    range.lowerBound)
+			}
+			guard case (let l, .extent(let ctlr, let m), let r)? =
+			    segmenting(atExtent: loExt) else {
+				return nil
+			}
+			guard let mReplaced = ctlr.replacing(range, in: m,
+			    with: replacement) else {
+				return nil
+			}
+			return l.appending(mReplaced).appending(r)
+		case (let loExt?, _):
+			guard case (let l, .extent(let ctlr, let m), let r)? =
+			    segmenting(atExtent: loExt) else {
+				return nil
+			}
+			guard let mReplaced = ctlr.replacing(
+			    range.lowerBound..<owner.endIndex, in: m,
+			    with: replacement) else {
+				return nil
+			}
+			guard let rTrimmed = r.replacing(
+			    owner.startIndex..<range.upperBound,
+			    with: Content.empty) else {
+				return nil
+			}
+			return l.appending(mReplaced).appending(rTrimmed)
+		case (nil, let hiExt?):
+			guard case (let l, .extent(let ctlr, let m), let r)? =
+			    segmenting(atExtent: hiExt) else {
+				return nil
+			}
+			guard let lReplaced = l.replacing(
+			    range.lowerBound..<owner.endIndex,
+			    with: replacement) else {
+				return nil
+			}
+			guard let mTrimmed = ctlr.replacing(
+			    owner.startIndex..<range.upperBound, in: m,
+			    with: Content.empty) else {
+				return nil
+			}
+			return lReplaced.appending(mTrimmed).appending(r)
 		}
 	}
-*/
-	/* TBD write a test */
 	func segmenting(atExtent target: Rope.ExtentController,
 	    leftSibling: Self = .empty) -> (Self, Self, Self)? {
 		switch self {
@@ -1493,8 +1654,7 @@ public extension Rope.Node {
 			return nil
 		}
 	}
-	/* TBD write a test---or remove disused function */
-	func headExtentAndTail(leftSibling: Self = .empty)
+	func segmentingAtAnyExtent(leftSibling: Self = .empty)
 	    -> (Self, Self?, Self) {
 		switch self {
 		case .cursor(_, _), .leaf(_, _), .index(_), .empty:
@@ -1503,11 +1663,11 @@ public extension Rope.Node {
 			return (leftSibling, self, .empty)
 		case .concat(let l, _, _, _, let r, _):
 			if case let (head, extent?, tail) =
-			    l.headExtentAndTail() {
+			    l.segmentingAtAnyExtent() {
 				return (leftSibling.appending(head),
 					extent, tail.appending(r))
 			} else {
-				return r.headExtentAndTail(
+				return r.segmentingAtAnyExtent(
 				    leftSibling: leftSibling.appending(l))
 			}
 		}
