@@ -338,7 +338,7 @@ public extension Rope.Node {
 				return self.appending(.index(label: h))
 			}
 		case .leaf(let attrs, let content):
-			let idx = String.Index(utf16Offset: offset.utf16Offset,
+			let idx = C.Index(utf16Offset: offset.utf16Offset,
 			    in: content)
 			let l = content.prefix(upTo: idx)
 			let r = content.suffix(from: idx)
@@ -375,7 +375,7 @@ public extension Rope.Node {
 			assert(place == 0)
 			return self.appending(.index(label: h))
 		case .leaf(let attrs, let content):
-			let idx = String.Index(utf16Offset: place.utf16Offset,
+			let idx = C.Index(utf16Offset: place.utf16Offset,
 			    in: content)
 			let l = content.prefix(upTo: idx)
 			let r = content.suffix(from: idx)
@@ -1161,8 +1161,7 @@ public extension Rope.Node {
 	func element(at i: Offset) -> Element {
 		switch self {
 		case .leaf(_, let s):
-			let idx =
-			    String.Index(utf16Offset: i.utf16Offset, in: s)
+			let idx = C.Index(utf16Offset: i.utf16Offset, in: s)
 			let c: Element = s[idx]
 			return c
 		case .concat(let ropel, let idx, _, _, let roper, _):
@@ -1308,8 +1307,7 @@ public extension Rope.Node {
 			    rightSibling: r.appending(rightSibling),
 			    depth: depth + 1)
 		case let .leaf(attrs, s):
-			let i = String.Index(utf16Offset: from.utf16Offset,
-			    in: s)
+			let i = C.Index(utf16Offset: from.utf16Offset, in: s)
 			if i == s.utf16.endIndex {
 				return rightSibling
 			}
@@ -1351,7 +1349,7 @@ public extension Rope.Node {
 				upTo: min(endIndex - idx, boundary - idx),
 				tightly: tightly, depth: depth + 1)
 		case let .leaf(attrs, s):
-			let i = String.Index(utf16Offset: boundary.utf16Offset,
+			let i = C.Index(utf16Offset: boundary.utf16Offset,
 			    in: s)
 			if i == s.utf16.startIndex {
 				return leftSibling
@@ -1794,6 +1792,107 @@ public extension Rope.Node {
 		    (ctlr, content) in
 			.nodes(.index(label: label),
 			       .extent(under: ctlr, content))
+		}
+	}
+}
+
+public extension Rope.Node {
+	func extractUTF16(from start: Offset, upTo end: Offset,
+	    filling buffer: inout UnsafeMutablePointer<UTF16.CodeUnit>) {
+		switch self {
+		case .concat(let l, let idx, _, _, let r, _):
+			if start < idx {
+				l.extractUTF16(from: start,
+				    upTo: min(end, idx),
+				    filling: &buffer)
+			}
+			if idx < end {
+				r.extractUTF16(from: max(start, idx) - idx,
+				    upTo: end - idx,
+				    filling: &buffer)
+			}
+		case .leaf(_, let s):
+			let utf16 = s.utf16
+			guard let sidx = utf16.index(utf16.startIndex,
+			    offsetBy: start.utf16Offset,
+			    limitedBy: utf16.endIndex),
+			    let eidx = utf16.index(utf16.startIndex,
+			    offsetBy: end.utf16Offset,
+			    limitedBy: utf16.endIndex) else {
+				fatalError("In \(#function), " +
+				    "no utf16 range \(start)..<\(end)")
+			}
+			for u in utf16[sidx..<eidx] {
+				buffer.initialize(to: u)
+				buffer += 1
+			}
+		case .extent(_, let content):
+			return content.extractUTF16(from: start, upTo: end,
+			    filling: &buffer)
+		case .cursor(_, _), .empty, .index(_):
+			return
+		}
+	}
+	func extractContent(from start: Offset, upTo end: Offset) -> C.SubSequence {
+		switch self {
+		case .concat(let l, let idx, _, _, let r, _):
+			var c = C.empty
+			if start < idx {
+				c += l.extractContent(from: start,
+				    upTo: min(end, idx))
+			}
+			if idx < end {
+				c += r.extractContent(
+				    from: max(start, idx) - idx,
+				    upTo: end - idx)
+			}
+			return c[...]
+		case .leaf(_, let s):
+			guard let sidx = s.utf16.index(s.utf16.startIndex,
+			    offsetBy: start.utf16Offset,
+			    limitedBy: s.utf16.endIndex),
+			    let eidx = s.utf16.index(s.utf16.startIndex,
+			    offsetBy: end.utf16Offset,
+			    limitedBy: s.utf16.endIndex) else {
+				fatalError("In \(#function), " +
+				    "no utf16 range \(start)..<\(end)")
+			}
+			return s[sidx..<eidx]
+		case .extent(_, let content):
+			return content.extractContent(from: start, upTo: end)
+		case .cursor(_, _), .empty, .index(_):
+			return C.empty[...]
+		}
+	}
+	func extractContent(from start: Offset, upTo end: Offset,
+	    filling c: inout C) {
+		switch self {
+		case .concat(let l, let idx, _, _, let r, _):
+			if start < idx {
+				l.extractContent(from: start,
+				    upTo: min(end, idx), filling: &c)
+			}
+			if idx < end {
+				r.extractContent(
+				    from: max(start, idx) - idx,
+				    upTo: end - idx, filling: &c)
+			}
+		case .leaf(_, let s):
+			guard let sidx = s.utf16.index(s.utf16.startIndex,
+			    offsetBy: start.utf16Offset,
+			    limitedBy: s.utf16.endIndex),
+			    let eidx = s.utf16.index(s.utf16.startIndex,
+			    offsetBy: end.utf16Offset,
+			    limitedBy: s.utf16.endIndex) else {
+				fatalError("In \(#function), " +
+				    "no utf16 range \(start)..<\(end)")
+			}
+			c += s[sidx..<eidx]
+		case .extent(_, let content):
+			content.extractContent(from: start, upTo: end,
+			    filling: &c)
+		case .cursor(_, _), .empty, .index(_):
+			return
 		}
 	}
 }

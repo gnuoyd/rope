@@ -1,10 +1,11 @@
 //
 // Copyright (c) 2019, 2020 David Young.  All rights reserved.
 //
-public protocol Content : Initializable, StringProtocol {
+
+public protocol Content : Initializable, RangeReplaceableCollection, StringProtocol {
 	associatedtype SubSequence
 	associatedtype Element
-	subscript(r: Range<String.Index>) -> Self.SubSequence { get }
+	subscript(r: Range<Self.Index>) -> Self.SubSequence { get }
 	var isEmpty: Bool { get }
 	static var empty: Self { get }
 	var length: Int { get }

@@ -378,6 +378,23 @@ extension Rope {
 }
 
 extension Rope {
+	public func extractContent(_ range: Range<Offset>) -> C.SubSequence {
+		return top.extractContent(from: range.lowerBound,
+		    upTo: range.upperBound)
+	}
+	public func extractContent(_ range: Range<Offset>,
+	    filling buffer: inout C) {
+		top.extractContent(from: range.lowerBound,
+		    upTo: range.upperBound, filling: &buffer)
+	}
+	public func extractUTF16(_ range: Range<Offset>,
+	    filling buffer: inout UnsafeMutablePointer<Unicode.UTF16.CodeUnit>){
+		return top.extractUTF16(from: range.lowerBound,
+		    upTo: range.upperBound, filling: &buffer)
+	}
+}
+
+extension Rope {
 	func extentsEnclosing(_ i: Index) -> [ExtentController]? {
 		return top.extentsEnclosing(i)
 	}
