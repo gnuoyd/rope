@@ -1,16 +1,42 @@
 //
 // Copyright (c) 2019, 2020 David Young.  All rights reserved.
 //
+public protocol UnitOffsetable {
+	init<S>(unitOffset offset: Int, in s: S)
+	    where S : UnitViewable, S.Index == Self
+	func unitOffset<S>(in s: S) -> Int
+	    where S : UnitViewable, S.Index == Self
+}
 
-public protocol Content : Initializable, RangeReplaceableCollection, StringProtocol {
+public extension UnitOffsetable {
+	init<S>(unitOffset offset: Int, in s: S)
+	    where S : UnitViewable, S.Index == Self {
+		self = s.index(unitOffset: offset)
+	}
+	func unitOffset<S>(in s: S) -> Int
+	    where S : UnitViewable, S.Index == Self {
+		return s.unitOffset(of: self)
+	}
+}
+
+public protocol UnitViewable {
+	associatedtype Unit
+	associatedtype Index : UnitOffsetable
+	associatedtype SubSequence : UnitViewable
+	associatedtype UnitView : BidirectionalCollection where Self.UnitView.Element == Self.Unit, Self.UnitView.Index == Self.Index
+	var units: Self.UnitView { get }
+	func unitOffset(of: Self.Index) -> Int
+	func index(unitOffset: Int) -> Self.Index
+}
+
+public protocol Content : Initializable, RangeReplaceableCollection, UnitViewable, BidirectionalCollection, Equatable {
 	associatedtype SubSequence
 	associatedtype Element
 	subscript(r: Range<Self.Index>) -> Self.SubSequence { get }
 	var isEmpty: Bool { get }
 	static var empty: Self { get }
 	var length: Int { get }
-	var utf16: Self.UTF16View { get }
-	static func +<Other>(_ l: Self, _ r: Other) -> Self where Other : Sequence, Character == Other.Element
+	var units: Self.UnitView { get }
 	init(_: SubSequence)
 	init(repeating: Element, count: Int)
 }

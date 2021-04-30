@@ -24,10 +24,10 @@ class RopeString : NSString {
 		fatalError()
 	}
 	public override var length: Int {
-		return rope.utf16.length
+		return rope.units.length
 	}
 	override func character(at i: Int) -> unichar {
-		let c = rope.utf16[Offset(of: i)]
+		let c = rope.units[Offset(of: i)]
 		// Swift.print("character(at: \(i)) -> \(c)")
 		return c
 	}
@@ -35,10 +35,10 @@ class RopeString : NSString {
 	    range: NSRange) {
 		var buffer = buffer_in
 		if false {
-			rope.extractUTF16(Offset.utf16Range(range), filling: &buffer)
+			rope.extractUnits(Offset.unitRange(range), filling: &buffer)
 		} else if false {
 			/* 1 try without intermediate `c`. */
-                        for u in rope.extractContent(Offset.utf16Range(range)).utf16 {
+                        for u in rope.extractContent(Offset.unitRange(range)).units {
                                 buffer.initialize(to: u)
                                 buffer += 1
                         }
@@ -47,9 +47,9 @@ class RopeString : NSString {
 			 * 2 try passing inout String to extractContent.
 			 */
 			var c: Content = Content.empty
-			rope.extractContent(Offset.utf16Range(range),
+			rope.extractContent(Offset.unitRange(range),
 			    filling: &c)
-			let result: Bool? = c.utf16.map { return $0 }.withContiguousStorageIfAvailable {
+			let result: Bool? = c.units.map { return $0 }.withContiguousStorageIfAvailable {
 				guard let base = $0.baseAddress else {
 					return false
 				}
@@ -57,7 +57,7 @@ class RopeString : NSString {
 				return true
 			}
 			if !(result ?? false) {
-				for u in c.utf16 {
+				for u in c.units {
 					buffer.initialize(to: u)
 					buffer += 1
 				}

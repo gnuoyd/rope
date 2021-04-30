@@ -1228,7 +1228,7 @@ class LookupUsingRopeIndicesDerivedFromUTF16Offsets: XCTestCase {
 	func testIterateElements() {
 		for (i, expected) in expectations.enumerated() {
 			let ofs = Offset(of: i)
-			let idx = RSS.Index(utf16Offset: ofs, in: r)
+			let idx = RSS.Index(unitOffset: ofs, in: r)
 			let found = r[idx]
 			XCTAssert(found == expected,
 			    "found \(found) expected \(expected)")
@@ -1236,7 +1236,7 @@ class LookupUsingRopeIndicesDerivedFromUTF16Offsets: XCTestCase {
 	}
 	func testEndIndex() {
 		let ofs = Offset(of: expectations.count)
-		let idx = RSS.Index(utf16Offset: ofs, in: r)
+		let idx = RSS.Index(unitOffset: ofs, in: r)
 		XCTAssertThrowsError(try r.element(at: idx))
 	}
 }
@@ -1624,59 +1624,59 @@ class NodeAttributes : XCTestCase {
 	func testFrontAttributes() {
 		let (attrs, range) = n.attributes(at: 0)
 		XCTAssert(Self.frontAttrs ~ attrs)
-		XCTAssert(range == Offset.utf16RangeTo(3))
+		XCTAssert(range == Offset.unitRangeTo(3))
 	}
 	func testMiddleAttributes() {
 		let (attrs, range) = n.attributes(at: Offset(of: 3))
 		XCTAssert(Self.middleAttrs ~ attrs)
-		XCTAssert(range == Offset.utf16Range(3..<8))
+		XCTAssert(range == Offset.unitRange(3..<8))
 	}
 	func testBackAttributes() {
 		let (attrs, range) = n.attributes(at: Offset(of: 8))
 		XCTAssert(Self.backAttrs ~ attrs)
-		XCTAssert(range == Offset.utf16Range(8..<12))
+		XCTAssert(range == Offset.unitRange(8..<12))
 	}
 	func testLastAttributes() {
 		let (attrs, range) = n.attributes(at: Offset(of: 11))
 		XCTAssert(Self.backAttrs ~ attrs)
-		XCTAssert(range == Offset.utf16Range(8..<12))
+		XCTAssert(range == Offset.unitRange(8..<12))
 	}
 	func testSettingFrontAndMiddleAttributes() {
 		let newn = n.settingAttributes(NodeAttributes.newAttrs,
-		    range: Offset.utf16Range(0..<8))
+		    range: Offset.unitRange(0..<8))
 		let (attrs, frontRange) = newn.attributes(at: 0)
 		XCTAssert(Self.newAttrs ~ attrs)
-		XCTAssert(frontRange == Offset.utf16Range(0..<3))
+		XCTAssert(frontRange == Offset.unitRange(0..<3))
 		let (_, middleRange) =
 		    newn.attributes(at: Offset(of: 3))
-		XCTAssert(middleRange == Offset.utf16Range(3..<8))
+		XCTAssert(middleRange == Offset.unitRange(3..<8))
 	}
 	static func helpTestSettingCentralAttributes(_ oldn: NSS) {
 		let newn = oldn.settingAttributes(NodeAttributes.newAttrs,
-		    range: Offset.utf16Range(2..<9))
+		    range: Offset.unitRange(2..<9))
 
 		let (frontAttrs, frontRange) = newn.attributes(at: 0)
-		XCTAssert(frontRange == Offset.utf16Range(0..<2))
+		XCTAssert(frontRange == Offset.unitRange(0..<2))
 		XCTAssert(Self.frontAttrs ~ frontAttrs)
 
 		let (midAttrs1, midRange1) =
 		    newn.attributes(at: Offset(of: 2))
-		XCTAssert(midRange1 == Offset.utf16Range(2..<3))
+		XCTAssert(midRange1 == Offset.unitRange(2..<3))
 		XCTAssert(Self.newAttrs ~ midAttrs1)
 
 		let (midAttrs2, midRange2) =
 		    newn.attributes(at: Offset(of: 3))
-		XCTAssert(midRange2 == Offset.utf16Range(3..<8))
+		XCTAssert(midRange2 == Offset.unitRange(3..<8))
 		XCTAssert(Self.newAttrs ~ midAttrs2)
 
 		let (midAttrs3, midRange3) =
 		    newn.attributes(at: Offset(of: 8))
-		XCTAssert(midRange3 == Offset.utf16Range(8..<9))
+		XCTAssert(midRange3 == Offset.unitRange(8..<9))
 		XCTAssert(Self.newAttrs ~ midAttrs3)
 
 		let (backAttrs, backRange) =
 		    newn.attributes(at: Offset(of: 9))
-		XCTAssert(backRange == Offset.utf16Range(9..<12))
+		XCTAssert(backRange == Offset.unitRange(9..<12))
 		XCTAssert(Self.backAttrs ~ backAttrs)
 	}
 	func testSettingCentralAttributes() {
@@ -1696,21 +1696,21 @@ class NodeAttributes : XCTestCase {
 	}
 	func testSettingBackAttributes() {
 		let newn = n.settingAttributes(NodeAttributes.newAttrs,
-		    range: Offset.utf16Range(8..<12))
+		    range: Offset.unitRange(8..<12))
 		let (attrs, range) = newn.attributes(at: Offset(of: 8))
 		XCTAssert(Self.newAttrs ~ attrs)
-		XCTAssert(range == Offset.utf16Range(8..<12),
+		XCTAssert(range == Offset.unitRange(8..<12),
 		    "actual range \(range) newn \(newn.debugDescription) " +
 		    "n \(n.debugDescription)")
 	}
 	func testSettingLastAttributes() {
 		let newn = n.settingAttributes(NodeAttributes.newAttrs,
-		    range: Offset.utf16Range(11..<12))
+		    range: Offset.unitRange(11..<12))
 		let (attrs, range) = newn.attributes(at: Offset(of: 11))
 		XCTAssert(Self.newAttrs ~ attrs)
-		XCTAssert(range == Offset.utf16Range(11..<12))
+		XCTAssert(range == Offset.unitRange(11..<12))
 		let (_, abuttingRange) = newn.attributes(at: Offset(of: 8))
-		XCTAssert(abuttingRange == Offset.utf16Range(8..<11))
+		XCTAssert(abuttingRange == Offset.unitRange(8..<11))
 	}
 }
 
@@ -2072,7 +2072,7 @@ class CompareIndicesAndEndComplicatedRopes: NestedExtentBase {
 	func testEdits() {
 		let pqrs = RSS(content: "pqrs")
 		let idx = pqrs.index(pqrs.endIndex, offsetBy: -2)
-		let range = Offset.utf16Range(2..<4)
+		let range = Offset.unitRange(2..<4)
 		/* Unfortunately, the following removes the .index(_) node
 		 * corresponding to `idx`:
 		 */
@@ -2097,7 +2097,7 @@ class CompareIndicesAndStartComplicatedRopes: NestedExtentBase {
 	func testEdits() {
 		let pqrs = RSS(content: "pqrs")
 		let idx = pqrs.index(pqrs.startIndex, offsetBy: 2)
-		let range = Offset.utf16Range(0..<2)
+		let range = Offset.unitRange(0..<2)
 		/* Unfortunately, the following removes the .index(_) node
 		 * corresponding to `idx`:
 		 */

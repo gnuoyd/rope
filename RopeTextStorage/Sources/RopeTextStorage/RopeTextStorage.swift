@@ -39,8 +39,8 @@ public class RopeTextStorage: NSTextStorage {
 		}
 /*
 		Swift.print("\(attrs.count) attributes on " +
-		    "[\(r.lowerBound.utf16Offset), " +
-		    "\(r.upperBound.utf16Offset)], \(attrs)")
+		    "[\(r.lowerBound.unitOffset), " +
+		    "\(r.upperBound.unitOffset)], \(attrs)")
 */
 		return attrs;
 	}
@@ -49,7 +49,7 @@ public class RopeTextStorage: NSTextStorage {
 		beginEditing()
 		// TBD make sure `str` is the most efficient representation
 		// to add to Rope<Substring> ?
-		rope[Offset.utf16Range(range)] = Substring(str)
+		rope[Offset.unitRange(range)] = Substring(str)
 		let actions = NSTextStorageEditActions.editedCharacters.union(
 		    .editedAttributes)
 		edited(actions, range: range,
@@ -59,7 +59,7 @@ public class RopeTextStorage: NSTextStorage {
 	override public func setAttributes(
 	    _ optAttrs: [NSAttributedString.Key : Any]?, range r: NSRange) {
 		beginEditing()
-		let range = Offset.utf16Range(r)
+		let range = Offset.unitRange(r)
 		if let attrs = optAttrs  {
 			rope.setAttributes(attrs, range: range)
 		} else {

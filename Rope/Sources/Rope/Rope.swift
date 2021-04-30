@@ -10,7 +10,7 @@ case atEnd
 }
 
 extension Range {
-	init<C : Content>(utf16Range r: Range<Rope<C>.Node.Offset>,
+	init<C : Content>(_ r: Range<Rope<C>.Node.Offset>,
 	                   in rope: Rope<C>) where Bound == Rope<C>.Index {
 		let lower = Rope.Index(abutting: r.lowerBound, on: .right,
 		    in: rope)
@@ -23,16 +23,16 @@ extension Range {
 extension Rope.Node {
 	public struct Dimensions {
 		public let jots: Int
-		public let utf16Offset: Offset
+		public let unitOffset: Offset
 		public static var zero: Dimensions {
-			return Dimensions(jots: 0, utf16Offset: 0)
+			return Dimensions(jots: 0, unitOffset: 0)
 		}
-		public init(jots: Int = 0, utf16Offset: Offset = 0) {
+		public init(jots: Int = 0, unitOffset offset: Offset = 0) {
 			self.jots = jots
-			self.utf16Offset = utf16Offset
+			self.unitOffset = offset
 		}
 		public var halfPerimeter: Int {
-			guard case .offset(let n) = utf16Offset else {
+			guard case .offset(let n) = unitOffset else {
 				return jots
 			}
 			return jots + n
@@ -43,7 +43,7 @@ extension Rope.Node {
 extension Rope.Node.Dimensions {
 	public static func +(_ l: Self, _ r: Self) -> Self {
 		return Self(jots: l.jots + r.jots,
-		            utf16Offset: l.utf16Offset + r.utf16Offset)
+		            unitOffset: l.unitOffset + r.unitOffset)
 	}
 }
 
@@ -54,11 +54,15 @@ extension Rope.Node.Offset : ExpressibleByIntegerLiteral {
 	}
 }
 
+extension Rope.Node {
+	public typealias Unit = C.Unit
+}
+
 extension Rope.Node.Offset {
 	public init(of n: Int) {
 		self = .offset(n)
 	}
-	public var utf16Offset: Int {
+	public var unitOffset: Int {
 		switch self {
 		case .offset(let n):
 			return n
@@ -301,7 +305,7 @@ public class Rope<C : Content> : Collection {
 	/* TBD tests */
 	public subscript(_ r: Range<Offset>) -> Content {
 		set(newValue) {
-			let ir = Range(utf16Range: r, in: self)
+			let ir = Range(r, in: self)
 			guard let newtop = top.replacing(ir,
 			    with: newValue) else {
 				fatalError("No such range")
@@ -309,7 +313,7 @@ public class Rope<C : Content> : Collection {
 			top = newtop
 		}
 		get {
-			let ir = Range(utf16Range: r, in: self)
+			let ir = Range(r, in: self)
 			return top[ir]
 		}
 	}
@@ -329,7 +333,7 @@ public class Rope<C : Content> : Collection {
 		return top.attributes(at: i)
 	}
 	public func setAttributes(_ attrs: Attributes, range r: Range<Offset>){
-		let ir = Range(utf16Range: r, in: self)
+		let ir = Range(r, in: self)
 		guard let newtop = top.settingAttributes(attrs, range: ir)
 		    else {
 			return
@@ -358,22 +362,22 @@ extension Rope {
 }
 
 extension Rope {
-        public struct UTF16View {
+        public struct UnitView {
 		let rope: Rope
 		init(rope r: Rope) {
 			rope = r
 		}
-                public subscript(i: Offset) -> Unicode.UTF16.CodeUnit {
+                public subscript(i: Offset) -> Rope.Node.Unit {
                         get {
-                                return rope.top.utf16(at: i)
+                                return rope.top.unit(at: i)
                         }
                 }
 		public var length: Int {
 			return rope.top.length
 		}
 	}
-	public var utf16: UTF16View {
-                return UTF16View(rope: self)
+	public var units: UnitView {
+                return UnitView(rope: self)
 	}
 }
 
@@ -387,9 +391,9 @@ extension Rope {
 		top.extractContent(from: range.lowerBound,
 		    upTo: range.upperBound, filling: &buffer)
 	}
-	public func extractUTF16(_ range: Range<Offset>,
-	    filling buffer: inout UnsafeMutablePointer<Unicode.UTF16.CodeUnit>){
-		return top.extractUTF16(from: range.lowerBound,
+	public func extractUnits(_ range: Range<Offset>,
+	    filling buffer: inout UnsafeMutablePointer<C.Unit>){
+		return top.extractUnits(from: range.lowerBound,
 		    upTo: range.upperBound, filling: &buffer)
 	}
 }

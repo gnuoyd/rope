@@ -338,7 +338,7 @@ public extension Rope.Node {
 				return self.appending(.index(label: h))
 			}
 		case .leaf(let attrs, let content):
-			let idx = C.Index(utf16Offset: offset.utf16Offset,
+			let idx = C.Index(unitOffset: offset.unitOffset,
 			    in: content)
 			let l = content.prefix(upTo: idx)
 			let r = content.suffix(from: idx)
@@ -375,7 +375,7 @@ public extension Rope.Node {
 			assert(place == 0)
 			return self.appending(.index(label: h))
 		case .leaf(let attrs, let content):
-			let idx = C.Index(utf16Offset: place.utf16Offset,
+			let idx = C.Index(unitOffset: place.unitOffset,
 			    in: content)
 			let l = content.prefix(upTo: idx)
 			let r = content.suffix(from: idx)
@@ -756,7 +756,7 @@ public extension Rope.Node {
 				return true
 			case false?:
 				return r.labels.extentCount > 0 ||
-				       midx != w.utf16Offset
+				       midx != w.unitOffset
 			}
 		case .cursor(_, _), .leaf(_, _), .empty:
 			return nil
@@ -989,10 +989,10 @@ public extension Rope.Node {
 		case .extent(_, let rope):
 			return rope.dimensions + Dimensions(jots: 2)
 		case .leaf(_, let s):
-			let endOffset = s.endIndex.utf16Offset(in: s)
-			let startOffset = s.startIndex.utf16Offset(in: s)
+			let endOffset = s.endIndex.unitOffset(in: s)
+			let startOffset = s.startIndex.unitOffset(in: s)
 			return Dimensions(
-			    utf16Offset: Offset(of: endOffset - startOffset))
+			    unitOffset: Offset(of: endOffset - startOffset))
 		case .empty:
 			return Dimensions.zero
 		case .cursor(_, _), .index(_):
@@ -1005,19 +1005,19 @@ public extension Rope.Node {
 	var endIndex: Offset {
 		switch self {
 		case Self.concat(_, _, _, _, _, let w):
-			return w.utf16Offset
+			return w.unitOffset
 		case .extent(_, let rope):
 			return rope.endIndex
 		case .leaf(_, let s):
-			let endOffset = s.endIndex.utf16Offset(in: s)
-			let startOffset = s.startIndex.utf16Offset(in: s)
+			let endOffset = s.endIndex.unitOffset(in: s)
+			let startOffset = s.startIndex.unitOffset(in: s)
 			return Offset(of: endOffset - startOffset)
 		case .empty, .index(_), .cursor(_, _):
 			return 0
 		}
 	}
 	var length: Int {
-		return endIndex.utf16Offset - startIndex.utf16Offset
+		return endIndex.unitOffset - startIndex.unitOffset
 	}
 	func transforming<R>(at i: Offset, base: Offset = 0,
 	    with fn: (Self, Offset, Offset) -> R) -> R {
@@ -1036,16 +1036,16 @@ public extension Rope.Node {
 			return rope.transforming(at: i, base: base, with: fn)
 		}
 	}
-	func utf16(at i: Offset) -> C.UTF16View.Element {
-		func utf16(_ node: Self, at i: Offset, base: Offset)
-		    -> C.UTF16View.Element {
+	func unit(at i: Offset) -> C.UnitView.Element {
+		func unit(_ node: Self, at i: Offset, base: Offset)
+		    -> C.UnitView.Element {
 			guard case .leaf(_, let s) = node else {
-				fatalError("In \(#function), no utf16 \(i)")
+				fatalError("In \(#function), no unit \(i)")
 			}
-			let sidx = C.Index(utf16Offset: i.utf16Offset, in: s)
-			return s.utf16[sidx]
+			let sidx = C.Index(unitOffset: i.unitOffset, in: s)
+			return s.units[sidx]
 		}
-		return transforming(at: i, with: utf16)
+		return transforming(at: i, with: unit)
 	}
 	func extentsEnclosing(_ i0: Offset) -> [Rope.ExtentController] {
 		var path: [Rope.ExtentController] = []
@@ -1149,7 +1149,7 @@ public extension Rope.Node {
 			 * not close at `i`. Rather, they close at an index
 			 * on the right.  So leave them out of the list.
 			 */
-			guard midx == w.utf16Offset &&
+			guard midx == w.unitOffset &&
 			      r.labels.extentCount == 0 else {
 				return l.extentsClosing(at: i)
 			}
@@ -1161,7 +1161,7 @@ public extension Rope.Node {
 	func element(at i: Offset) -> Element {
 		switch self {
 		case .leaf(_, let s):
-			let idx = C.Index(utf16Offset: i.utf16Offset, in: s)
+			let idx = C.Index(unitOffset: i.unitOffset, in: s)
 			let c: Element = s[idx]
 			return c
 		case .concat(let ropel, let idx, _, _, let roper, _):
@@ -1273,11 +1273,11 @@ public extension Rope.Node {
 			}
 		})
 	}
-	/* Return the subrope that starts at `from`, the UTF16 offset
+	/* Return the subrope that starts at `from`, the unit offset
 	 * from the beginning of `self`, with `rightSibling` appended.
 	 *
 	 * In the subrope, *exclude* all indices, cursors, and other nodes
-	 * that do not affect the UTF16 offset and that are adjacent to
+	 * that do not affect the unit offset and that are adjacent to
 	 * `from`, if `tightly` is true.  Otherwise, *include* those nodes.
 	 *
 	 * `depth` is just an (unused) diagnostic variable that increases
@@ -1307,8 +1307,8 @@ public extension Rope.Node {
 			    rightSibling: r.appending(rightSibling),
 			    depth: depth + 1)
 		case let .leaf(attrs, s):
-			let i = C.Index(utf16Offset: from.utf16Offset, in: s)
-			if i == s.utf16.endIndex {
+			let i = C.Index(unitOffset: from.unitOffset, in: s)
+			if i == s.units.endIndex {
 				return rightSibling
 			}
 			let subleaf: Self =
@@ -1317,10 +1317,10 @@ public extension Rope.Node {
 		}
 	}
 	/* Append to `leftSibling` and return the subrope that ends at `to`,
-	 * the UTF16 offset from the beginning of `self`.
+	 * the unit offset from the beginning of `self`.
 	 *
 	 * In the subrope, *exclude* all indices, cursors, and other nodes
-	 * adjacent to `to` that do not increase the UTF16 offset, if `tightly`
+	 * adjacent to `to` that do not increase the unit offset, if `tightly`
 	 * is true.  Otherwise, *include* those nodes.
 	 *
 	 * `depth` is just an (unused) diagnostic variable that increases
@@ -1349,9 +1349,9 @@ public extension Rope.Node {
 				upTo: min(endIndex - idx, boundary - idx),
 				tightly: tightly, depth: depth + 1)
 		case let .leaf(attrs, s):
-			let i = C.Index(utf16Offset: boundary.utf16Offset,
+			let i = C.Index(unitOffset: boundary.unitOffset,
 			    in: s)
-			if i == s.utf16.startIndex {
+			if i == s.units.startIndex {
 				return leftSibling
 			}
 			return leftSibling.appending(
@@ -1797,37 +1797,37 @@ public extension Rope.Node {
 }
 
 public extension Rope.Node {
-	func extractUTF16(from start: Offset, upTo end: Offset,
-	    filling buffer: inout UnsafeMutablePointer<UTF16.CodeUnit>) {
+	func extractUnits(from start: Offset, upTo end: Offset,
+	    filling buffer: inout UnsafeMutablePointer<C.Unit>) {
 		switch self {
 		case .concat(let l, let idx, _, _, let r, _):
 			if start < idx {
-				l.extractUTF16(from: start,
+				l.extractUnits(from: start,
 				    upTo: min(end, idx),
 				    filling: &buffer)
 			}
 			if idx < end {
-				r.extractUTF16(from: max(start, idx) - idx,
+				r.extractUnits(from: max(start, idx) - idx,
 				    upTo: end - idx,
 				    filling: &buffer)
 			}
 		case .leaf(_, let s):
-			let utf16 = s.utf16
-			guard let sidx = utf16.index(utf16.startIndex,
-			    offsetBy: start.utf16Offset,
-			    limitedBy: utf16.endIndex),
-			    let eidx = utf16.index(utf16.startIndex,
-			    offsetBy: end.utf16Offset,
-			    limitedBy: utf16.endIndex) else {
+			let units = s.units
+			guard let sidx = units.index(units.startIndex,
+			    offsetBy: start.unitOffset,
+			    limitedBy: units.endIndex),
+			    let eidx = units.index(units.startIndex,
+			    offsetBy: end.unitOffset,
+			    limitedBy: units.endIndex) else {
 				fatalError("In \(#function), " +
-				    "no utf16 range \(start)..<\(end)")
+				    "no units range \(start)..<\(end)")
 			}
-			for u in utf16[sidx..<eidx] {
+			for u in units[sidx..<eidx] {
 				buffer.initialize(to: u)
 				buffer += 1
 			}
 		case .extent(_, let content):
-			return content.extractUTF16(from: start, upTo: end,
+			return content.extractUnits(from: start, upTo: end,
 			    filling: &buffer)
 		case .cursor(_, _), .empty, .index(_):
 			return
@@ -1848,14 +1848,14 @@ public extension Rope.Node {
 			}
 			return c[...]
 		case .leaf(_, let s):
-			guard let sidx = s.utf16.index(s.utf16.startIndex,
-			    offsetBy: start.utf16Offset,
-			    limitedBy: s.utf16.endIndex),
-			    let eidx = s.utf16.index(s.utf16.startIndex,
-			    offsetBy: end.utf16Offset,
-			    limitedBy: s.utf16.endIndex) else {
+			guard let sidx = s.units.index(s.units.startIndex,
+			    offsetBy: start.unitOffset,
+			    limitedBy: s.units.endIndex),
+			    let eidx = s.units.index(s.units.startIndex,
+			    offsetBy: end.unitOffset,
+			    limitedBy: s.units.endIndex) else {
 				fatalError("In \(#function), " +
-				    "no utf16 range \(start)..<\(end)")
+				    "no units range \(start)..<\(end)")
 			}
 			return s[sidx..<eidx]
 		case .extent(_, let content):
@@ -1878,14 +1878,14 @@ public extension Rope.Node {
 				    upTo: end - idx, filling: &c)
 			}
 		case .leaf(_, let s):
-			guard let sidx = s.utf16.index(s.utf16.startIndex,
-			    offsetBy: start.utf16Offset,
-			    limitedBy: s.utf16.endIndex),
-			    let eidx = s.utf16.index(s.utf16.startIndex,
-			    offsetBy: end.utf16Offset,
-			    limitedBy: s.utf16.endIndex) else {
+			guard let sidx = s.units.index(s.units.startIndex,
+			    offsetBy: start.unitOffset,
+			    limitedBy: s.units.endIndex),
+			    let eidx = s.units.index(s.units.startIndex,
+			    offsetBy: end.unitOffset,
+			    limitedBy: s.units.endIndex) else {
 				fatalError("In \(#function), " +
-				    "no utf16 range \(start)..<\(end)")
+				    "no units range \(start)..<\(end)")
 			}
 			c += s[sidx..<eidx]
 		case .extent(_, let content):
