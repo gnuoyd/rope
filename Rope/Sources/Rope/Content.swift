@@ -32,14 +32,10 @@ public protocol UnitViewable {
 public protocol Content : RangeReplaceableCollection, UnitViewable,
     BidirectionalCollection, Equatable {
 	associatedtype SubSequence
-	associatedtype Element
 	subscript(r: Range<Self.Index>) -> Self.SubSequence { get }
-	var isEmpty: Bool { get }
 	static var empty: Self { get }
 	var length: Int { get }
 	var units: Self.UnitView { get }
-	init(_: SubSequence)
-	init(repeating: Element, count: Int)
 }
 
 extension Content {
