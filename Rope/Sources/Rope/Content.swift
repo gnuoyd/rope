@@ -40,14 +40,14 @@ public protocol Content : RangeReplaceableCollection, UnitViewable,
 
 extension Content {
 	var restAndLast: (Self, Self)? {
-		if startIndex == endIndex {
+		if isEmpty {
 			return nil
 		}
 		return (Self.init(dropLast(1)),
 		        Self.init(self[self.index(before: endIndex)...]))
 	}
 	var firstAndRest: (Self, Self)? {
-		if startIndex == endIndex {
+		if isEmpty {
 			return nil
 		}
 		return (Self.init(self[..<self.index(after: startIndex)]), Self.init(dropFirst(1)))
