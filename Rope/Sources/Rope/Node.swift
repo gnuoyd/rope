@@ -1833,7 +1833,8 @@ public extension Rope.Node {
 			return
 		}
 	}
-	func extractContent(from start: Offset, upTo end: Offset) -> C.SubSequence {
+	func extractContent(from start: Offset, upTo end: Offset)
+	    -> C.SubSequence {
 		switch self {
 		case .concat(let l, let idx, _, _, let r, _):
 			var c = C.empty
