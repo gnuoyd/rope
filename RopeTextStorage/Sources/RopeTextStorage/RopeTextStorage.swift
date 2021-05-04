@@ -5,16 +5,11 @@ import AppKit
 import Rope
 
 public class RopeTextStorage: NSTextStorage {
-	typealias Offset = Rope<Substring>.Node.Offset
-	let rope: Rope<Substring>
+	typealias Offset = Rope<Array<UTF16.CodeUnit>>.Node.Offset
+	let rope: Rope<Array<UTF16.CodeUnit>>
 	let _string: RopeString
 	public override init() {
 		rope = Rope()
-		_string = RopeString(rope: rope)
-		super.init()
-	}
-	public init(content t: Substring.Initializer) {
-		rope = Rope<Substring>(content: t)
 		_string = RopeString(rope: rope)
 		super.init()
 	}
@@ -44,28 +39,36 @@ public class RopeTextStorage: NSTextStorage {
 */
 		return attrs;
 	}
+	private func performEditing<T>(_ f: () -> T) -> T {
+		beginEditing()
+		defer {
+			endEditing()
+		}
+		return f()
+	}
 	override public func replaceCharacters(in range: NSRange,
 	    with str: String) {
-		beginEditing()
-		// TBD make sure `str` is the most efficient representation
-		// to add to Rope<Substring> ?
-		rope[Offset.unitRange(range)] = Substring(str)
-		let actions = NSTextStorageEditActions.editedCharacters.union(
-		    .editedAttributes)
-		edited(actions, range: range,
-		    changeInLength: (str as NSString).length - range.length)
-		endEditing()
+		performEditing() {
+			rope[Offset.unitRange(range)] =
+			    Array<UTF16.CodeUnit>(str.utf16[...])
+			let actions =
+			    NSTextStorageEditActions.editedCharacters.union(
+			    .editedAttributes)
+			edited(actions, range: range,
+			    changeInLength:
+			        (str as NSString).length - range.length)
+		}
 	}
 	override public func setAttributes(
 	    _ optAttrs: [NSAttributedString.Key : Any]?, range r: NSRange) {
-		beginEditing()
-		let range = Offset.unitRange(r)
-		if let attrs = optAttrs  {
-			rope.setAttributes(attrs, range: range)
-		} else {
-			rope.clearAttributesOnRange(range)
+		performEditing() {
+			let range = Offset.unitRange(r)
+			if let attrs = optAttrs  {
+				rope.setAttributes(attrs, range: range)
+			} else {
+				rope.clearAttributesOnRange(range)
+			}
+			edited(.editedAttributes, range: r, changeInLength: 0)
 		}
-		edited(.editedAttributes, range: r, changeInLength: 0)
-		endEditing()
 	}
 }

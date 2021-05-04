@@ -5,10 +5,10 @@ import AppKit
 import Rope
 
 class RopeString : NSString {
-	typealias Offset = Rope<Substring>.Node.Offset
-	typealias Content = Rope<Substring>.Node.Content
-	let rope: Rope<Substring>
-	init(rope r: Rope<Substring>) {
+	typealias Offset = Rope<Array<UTF16.CodeUnit>>.Node.Offset
+	typealias Content = Rope<Array<UTF16.CodeUnit>>.Node.Content
+	let rope: Rope<Array<UTF16.CodeUnit>>
+	init(rope r: Rope<Array<UTF16.CodeUnit>>) {
 		rope = r
 		super.init()
 	}
@@ -34,34 +34,6 @@ class RopeString : NSString {
 	override func getCharacters(_ buffer_in: UnsafeMutablePointer<unichar>,
 	    range: NSRange) {
 		var buffer = buffer_in
-		if false {
-			rope.extractUnits(Offset.unitRange(range), filling: &buffer)
-		} else if false {
-			/* 1 try without intermediate `c`. */
-                        for u in rope.extractContent(Offset.unitRange(range)).units {
-                                buffer.initialize(to: u)
-                                buffer += 1
-                        }
-		} else {
-			/*
-			 * 2 try passing inout String to extractContent.
-			 */
-			var c: Content = Content.empty
-			rope.extractContent(Offset.unitRange(range),
-			    filling: &c)
-			let result: Bool? = c.units.map { return $0 }.withContiguousStorageIfAvailable {
-				guard let base = $0.baseAddress else {
-					return false
-				}
-				buffer.initialize(from: base, count: range.length)
-				return true
-			}
-			if !(result ?? false) {
-				for u in c.units {
-					buffer.initialize(to: u)
-					buffer += 1
-				}
-			}
-		}
+		rope.extractUnits(Offset.unitRange(range), filling: &buffer)
 	}
 }

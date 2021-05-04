@@ -1812,19 +1812,33 @@ public extension Rope.Node {
 				    filling: &buffer)
 			}
 		case .leaf(_, let s):
-			let units = s.units
-			guard let sidx = units.index(units.startIndex,
-			    offsetBy: start.unitOffset,
-			    limitedBy: units.endIndex),
-			    let eidx = units.index(units.startIndex,
-			    offsetBy: end.unitOffset,
-			    limitedBy: units.endIndex) else {
-				fatalError("In \(#function), " +
-				    "no units range \(start)..<\(end)")
-			}
-			for u in units[sidx..<eidx] {
-				buffer.initialize(to: u)
-				buffer += 1
+			guard case true? =
+			    (s.units.withContiguousStorageIfAvailable {
+				guard let base = $0.baseAddress else {
+					return false
+				}
+				let length = end.unitOffset - start.unitOffset
+				buffer.initialize(from: base + start.unitOffset,
+				    count: length)
+				buffer += length
+				return true
+			} as Bool?) else {
+				let units = s.units
+				guard let sidx = units.index(units.startIndex,
+				        offsetBy: start.unitOffset,
+				        limitedBy: units.endIndex),
+				    let eidx = units.index(units.startIndex,
+				        offsetBy: end.unitOffset,
+					limitedBy: units.endIndex)
+				    else {
+					fatalError("In \(#function), " +
+					    "no units range \(start)..<\(end)")
+				}
+				for u in units[sidx..<eidx] {
+					buffer.initialize(to: u)
+					buffer += 1
+				}
+				return
 			}
 		case .extent(_, let content):
 			return content.extractUnits(from: start, upTo: end,
