@@ -53,5 +53,3 @@ extension Content {
 		return (Self.init(self[..<self.index(after: startIndex)]), Self.init(dropFirst(1)))
 	}
 }
-
-
