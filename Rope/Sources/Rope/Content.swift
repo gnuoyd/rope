@@ -29,7 +29,8 @@ public protocol UnitViewable {
 	func index(unitOffset: Int) -> Self.Index
 }
 
-public protocol Content : Initializable, RangeReplaceableCollection, UnitViewable, BidirectionalCollection, Equatable {
+public protocol Content : RangeReplaceableCollection, UnitViewable,
+    BidirectionalCollection, Equatable {
 	associatedtype SubSequence
 	associatedtype Element
 	subscript(r: Range<Self.Index>) -> Self.SubSequence { get }
