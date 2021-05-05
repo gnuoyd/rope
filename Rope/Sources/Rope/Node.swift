@@ -853,8 +853,7 @@ public extension Rope.Node {
 			self = Self.leaf(attrs, c)
 		}
 	}
-	init<I>(content i: I) where C : Initializable,
-	    C.Initializer == I, I : Collection {
+	init<I>(content i: I) where C.SubSequence == I {
 		self.init(content: C(i))
 	}
 }

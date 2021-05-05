@@ -177,8 +177,7 @@ public class Rope<C : Content> : Collection {
 	public func index(_ h1: Label, precedes h2: Label) -> Bool? {
 		return top.index(h1, precedes: h2)
 	}
-	public init<T>(content t: T) where C : Initializable,
-	    C.Initializer == T, T : Collection {
+	public init<T>(content t: T) where C.SubSequence == T {
 		_top = Node(content: t)
 	}
 	public func index(after i: Index) -> Index {
