@@ -1509,9 +1509,6 @@ public extension Rope.Node {
 		return subrope(after: range.lowerBound,
 		               upTo: range.upperBound)?.content ?? Content.empty
 	}
-	/* XXX this will split extents!  Needs to find affected extents,
-	 * split, perform replacement/deletion on each affected extent.
-	 */
 /*
 	func replacing(_ range: Range<Rope.Index>, with c: Content) -> Self? {
 		guard let l = subrope(upTo: range.lowerBound) else {
@@ -1523,6 +1520,10 @@ public extension Rope.Node {
 		return l.appending(Self(content: c)).appending(r)
 	}
 */
+	/* A naive version of `replacing(_:with:)` splits extents.  This
+	 * version finds affected extents, splits before and after eac,
+	 * extent, and performs replacement/deletion on each affected extent.
+	 */
 	func replacing(_ range: Range<Rope.Index>, with replacement: Content)
 	    -> Self? {
 		let owner = range.lowerBound.owner
