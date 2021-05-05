@@ -316,18 +316,14 @@ public class Rope<C : Content> : Collection {
 			return top[ir]
 		}
 	}
-/*
-	public subscript<I>(_ r: Range<Offset>) -> I
-	    where C : Initializable, C.Initializer == I, I : Collection,
-	          I : Initializable, I.Initializer == C {
+	public subscript<I>(_ r: Range<Offset>) -> I where C.SubSequence == I {
 		set(newValue) {
-			top = top.replacing(r, with: C(newValue))
+			self[r] = C(newValue)
 		}
 		get {
-			return I(top[r])
+			return self[r][...]
 		}
 	}
-*/
 	public func attributes(at i: Offset) -> (Attributes, Range<Offset>) {
 		return top.attributes(at: i)
 	}
