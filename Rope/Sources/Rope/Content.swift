@@ -52,6 +52,7 @@ extension Content {
 		if isEmpty {
 			return nil
 		}
-		return (Self.init(self[..<self.index(after: startIndex)]), Self.init(dropFirst(1)))
+		return (Self.init(self[..<self.index(after: startIndex)]),
+		        Self.init(dropFirst(1)))
 	}
 }
