@@ -189,19 +189,19 @@ extension Rope.Node where Content == Substring {
 extension Rope.Node {
 	public static func == (_ l: Self, _ r: Self) -> Bool {
 		switch (l, r) {
-		case (.cursor(let lLabel, let lattrs),
-		      .cursor(let rLabel, let rattrs)):
-			return lLabel == rLabel && lattrs ~ rattrs
-		case (.index(let lWeakLabel), .index(let rWeakLabel)):
-			return lWeakLabel.get() == rWeakLabel.get()
-		case (.extent(let lCtlr, let lNode),
-		      .extent(let rCtlr, let rNode)):
-			return lCtlr == rCtlr && lNode == rNode
-		case (.concat(let lNode1, _, _, _, let lNode2, _),
-		      .concat(let rNode1, _, _, _, let rNode2, _)):
-			return lNode1 == rNode1 && lNode2 == rNode2
-		case (.leaf(let lattrs, let lContent), .leaf(let rattrs, let rContent)):
-			return lContent == rContent && lattrs ~ rattrs
+		case (.cursor(let ll, let la),
+		      .cursor(let rl, let ra)):
+			return ll == rl && la ~ ra
+		case (.index(let lwl), .index(let rwl)):
+			return lwl.get() == rwl.get()
+		case (.extent(let lc, let ln),
+		      .extent(let rc, let rn)):
+			return lc == rc && ln == rn
+		case (.concat(let ln1, _, _, _, let ln2, _),
+		      .concat(let rn1, _, _, _, let rn2, _)):
+			return ln1 == rn1 && ln2 == rn2
+		case (.leaf(let la, let lc), .leaf(let ra, let rc)):
+			return lc == rc && la ~ ra
 		case (.empty, .empty):
 			return true
 		default:
