@@ -1474,12 +1474,6 @@ public extension Rope.Node {
 			    depth: depth + 1)
 		}
 	}
-	/*
-	func deleting(from start: Offset, to end: Offset) -> Self {
-		return subrope(from: 0, upTo: start).appending(
-		    subrope(from: end, upTo: endIndex))
-	}
-	*/
 	func compactMap(_ filter: (Self) -> Self?) -> Self? {
 		switch self {
 		case .extent(let ctlr, let content):
@@ -1509,17 +1503,6 @@ public extension Rope.Node {
 		return subrope(after: range.lowerBound,
 		               upTo: range.upperBound)?.content ?? Content.empty
 	}
-/*
-	func replacing(_ range: Range<Rope.Index>, with c: Content) -> Self? {
-		guard let l = subrope(upTo: range.lowerBound) else {
-			return nil
-		}
-		guard let r = subrope(after: range.upperBound) else {
-			return nil
-		}
-		return l.appending(Self(content: c)).appending(r)
-	}
-*/
 	/* A naive version of `replacing(_:with:)` splits extents.  This
 	 * version finds affected extents, splits before and after eac,
 	 * extent, and performs replacement/deletion on each affected extent.
