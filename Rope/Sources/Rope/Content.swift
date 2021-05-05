@@ -23,7 +23,9 @@ public protocol UnitViewable {
 	associatedtype Unit
 	associatedtype Index : UnitOffsetable
 	associatedtype SubSequence : UnitViewable
-	associatedtype UnitView : BidirectionalCollection where Self.UnitView.Element == Self.Unit, Self.UnitView.Index == Self.Index
+	associatedtype UnitView : BidirectionalCollection
+	    where Self.UnitView.Element == Self.Unit,
+	          Self.UnitView.Index == Self.Index
 	var units: Self.UnitView { get }
 	func unitOffset(of: Self.Index) -> Int
 	func index(unitOffset: Int) -> Self.Index
