@@ -567,7 +567,7 @@ class SegmentingAtExtent : XCTestCase {
 		guard let (l, m, r) =
 		    extentInExtent.segmenting(atExtent: c[0]) else {
 			XCTFail("no such extent controller")
-			return;
+			return
 		}
 		XCTAssert(l == .empty)
 		XCTAssert(m == extentInExtent)
@@ -577,7 +577,7 @@ class SegmentingAtExtent : XCTestCase {
 		guard let (l, m, r) =
 		    extentOnLeft.segmenting(atExtent: c[1]) else {
 			XCTFail("no such extent controller")
-			return;
+			return
 		}
 		XCTAssert(l == .empty)
 		XCTAssert(m == innerExtent)
@@ -587,7 +587,7 @@ class SegmentingAtExtent : XCTestCase {
 		guard let (l, m, r) =
 		    extentOnRight.segmenting(atExtent: c[1]) else {
 			XCTFail("no such extent controller")
-			return;
+			return
 		}
 		XCTAssert(l == .text("abc"))
 		XCTAssert(m == innerExtent)
@@ -597,7 +597,7 @@ class SegmentingAtExtent : XCTestCase {
 		guard let (l, m, r) =
 		    extentInCenter.segmenting(atExtent: c[1]) else {
 			XCTFail("no such extent controller")
-			return;
+			return
 		}
 		XCTAssert(l == .text("abc"))
 		XCTAssert(m == innerExtent)
@@ -607,7 +607,7 @@ class SegmentingAtExtent : XCTestCase {
 		guard let (l, m, r) =
 		    multipleExtentsInCenter.segmenting(atExtent: c[1]) else {
 			XCTFail("no such extent controller")
-			return;
+			return
 		}
 		XCTAssert(l == .text("abc"))
 		XCTAssert(m == innerExtent)
@@ -617,7 +617,7 @@ class SegmentingAtExtent : XCTestCase {
 		guard let (l, m, r) =
 		    multipleExtentsInCenter.segmenting(atExtent: c[3]) else {
 			XCTFail("no such extent controller")
-			return;
+			return
 		}
 		XCTAssert(l == .nodes(.text("abc"), innerExtent))
 		XCTAssert(m == otherExtent)
