@@ -1692,11 +1692,6 @@ public extension Rope.Node {
 			return self.appending(.index(label: label))
 		}
 	}
-	func replacing(_ range: Range<Offset>, with c: Content) -> Self {
-		let l = subrope(upTo: range.lowerBound)
-		let r = subrope(from: range.upperBound)
-		return l.appending(Self(content: c)).appending(r)
-	}
 	/* TBD tighten up cursor placement?  Check if any nodes are
 	 * excluded or doubly-included?
 	 */
