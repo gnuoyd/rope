@@ -1712,13 +1712,6 @@ class NodeAttributes : XCTestCase {
 	func testSettingCentralAttributes() {
 		NodeAttributes.helpTestSettingCentralAttributes(rope)
 	}
-/*
-	func testSettingCentralAttributesWithCursor() {
-		let ctlr = ECSS()
-		let contn: NSS = .extent(under: ctlr, n)
-		NodeAttributes.helpTestSettingCentralAttributes(contn)
-	}
-*/
 	func testSettingCentralAttributesWithExtent() {
 		NodeAttributes.helpTestSettingCentralAttributes(contained)
 	}
