@@ -1504,7 +1504,7 @@ public extension Rope.Node {
 		               upTo: range.upperBound)?.content ?? Content.empty
 	}
 	/* A naive version of `replacing(_:with:)` splits extents.  This
-	 * version finds affected extents, splits before and after eac,
+	 * version finds affected extents, splits before and after each
 	 * extent, and performs replacement/deletion on each affected extent.
 	 */
 	func replacing(_ range: Range<Rope.Index>, with replacement: Content)
