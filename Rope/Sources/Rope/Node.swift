@@ -576,13 +576,6 @@ public extension Rope.Node {
 		}
 		return l.appending(fn(m)).appending(r)
 	}
-	func transforming(range: Range<Offset>, with fn: (Self) -> Self)
-	    -> Self {
-		let l = subrope(from: 0, upTo: range.lowerBound)
-		let m = subrope(from: range.lowerBound, upTo: range.upperBound)
-		let r = subrope(from: range.upperBound, upTo: endIndex)
-		return l.appending(fn(m)).appending(r)
-	}
 	func settingAttributes(_ attrs: Attributes) -> Self {
 		switch self {
 		case .cursor(let h, _):
