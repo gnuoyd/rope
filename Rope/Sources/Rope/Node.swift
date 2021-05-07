@@ -634,8 +634,8 @@ public extension Rope.Node {
 			node.clearingAttributes()
 		}
 	}
-	func addingAttributes(_ attrs: Attributes, range: Range<Offset>)
-	    -> Self {
+	func addingAttributes(_ attrs: Attributes, range: Range<Rope.Index>)
+	    -> Self? {
 		return transforming(range: range) { node in
 			node.addingAttributes(attrs)
 		}
