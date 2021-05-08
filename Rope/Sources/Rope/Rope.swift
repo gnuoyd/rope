@@ -335,9 +335,9 @@ public class Rope<C : Content> : Collection {
 		}
 		top = newtop
 	}
-	public func clearAttributes(onRange r: Range<Offset>) {
+	public func clearAttributes(on r: Range<Offset>) {
 		let ir = Range(r, in: self)
-		guard let newtop = top.clearingAttributes(onRange: ir) else {
+		guard let newtop = top.clearingAttributes(on: ir) else {
 			return
 		}
 		top = newtop

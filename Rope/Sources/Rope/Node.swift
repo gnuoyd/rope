@@ -76,6 +76,16 @@ extension Rope.ExtentController {
 		}
 		return .extent(self, replaced)
 	}
+	/* TBD Make this transformingAttributes where `fn` maps from
+	 * attributes to attributes.
+	 */
+	func transforming(_ range: Range<Rope.Index>, in content: Rope.Node,
+	    with fn: (Rope.Node) -> Rope.Node) -> Rope.Node? {
+		guard let xformed = content.transforming(range, with: fn) else {
+			return nil
+		}
+		return .extent(self, xformed)
+	}
 }
 
 extension Rope.Node {
@@ -562,6 +572,7 @@ public extension Rope.Node {
 				node.attributes(at: i, base: base)
 		}
 	}
+	/*
 	func transforming(range: Range<Rope.Index>, with fn: (Self) -> Self)
 	    -> Self? {
 		guard let l = subrope(upTo: range.lowerBound) else {
@@ -575,6 +586,129 @@ public extension Rope.Node {
 			return nil
 		}
 		return l.appending(fn(m)).appending(r)
+	}
+	*/
+	/* A naive version of `transforming(_:with:)` splits extents.  This
+	 * version finds affected extents, splits before and after each
+	 * extent, and performs `fn` on each affected extent.
+	 */
+	func transforming(_ range: Range<Rope.Index>, with fn: (Self) -> Self)
+	    -> Self? {
+		let owner = range.lowerBound.owner
+		switch (extentsEnclosing(range.lowerBound)?.first,
+			extentsEnclosing(range.upperBound)?.first) {
+		case (nil, nil):
+			/* Deal with an empty `range` where the lowerBound
+			 * is right of the upperBound---it can happen---but
+			 * nevertheless the bounds are equal.
+			 */
+			if range.isEmpty {
+				// TBD perform an alternate, "inserting"
+				// transformation
+				return self
+			}
+			/* Important: don't discard any embedded indices at
+			 * `range` boundaries!  Instead, use
+			 * splitting(after:) and splitting(before:) to
+			 * preserve embedded indices for reuse.
+			 */
+			guard let (head, rest) =
+			    splitting(after: range.lowerBound) else {
+				Swift.print("\(#function): no such lower bound")
+				return nil
+			}
+			guard let (middle, tail) =
+			    rest.splitting(before: range.upperBound) else {
+				Swift.print("\(#function): no such upper bound")
+				return nil
+			}
+			/* Important: perform .replacing() on extents in the
+			 * range so that they get an opportunity to cancel if
+			 * they are read-only.
+			 */
+			switch middle.segmentingAtAnyExtent() {
+			case (_, nil, _):
+				return head.appending(
+				    fn(middle)).appending(tail)
+			case (let l, .extent(let ctlr, let m), let r):
+				Swift.print("\(#function): segmented at extent")
+				let entirety = owner.startIndex..<owner.endIndex
+				guard let lXformed = l.transforming(entirety,
+				    with: fn) else {
+					return nil
+				}
+				guard let mXformed = ctlr.transforming(entirety,
+				    in: m, with: fn) else {
+					return nil
+				}
+				guard let rXformed = r.transforming(entirety,
+				    with: fn) else {
+					return nil
+				}
+				return head.appending(
+				    lXformed).appending(
+				    mXformed).appending(
+				    rXformed).appending(tail)
+			case (_, _?, _):
+				Swift.print("\(#function): non-extent center")
+				// m wasn't an extent for some reason
+				// TBD change return type of
+				// segmentingAtAnyExtent to avoid this
+				// impossible error case
+				return nil
+			}
+		case (let loExt?, let hiExt?) where loExt == hiExt:
+			/* Deal with an empty `range` where the lowerBound
+			 * is right of the upperBound---it can happen---but
+			 * nevertheless the bounds are equal.
+			 */
+			if range.isEmpty {
+				// TBD perform an alternate, "inserting"
+				// transformation
+				return self
+			}
+			guard case (let l, .extent(let ctlr, let m), let r)? =
+			    segmenting(atExtent: loExt) else {
+				return nil
+			}
+			guard let mXformed = ctlr.transforming(range, in: m,
+			    with: fn) else {
+				return nil
+			}
+			return l.appending(mXformed).appending(r)
+		case (let loExt?, _):
+			guard case (let l, .extent(let ctlr, let m), let r)? =
+			    segmenting(atExtent: loExt) else {
+				return nil
+			}
+			guard let mXformed = ctlr.transforming(
+			    range.lowerBound..<owner.endIndex, in: m,
+			    with: fn) else {
+				return nil
+			}
+			guard let rXformed = r.transforming(
+			    owner.startIndex..<range.upperBound,
+			    with: fn) else {
+				return nil
+			}
+			return l.appending(mXformed).appending(rXformed)
+		case (nil, let hiExt?):
+			guard case (let l, .extent(let ctlr, let m), let r)? =
+			    segmenting(atExtent: hiExt) else {
+				return nil
+			}
+			guard let lXformed = l.transforming(
+			    range.lowerBound..<owner.endIndex,
+			    with: fn) else {
+				return nil
+			}
+			guard let mXformed = ctlr.transforming(
+			    owner.startIndex..<range.upperBound, in: m,
+			    with: fn) else {
+				return nil
+			}
+			return lXformed.appending(mXformed).appending(r)
+		}
 	}
 	func settingAttributes(_ attrs: Attributes) -> Self {
 		switch self {
@@ -623,23 +757,22 @@ public extension Rope.Node {
 			return self
 		}
 	}
-	func settingAttributes(_ attrs: Attributes, range r: Range<Rope.Index>)
+	func settingAttributes(_ attrs: Attributes, range: Range<Rope.Index>)
 	    -> Self? {
-		return transforming(range: r) { node in
+		return transforming(range) { node in
 			node.settingAttributes(attrs)
 		}
 	}
-	func clearingAttributes(onRange r: Range<Rope.Index>) -> Self? {
-		return transforming(range: r) { node in
+	func clearingAttributes(on r: Range<Rope.Index>) -> Self? {
+		return transforming(r) { node in
 			node.clearingAttributes()
 		}
 	}
 	func addingAttributes(_ attrs: Attributes, range: Range<Rope.Index>)
 	    -> Self? {
-		return transforming(range: range) { node in
+		return transforming(range) { node in
 			node.addingAttributes(attrs)
 		}
-		    
 	}
 }
 

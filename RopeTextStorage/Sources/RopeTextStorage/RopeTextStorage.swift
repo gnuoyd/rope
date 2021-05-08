@@ -66,7 +66,7 @@ public class RopeTextStorage: NSTextStorage {
 			if let attrs = optAttrs {
 				rope.setAttributes(attrs, range: range)
 			} else {
-				rope.clearAttributes(onRange: range)
+				rope.clearAttributes(on: range)
 			}
 			edited(.editedAttributes, range: r, changeInLength: 0)
 		}
