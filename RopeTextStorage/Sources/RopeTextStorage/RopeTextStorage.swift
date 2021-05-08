@@ -63,7 +63,7 @@ public class RopeTextStorage: NSTextStorage {
 	    _ optAttrs: [NSAttributedString.Key : Any]?, range r: NSRange) {
 		performEditing() {
 			let range = Offset.unitRange(r)
-			if let attrs = optAttrs  {
+			if let attrs = optAttrs {
 				rope.setAttributes(attrs, range: range)
 			} else {
 				rope.clearAttributes(onRange: range)
