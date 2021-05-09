@@ -79,9 +79,11 @@ extension Rope.ExtentController {
 	/* TBD Make this transformingAttributes where `fn` maps from
 	 * attributes to attributes.
 	 */
-	func transforming(_ range: Range<Rope.Index>, in content: Rope.Node,
-	    with fn: (Rope.Node) -> Rope.Node) -> Rope.Node? {
-		guard let xformed = content.transforming(range, with: fn) else {
+	func transformingAttributes(on range: Range<Rope.Index>,
+	    in content: Rope.Node,
+	    with fn: (Attributes) -> Attributes) throws -> Rope.Node? {
+		guard let xformed = try content.transformingAttributes(on: range,
+		    with: fn) else {
 			return nil
 		}
 		return .extent(self, xformed)
@@ -558,6 +560,9 @@ public extension Rope.Node {
 }
 
 public extension Rope.Node {
+	enum NodeModificationError : Error {
+	case unexpectedExtent
+	}
 	func attributes(at i: Offset, base: Offset)
 	    -> (Attributes, Range<Offset>) {
 		guard case .leaf(let attrs, _) = self,
@@ -588,12 +593,12 @@ public extension Rope.Node {
 		return l.appending(fn(m)).appending(r)
 	}
 	*/
-	/* A naive version of `transforming(_:with:)` splits extents.  This
-	 * version finds affected extents, splits before and after each
-	 * extent, and performs `fn` on each affected extent.
+	/* A naive version of `transformingAttributes(on:with:)` splits
+	 * extents.  This version finds affected extents, splits before
+	 * and after each extent, and performs `fn` on each affected extent.
 	 */
-	func transforming(_ range: Range<Rope.Index>, with fn: (Self) -> Self)
-	    -> Self? {
+	func transformingAttributes(on range: Range<Rope.Index>,
+	    with fn: (Attributes) -> Attributes) throws -> Self? {
 		let owner = range.lowerBound.owner
 		switch (extentsEnclosing(range.lowerBound)?.first,
 			extentsEnclosing(range.upperBound)?.first) {
@@ -629,26 +634,24 @@ public extension Rope.Node {
 			switch middle.segmentingAtAnyExtent() {
 			case (_, nil, _):
 				return head.appending(
-				    fn(middle)).appending(tail)
+				    try middle.transformingAttributes(with: fn)).appending(tail)
 			case (let l, .extent(let ctlr, let m), let r):
 				Swift.print("\(#function): segmented at extent")
 				let entirety = owner.startIndex..<owner.endIndex
-				guard let lXformed = l.transforming(entirety,
-				    with: fn) else {
+				guard let newl = try l.transformingAttributes(
+				    on: entirety, with: fn) else {
 					return nil
 				}
-				guard let mXformed = ctlr.transforming(entirety,
-				    in: m, with: fn) else {
+				guard let newm = try ctlr.transformingAttributes(
+				    on: entirety, in: m, with: fn) else {
 					return nil
 				}
-				guard let rXformed = r.transforming(entirety,
-				    with: fn) else {
+				guard let newr = try r.transformingAttributes(
+				    on: entirety, with: fn) else {
 					return nil
 				}
-				return head.appending(
-				    lXformed).appending(
-				    mXformed).appending(
-				    rXformed).appending(tail)
+				return head.appending(newl).appending(
+				    newm).appending(newr).appending(tail)
 			case (_, _?, _):
 				Swift.print("\(#function): non-extent center")
 				// m wasn't an extent for some reason
@@ -671,75 +674,62 @@ public extension Rope.Node {
 			    segmenting(atExtent: loExt) else {
 				return nil
 			}
-			guard let mXformed = ctlr.transforming(range, in: m,
-			    with: fn) else {
+			guard let newm = try ctlr.transformingAttributes(
+			    on: range, in: m, with: fn) else {
 				return nil
 			}
-			return l.appending(mXformed).appending(r)
+			return l.appending(newm).appending(r)
 		case (let loExt?, _):
 			guard case (let l, .extent(let ctlr, let m), let r)? =
 			    segmenting(atExtent: loExt) else {
 				return nil
 			}
-			guard let mXformed = ctlr.transforming(
-			    range.lowerBound..<owner.endIndex, in: m,
+			guard let newm = try ctlr.transformingAttributes(
+			    on: range.lowerBound..<owner.endIndex, in: m,
 			    with: fn) else {
 				return nil
 			}
-			guard let rXformed = r.transforming(
-			    owner.startIndex..<range.upperBound,
+			guard let newr = try r.transformingAttributes(
+			    on: owner.startIndex..<range.upperBound,
 			    with: fn) else {
 				return nil
 			}
-			return l.appending(mXformed).appending(rXformed)
+			return l.appending(newm).appending(newr)
 		case (nil, let hiExt?):
 			guard case (let l, .extent(let ctlr, let m), let r)? =
 			    segmenting(atExtent: hiExt) else {
 				return nil
 			}
-			guard let lXformed = l.transforming(
-			    range.lowerBound..<owner.endIndex,
+			guard let newl = try l.transformingAttributes(
+			    on: range.lowerBound..<owner.endIndex,
 			    with: fn) else {
 				return nil
 			}
-			guard let mXformed = ctlr.transforming(
-			    owner.startIndex..<range.upperBound, in: m,
+			guard let newm = try ctlr.transformingAttributes(
+			    on: owner.startIndex..<range.upperBound, in: m,
 			    with: fn) else {
 				return nil
 			}
-			return lXformed.appending(mXformed).appending(r)
+			return newl.appending(newm).appending(r)
 		}
 	}
-	func settingAttributes(_ attrs: Attributes) -> Self {
+	func transformingAttributes(with fn: (Attributes) -> Attributes)
+	    throws -> Self {
 		switch self {
-		case .cursor(let h, _):
-			return .cursor(h, attrs)
-		case .extent(let ctlr, let n):
-			return .extent(ctlr, n.settingAttributes(attrs))
+		case .cursor(let h, let attrs):
+			return .cursor(h, fn(attrs))
+		case .extent(_, _):
+			throw NodeModificationError.unexpectedExtent
 		case .concat(let l, _, _, _, let r, _):
-			return .nodes(l.settingAttributes(attrs),
-			              r.settingAttributes(attrs))
-		case .leaf(_, let content):
-			return .leaf(attrs, content)
+			return .nodes(try l.transformingAttributes(with: fn),
+			              try r.transformingAttributes(with: fn))
+		case .leaf(let attrs, let content):
+			return .leaf(fn(attrs), content)
 		case .empty, .index(_):
 			return self
 		}
 	}
-	func clearingAttributes() -> Self {
-		switch self {
-		case .cursor(let h, _):
-			return .cursor(h, [:])
-		case .extent(let ctlr, let n):
-			return .extent(ctlr, n.clearingAttributes())
-		case .concat(let l, _, _, _, let r, _):
-			return .nodes(l.clearingAttributes(),
-			              r.clearingAttributes())
-		case .leaf(_, let content):
-			return .leaf([:], content)
-		case .empty, .index(_):
-			return self
-		}
-	}
+	/*
 	func addingAttributes(_ nattrs: Attributes) -> Self {
 		switch self {
 		case .cursor(let h, var attrs):
@@ -757,22 +747,19 @@ public extension Rope.Node {
 			return self
 		}
 	}
-	func settingAttributes(_ attrs: Attributes, range: Range<Rope.Index>)
-	    -> Self? {
-		return transforming(range) { node in
-			node.settingAttributes(attrs)
-		}
-	}
-	func clearingAttributes(on r: Range<Rope.Index>) -> Self? {
-		return transforming(r) { node in
-			node.clearingAttributes()
-		}
-	}
 	func addingAttributes(_ attrs: Attributes, range: Range<Rope.Index>)
 	    -> Self? {
 		return transforming(range) { node in
 			node.addingAttributes(attrs)
 		}
+	}
+	*/
+	func settingAttributes(_ attrs: Attributes, range: Range<Rope.Index>)
+	    -> Self? {
+		return try? transformingAttributes(on: range) { _ in attrs }
+	}
+	func clearingAttributes(on r: Range<Rope.Index>) -> Self? {
+		return try? transformingAttributes(on: r) { _ in [:] }
 	}
 }
 
