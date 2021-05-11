@@ -21,7 +21,7 @@ extension Rope.Node.Offset {
 	public static func +(_ l: Self, _ r: Self) -> Self {
 		return Self(of: l.unitOffset + r.unitOffset)
 	}
-	static func -(_ l: Self, _ r: Self) -> Self {
+	public static func -(_ l: Self, _ r: Self) -> Self {
 		return Self(of: l.unitOffset - r.unitOffset)
 	}
 }
@@ -33,10 +33,10 @@ extension Rope.Node.Offset : Comparable {
 	public static func <(_ l: Self, _ r: Self) -> Bool {
 		return l.unitOffset < r.unitOffset
 	}
-	static func max(_ l: Self, _ r: Self) -> Self {
+	public static func max(_ l: Self, _ r: Self) -> Self {
 		return (l <= r) ? r : l
 	}
-	static func min(_ l: Self, _ r: Self) -> Self {
+	public static func min(_ l: Self, _ r: Self) -> Self {
 		return (l <= r) ? l : r
 	}
 }
