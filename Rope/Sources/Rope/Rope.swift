@@ -305,7 +305,7 @@ public class Rope<C : Content> : Collection {
 	public subscript(_ r: Range<Offset>) -> Content {
 		set(newValue) {
 			let ir = Range(r, in: self)
-			guard let newtop = top.replacing(ir,
+			guard let newtop = try? top.replacing(ir,
 			    with: newValue) else {
 				fatalError("No such range")
 			}
@@ -329,7 +329,7 @@ public class Rope<C : Content> : Collection {
 	}
 	public func setAttributes(_ attrs: Attributes, range r: Range<Offset>){
 		let ir = Range(r, in: self)
-		guard let newtop = top.settingAttributes(attrs, range: ir)
+		guard let newtop = try? top.settingAttributes(attrs, range: ir)
 		    else {
 			return
 		}
@@ -337,7 +337,7 @@ public class Rope<C : Content> : Collection {
 	}
 	public func clearAttributes(on r: Range<Offset>) {
 		let ir = Range(r, in: self)
-		guard let newtop = top.clearingAttributes(on: ir) else {
+		guard let newtop = try? top.clearingAttributes(on: ir) else {
 			return
 		}
 		top = newtop

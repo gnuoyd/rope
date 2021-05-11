@@ -560,12 +560,12 @@ class SegmentingAtExtent : XCTestCase {
 		return n
 	}
 	func testSegmentingEmbeddedExtents() {
-		XCTAssert(nil == extentInExtent.segmenting(atExtent: c[1]))
-		XCTAssert(nil == extentInExtent.segmenting(atExtent: c[2]))
+		XCTAssertThrowsError(try extentInExtent.segmenting(atExtent: c[1]))
+		XCTAssertThrowsError(try extentInExtent.segmenting(atExtent: c[2]))
 	}
 	func testSegmentingExtent() {
 		guard let (l, m, r) =
-		    extentInExtent.segmenting(atExtent: c[0]) else {
+		    try? extentInExtent.segmenting(atExtent: c[0]) else {
 			XCTFail("no such extent controller")
 			return
 		}
@@ -575,7 +575,7 @@ class SegmentingAtExtent : XCTestCase {
 	}
 	func testSegmentingExtentOnLeft() {
 		guard let (l, m, r) =
-		    extentOnLeft.segmenting(atExtent: c[1]) else {
+		    try? extentOnLeft.segmenting(atExtent: c[1]) else {
 			XCTFail("no such extent controller")
 			return
 		}
@@ -585,7 +585,8 @@ class SegmentingAtExtent : XCTestCase {
 	}
 	func testSegmentingExtentOnRight() {
 		guard let (l, m, r) =
-		    extentOnRight.segmenting(atExtent: c[1]) else {
+		    try? extentOnRight.segmenting(atExtent: c[1])
+		else {
 			XCTFail("no such extent controller")
 			return
 		}
@@ -595,7 +596,8 @@ class SegmentingAtExtent : XCTestCase {
 	}
 	func testSegmentingExtentInCenter() {
 		guard let (l, m, r) =
-		    extentInCenter.segmenting(atExtent: c[1]) else {
+		    try? extentInCenter.segmenting(atExtent: c[1])
+		else {
 			XCTFail("no such extent controller")
 			return
 		}
@@ -605,7 +607,8 @@ class SegmentingAtExtent : XCTestCase {
 	}
 	func testSegmentingMultipleExtentsInCenter1() {
 		guard let (l, m, r) =
-		    multipleExtentsInCenter.segmenting(atExtent: c[1]) else {
+		    try? multipleExtentsInCenter.segmenting(atExtent: c[1])
+		else {
 			XCTFail("no such extent controller")
 			return
 		}
@@ -615,7 +618,8 @@ class SegmentingAtExtent : XCTestCase {
 	}
 	func testSegmentingMultipleExtentsInCenter2() {
 		guard let (l, m, r) =
-		    multipleExtentsInCenter.segmenting(atExtent: c[3]) else {
+		    try? multipleExtentsInCenter.segmenting(atExtent: c[3])
+		else {
 			XCTFail("no such extent controller")
 			return
 		}
@@ -1665,7 +1669,7 @@ class NodeAttributes : XCTestCase {
 	}
 	func testSettingFrontAndMiddleAttributes() {
 		let ir = Range(Offset.unitRange(0..<8), in: rope)
-		guard let newn = rope.node.settingAttributes(
+		guard let newn = try? rope.node.settingAttributes(
 		    NodeAttributes.newAttrs, range: ir) else {
 			XCTFail("expected non-nil .settingAttributes()")
 			return
@@ -1679,7 +1683,7 @@ class NodeAttributes : XCTestCase {
 	}
 	static func helpTestSettingCentralAttributes(_ oldr: RSS) {
 		let ir = Range(Offset.unitRange(2..<9), in: oldr)
-		guard let newn = oldr.node.settingAttributes(
+		guard let newn = try? oldr.node.settingAttributes(
 		    NodeAttributes.newAttrs, range: ir) else {
 			XCTFail("expected non-nil .settingAttributes()")
 			return
@@ -1717,7 +1721,7 @@ class NodeAttributes : XCTestCase {
 	}
 	func testSettingBackAttributes() {
 		let ir = Range(Offset.unitRange(8..<12), in: rope)
-		guard let newn = rope.node.settingAttributes(
+		guard let newn = try? rope.node.settingAttributes(
 		    NodeAttributes.newAttrs, range: ir) else {
 			XCTFail("expected non-nil .settingAttributes()")
 			return
@@ -1730,7 +1734,7 @@ class NodeAttributes : XCTestCase {
 	}
 	func testSettingLastAttributes() {
 		let ir = Range(Offset.unitRange(11..<12), in: rope)
-		guard let newn = rope.node.settingAttributes(
+		guard let newn = try? rope.node.settingAttributes(
 		    NodeAttributes.newAttrs, range: ir) else {
 			XCTFail("expected non-nil .settingAttributes()")
 			return
