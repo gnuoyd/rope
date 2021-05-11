@@ -553,7 +553,7 @@ public extension Rope.Node {
 }
 
 public extension Rope.Node {
-	enum NodeModificationError : Error {
+	enum NodeError : Error {
 	case unexpectedExtent
 	case expectedExtent
 	case readonlyExtent
@@ -598,8 +598,8 @@ public extension Rope.Node {
 	func transformingAttributes(on range: Range<Rope.Index>,
 	    with fn: (Attributes) -> Attributes) throws -> Self {
 		let owner = range.lowerBound.owner
-		switch (extentsEnclosing(range.lowerBound)?.first,
-			extentsEnclosing(range.upperBound)?.first) {
+		switch (try extentsEnclosing(range.lowerBound).first,
+			try extentsEnclosing(range.upperBound).first) {
 		case (nil, nil):
 			/* Deal with an empty `range` where the lowerBound
 			 * is right of the upperBound---it can happen---but
@@ -643,7 +643,7 @@ public extension Rope.Node {
 				// TBD change return type of
 				// segmentingAtAnyExtent to avoid this
 				// impossible error case
-				throw NodeModificationError.expectedExtent
+				throw NodeError.expectedExtent
 			}
 		case (let loExt?, let hiExt?) where loExt == hiExt:
 			/* Deal with an empty `range` where the lowerBound
@@ -657,7 +657,7 @@ public extension Rope.Node {
 			}
 			guard case (let l, .extent(let ctlr, let m), let r) =
 			    try segmenting(atExtent: loExt) else {
-				throw NodeModificationError.expectedExtent
+				throw NodeError.expectedExtent
 			}
 			let newm = try ctlr.transformingAttributes(
 			    on: range, in: m, with: fn)
@@ -665,7 +665,7 @@ public extension Rope.Node {
 		case (let loExt?, _):
 			guard case (let l, .extent(let ctlr, let m), let r) =
 			    try segmenting(atExtent: loExt) else {
-				throw NodeModificationError.expectedExtent
+				throw NodeError.expectedExtent
 			}
 			let newm = try ctlr.transformingAttributes(
 			    on: range.lowerBound..<owner.endIndex, in: m,
@@ -677,7 +677,7 @@ public extension Rope.Node {
 		case (nil, let hiExt?):
 			guard case (let l, .extent(let ctlr, let m), let r) =
 			    try segmenting(atExtent: hiExt) else {
-				throw NodeModificationError.expectedExtent
+				throw NodeError.expectedExtent
 			}
 			let newl = try l.transformingAttributes(
 			    on: range.lowerBound..<owner.endIndex,
@@ -694,7 +694,7 @@ public extension Rope.Node {
 		case .cursor(let h, let attrs):
 			return .cursor(h, fn(attrs))
 		case .extent(_, _):
-			throw NodeModificationError.unexpectedExtent
+			throw NodeError.unexpectedExtent
 		case .concat(let l, _, _, _, let r, _):
 			return .nodes(try l.transformingAttributes(with: fn),
 			              try r.transformingAttributes(with: fn))
@@ -753,11 +753,11 @@ public extension Rope.Node {
 		switch self {
 		case .index(let w):
 			guard let label = w.get(), label == target else {
-				throw NodeModificationError.indexNotFound
+				throw NodeError.indexNotFound
 			}
 			return elt
 		case .cursor(_, _):
-			throw NodeModificationError.indexNotFound
+			throw NodeError.indexNotFound
 		case .extent(let ctlr, let r):
 			return try ctlr.node(r, inserting: elt, at: target)
 		case .concat(let l, _, _, _, let r, _):
@@ -768,10 +768,10 @@ public extension Rope.Node {
 				let newr = try r.inserting(elt, at: target)
 				return Self(left: l, right: newr)
 			} else {
-				throw NodeModificationError.indexNotFound
+				throw NodeError.indexNotFound
 			}
 		case .leaf(_, _), .empty:
-			throw NodeModificationError.indexNotFound
+			throw NodeError.indexNotFound
 		}
 	}
 }
@@ -1144,8 +1144,8 @@ public extension Rope.Node {
 		}
 	}
 	func extentsEnclosing(_ i: Rope.Index,
-	                      in controllers: [Rope.ExtentController] = [])
-	    -> [Rope.ExtentController]? {
+	                      under controllers: [Rope.ExtentController] = [])
+	    throws -> [Rope.ExtentController] {
 		switch (i, self) {
 		case (.start(_), _), (.end(_), _):
 			return controllers
@@ -1153,84 +1153,92 @@ public extension Rope.Node {
 			return controllers
 		case (.interior(_, let h), .concat(let l, _, _, _, let r, _))
 		    where self.contains(h):
-			return l.extentsEnclosing(i, in: controllers) ??
-			       r.extentsEnclosing(i, in: controllers)
+		    	do {
+				return try l.extentsEnclosing(i,
+				    under: controllers)
+			} catch NodeError.indexNotFound {
+			       return try r.extentsEnclosing(i,
+			           under: controllers)
+			}
 		case (.interior(_, _), .extent(let ctlr, let content)):
-			return content.extentsEnclosing(i,
-			    in: controllers + [ctlr])
+			return try content.extentsEnclosing(i,
+			    under: controllers + [ctlr])
 		default:
-			return nil
+			throw NodeError.indexNotFound
 		}
 	}
 	func extentsOpening(at i: Rope.Index,
 	                    in controllers: [Rope.ExtentController] = [])
-	    -> [Rope.ExtentController]? {
+	    throws -> [Rope.ExtentController] {
 		switch (self, i) {
 		case (_, .end(_)):
 			return []
 		case (_, .start(_)):
 			return []
 		case (.extent(let ctlr, let content), _):
-			return content.extentsOpening(at: i,
+			return try content.extentsOpening(at: i,
 			                              in: controllers + [ctlr])
 		case (.index(let w), .interior(_, let h)) where w.get() == h:
 			return controllers
 		case (.concat(let l, let midx, _, let labels, let r, _),
-		      .interior(_, let h)):
-		        guard labels.contains(h.id) else {
-				return nil
+		      .interior(_, let h)) where labels.contains(h.id):
+			do {
+				return try l.extentsOpening(at: i,
+				    in: controllers)
+			} catch NodeError.indexNotFound {
+				/* If there are characters left of `r`, or any
+				 * extents open left of `r`, then the
+				 * controllers we have seen on our way down,
+				 * `controllers`, do not open at `i`. Rather,
+				 * they open at an index on the left.  So
+				 * leave them out of the list.
+				 */
+				guard 0 == midx && l.labels.extentCount == 0
+				    else {
+					return try r.extentsOpening(at: i)
+				}
+				return try r.extentsOpening(at: i,
+				    in: controllers)
 			}
-			if let c = l.extentsOpening(at: i, in: controllers) {
-				return c
-			}
-			/* If there are characters left of `r`, or any
-			 * extents open left of `r`, then the controllers
-			 * we have seen on our way down, `controllers`, do
-			 * not open at `i`. Rather, they open at an index
-			 * on the left.  So leave them out of the list.
-			 */
-			guard 0 == midx && l.labels.extentCount == 0 else {
-				return r.extentsOpening(at: i)
-			}
-			return r.extentsOpening(at: i, in: controllers)
 		default:
-			return nil
+			throw NodeError.indexNotFound
 		}
 	}
 	func extentsClosing(at i: Rope.Index,
 	                    in controllers: [Rope.ExtentController] = [])
-	    -> [Rope.ExtentController]? {
+	    throws -> [Rope.ExtentController] {
 		switch (self, i) {
 		case (_, .end(_)):
 			return []
 		case (_, .start(_)):
 			return []
 		case (.extent(let ctlr, let content), _):
-			return content.extentsClosing(at: i,
+			return try content.extentsClosing(at: i,
 			                              in: controllers + [ctlr])
 		case (.index(let w), .interior(_, let h)) where w.get() == h:
 			return controllers
 		case (.concat(let l, let midx, _, let labels, let r, let w),
-		      .interior(_, let h)):
-		        guard labels.contains(h.id) else {
-				return nil
+		      .interior(_, let h)) where labels.contains(h.id):
+			do {
+				return try r.extentsClosing(at: i,
+				    in: controllers)
+			} catch NodeError.indexNotFound {
+				/* If there are characters right of `l`, or any
+				 * extents open right of `l`, then the
+				 * controllers we have seen on our way down,
+				 * `controllers`, do not close at `i`. Rather,
+				 * they close at an index on the right.  So
+				 * leave them out of the list.
+				 */
+				guard midx == w.unitOffset &&
+				      r.labels.extentCount == 0 else {
+					return try l.extentsClosing(at: i)
+				}
+				return try l.extentsClosing(at: i,
+				    in: controllers)
 			}
-			if let c = r.extentsClosing(at: i, in: controllers) {
-				return c
-			}
-			/* If there are characters right of `l`, or any
-			 * extents open right of `l`, then the controllers
-			 * we have seen on our way down, `controllers`, do
-			 * not close at `i`. Rather, they close at an index
-			 * on the right.  So leave them out of the list.
-			 */
-			guard midx == w.unitOffset &&
-			      r.labels.extentCount == 0 else {
-				return l.extentsClosing(at: i)
-			}
-			return l.extentsClosing(at: i, in: controllers)
 		default:
-			return nil
+			throw NodeError.indexNotFound
 		}
 	}
 	func element(at i: Offset) -> Element {
@@ -1502,7 +1510,7 @@ public extension Rope.Node {
 			}
 		case (.cursor(_, _), _), (.empty, _), (.index(_), _),
 		     (.leaf(_, _), _) where rightSibling == .empty:
-			throw NodeModificationError.indexNotFound
+			throw NodeError.indexNotFound
 		default:
 			return try rightSibling.splitting(leftSibling:
 			    leftSibling.appending(self), at: boundary,
@@ -1589,8 +1597,8 @@ public extension Rope.Node {
 	func replacing(_ range: Range<Rope.Index>, with replacement: Content)
 	    throws -> Self {
 		let owner = range.lowerBound.owner
-		switch (extentsEnclosing(range.lowerBound)?.first,
-			extentsEnclosing(range.upperBound)?.first) {
+		switch (try extentsEnclosing(range.lowerBound).first,
+			try extentsEnclosing(range.upperBound).first) {
 		case (nil, nil):
 			/* Deal with an empty `range` where the lowerBound
 			 * is right of the upperBound---it can happen---but
@@ -1629,7 +1637,7 @@ public extension Rope.Node {
 				    Self(content: replacement)).appending(
 				    rReplaced).appending(tail)
 			case (_, _?, _):
-				throw NodeModificationError.expectedExtent
+				throw NodeError.expectedExtent
 			}
 		case (let loExt?, let hiExt?) where loExt == hiExt:
 			/* Deal with an empty `range` where the lowerBound
@@ -1642,7 +1650,7 @@ public extension Rope.Node {
 			}
 			guard case (let l, .extent(let ctlr, let m), let r) =
 			    try segmenting(atExtent: loExt) else {
-				throw NodeModificationError.expectedExtent
+				throw NodeError.expectedExtent
 			}
 			let mReplaced = try ctlr.replacing(range, in: m,
 			    with: replacement)
@@ -1650,7 +1658,7 @@ public extension Rope.Node {
 		case (let loExt?, _):
 			guard case (let l, .extent(let ctlr, let m), let r) =
 			    try segmenting(atExtent: loExt) else {
-				throw NodeModificationError.expectedExtent
+				throw NodeError.expectedExtent
 			}
 			let mReplaced = try ctlr.replacing(
 			    range.lowerBound..<owner.endIndex, in: m,
@@ -1662,7 +1670,7 @@ public extension Rope.Node {
 		case (nil, let hiExt?):
 			guard case (let l, .extent(let ctlr, let m), let r) =
 			    try segmenting(atExtent: hiExt) else {
-				throw NodeModificationError.expectedExtent
+				throw NodeError.expectedExtent
 			}
 			let lReplaced = try l.replacing(
 			    range.lowerBound..<owner.endIndex,
@@ -1689,7 +1697,7 @@ public extension Rope.Node {
 			}
 		case .cursor(_, _), .empty, .extent(_, _), .index(_),
 		     .leaf(_, _):
-			throw NodeModificationError.extentNotFound
+			throw NodeError.extentNotFound
 		}
 	}
 	func segmentingAtAnyExtent(leftSibling: Self = .empty)
@@ -1728,7 +1736,7 @@ public extension Rope.Node {
 		}
 	}
 	func indexingFirstExtent(after index: Rope.Index,
-	    label: Label) -> Self? {
+	    label: Label) throws -> Self? {
 		/* If extents enclose `index`, then we are about to split
 		 * an extent.  That mustn't happen.  Instead, the operation
 		 * that the caller would like to perform
@@ -1736,7 +1744,7 @@ public extension Rope.Node {
 		 * first enclosing extent.  Return nil to prevent a split
 		 * from occurring.
 		 */
-		guard extentsEnclosing(index)?.isEmpty ?? false else {
+		guard try extentsEnclosing(index).isEmpty else {
 			return nil
 		}
 		switch index {

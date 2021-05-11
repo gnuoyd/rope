@@ -661,7 +661,7 @@ class RopeIndexedControllerPaths: NestedExtentBase {
 	}
 	func testControllerPaths() {
 		for (i, expected) in zip(rope.indices, expectations) {
-			XCTAssert(rope.extentsEnclosing(i) == expected)
+			XCTAssert(try rope.extentsEnclosing(i) == expected)
 		}
 	}
 	func testForwardClimbIn() {
@@ -874,24 +874,26 @@ class ExtentsOpeningClosing : XCTestCase {
 		return r
 	}
 	func testClosingEmpty() {
-		XCTAssert(empty.extentsClosing(at: empty.startIndex) == [])
-		XCTAssert(empty.extentsClosing(at: empty.endIndex) == [])
+		XCTAssert(try empty.extentsClosing(at: empty.startIndex) == [])
+		XCTAssert(try empty.extentsClosing(at: empty.endIndex) == [])
 	}
 	func testOpeningEmpty() {
-		XCTAssert(empty.extentsOpening(at: empty.startIndex) == [])
-		XCTAssert(empty.extentsOpening(at: empty.endIndex) == [])
+		XCTAssert(try empty.extentsOpening(at: empty.startIndex) == [])
+		XCTAssert(try empty.extentsOpening(at: empty.endIndex) == [])
 	}
 	func testClosingSimple() {
 		let middle = simple.index(after: simple.startIndex)
-		XCTAssert(simple.extentsClosing(at: simple.startIndex) == [])
-		XCTAssert(simple.extentsClosing(at: middle) == [simpleCtlr])
-		XCTAssert(simple.extentsClosing(at: simple.endIndex) == [])
+		XCTAssert(try simple.extentsClosing(at: simple.startIndex) ==
+		    [])
+		XCTAssert(try simple.extentsClosing(at: middle) == [simpleCtlr])
+		XCTAssert(try simple.extentsClosing(at: simple.endIndex) == [])
 	}
 	func testOpeningSimple() {
 		let middle = simple.index(after: simple.startIndex)
-		XCTAssert(simple.extentsOpening(at: simple.startIndex) == [])
-		XCTAssert(simple.extentsOpening(at: middle) == [simpleCtlr])
-		XCTAssert(simple.extentsClosing(at: simple.endIndex) == [])
+		XCTAssert(try simple.extentsOpening(at: simple.startIndex) ==
+		    [])
+		XCTAssert(try simple.extentsOpening(at: middle) == [simpleCtlr])
+		XCTAssert(try simple.extentsClosing(at: simple.endIndex) == [])
 	}
 	func testClosingComplex() {
 		let expectations = [
@@ -927,7 +929,8 @@ class ExtentsOpeningClosing : XCTestCase {
 		    []]		// ()(a(b)c())(((def)))(((g)h)i)*
 
 		for (idx, expected) in zip(cplx.indices, expectations) {
-			guard let found = cplx.extentsClosing(at: idx) else {
+			guard let found = try? cplx.extentsClosing(at: idx)
+			    else {
 				XCTFail("no such index")
 				continue
 			}
@@ -973,7 +976,8 @@ class ExtentsOpeningClosing : XCTestCase {
 		    []]		// ()(a(b)c())(((def)))(((g)h)i)*
 
 		for (idx, expected) in zip(cplx.indices, expectations) {
-			guard let found = cplx.extentsOpening(at: idx) else {
+			guard let found = try? cplx.extentsOpening(at: idx)
+			    else {
 				XCTFail("no such index")
 				continue
 			}
