@@ -48,61 +48,45 @@ class IndexOrder: XCTestCase {
 
 class NestedExtentBase : XCTestCase {
 	let c = [ECSS(), ECSS(), ECSS()]
-	var _rope: RSS? = nil
-	var rope: RSS {
-		if let r = _rope {
-			return r
-		}
-		// (abc(def(ghi)))
-		// 000000000000000
-		//     1111111111
-		//         22222
-		let r: RSS = Rope(with:
+	// (abc(def(ghi)))
+	// 000000000000000
+	//     1111111111
+	//         22222
+	lazy var rope: RSS = Rope(with:
 		    .extent(under: c[0],
 		            .text("abc"),
 			    .extent(under: c[1],
 			            .text("def"),
 				    .extent(under: c[2],
 				            .text("ghi")))))
-		_rope = r
-		return r
-	}
 }
 
 class IndexedExtentBase : XCTestCase {
 	let c = [ECSS(), ECSS(), ECSS()]
 	static let indices: ClosedRange<Int> = 0...9
 	let l = Array<Label>(indices.map { _ in Label() })
-	var _rope: RSS? = nil
-	var rope: RSS {
-		if let r = _rope {
-			return r
-		}
-		// (abc(def(ghi)))
-		// 000000000000000
-		//     1111111111
-		//         22222
-		// *(*abc*(*def*(*ghi*)*)*)*
-		let r: RSS = Rope(
-		    with: .nodes(.index(label: l[0]),
-		                 .extent(under: c[0],
-		                     .index(label: l[1]),
-				     .text("abc"),
-				     .index(label: l[2]),
-				     .extent(under: c[1],
-				         .index(label: l[3]),
-				         .text("def"),
-				         .index(label: l[4]),
-					 .extent(under: c[2],
-					     .index(label: l[5]),
-					     .text("ghi"),
-					     .index(label: l[6])),
-					 .index(label: l[7])),
-					 .index(label: l[8])),
-				 .index(label: l[9])))
-		_rope = r
-		return r
-	}
+	// (abc(def(ghi)))
+	// 000000000000000
+	//     1111111111
+	//         22222
+	// *(*abc*(*def*(*ghi*)*)*)*
+	lazy var rope: RSS = Rope(with:
+	    .nodes(.index(label: l[0]),
+		   .extent(under: c[0],
+		       .index(label: l[1]),
+		       .text("abc"),
+		       .index(label: l[2]),
+		       .extent(under: c[1],
+		           .index(label: l[3]),
+		           .text("def"),
+		           .index(label: l[4]),
+		           .extent(under: c[2],
+		               .index(label: l[5]),
+		               .text("ghi"),
+		               .index(label: l[6])),
+		           .index(label: l[7])),
+		           .index(label: l[8])),
+		   .index(label: l[9])))
 	func testInsertingFirstIndex() {
 		XCTAssert(rope.firstIndex(inExtent: c[0]) ==
 		          .interior(of: rope, label: l[1]))
@@ -139,59 +123,32 @@ class IndexedExtentBase : XCTestCase {
 
 class DirectSelection : XCTestCase {
 	let c = [ECSS(), ECSS(), ECSS(), ECSS()]
-	var _abc: RSS? = nil
-	var _abcdef: RSS? = nil
-	var _pqrs: RSS? = nil
-	var _wxyz: RSS? = nil
 	// (a)b(c)
-	var abc: RSS {
-		if let r = _abc {
-			return r
-		}
-		let r: RSS = Rope(with: .nodes(.extent(under: c[0], .text("a")),
-				     .text("b"),
-				     .extent(under: c[1], .text("c"))))
-		_abc = r
-		return r
-	}
+	lazy var abc: RSS = Rope(with:
+	    .nodes(.extent(under: c[0], .text("a")), .text("b"),
+	           .extent(under: c[1], .text("c"))))
 	// w(x(y(z)))
-	var wxyz: RSS {
-		if let r = _wxyz {
-			return r
-		}
-		let r: RSS = Rope(with: .nodes(.text("w"),
-		    .extent(under: c[0], .text("x"),
-		            .extent(under: c[1], .text("y"),
-			            .extent(under: c[2], .text("z"))))))
-		_wxyz = r
-		return r
-	}
+	lazy var wxyz: RSS = Rope(with:
+	    .nodes(.text("w"),
+		   .extent(under: c[0],
+		       .text("x"),
+		       .extent(under: c[1],
+		           .text("y"),
+			   .extent(under: c[2], .text("z"))))))
 	// (()(a)b(cd)ef)
-	var abcdef: RSS {
-		if let r = _abcdef {
-			return r
-		}
-		let r: RSS = Rope(with:
-		    .extent(under: c[0],
-		        .extent(under: c[1], .empty),
-		        .extent(under: c[2], .text("a")),
-			.text("b"),
-		        .extent(under: c[3], .text("cd")),
-			.text("ef")))
-		_abcdef = r
-		return r
-	}
+	lazy var abcdef: RSS = Rope(with:
+	    .extent(under: c[0],
+	        .extent(under: c[1], .empty),
+	        .extent(under: c[2], .text("a")),
+	        .text("b"),
+	        .extent(under: c[3], .text("cd")),
+	        .text("ef")))
 	// (p(q)r)(s)
-	var pqrs: RSS {
-		if let r = _pqrs {
-			return r
-		}
-		let r: RSS = Rope(with: .nodes(.extent(under: c[0], .text("p"),
-		    .extent(under: c[1], .text("q")), .text("r")),
-				     .extent(under: c[2], .text("s"))))
-		_pqrs = r
-		return r
-	}
+	lazy var pqrs: RSS = Rope(with:
+	    .nodes(.extent(under: c[0], .text("p"),
+	           .extent(under: c[1], .text("q")),
+		   .text("r")),
+		   .extent(under: c[2], .text("s"))))
 	func testDirectedWxyz0() {
 		let start = wxyz.startIndex
 		let end = wxyz.index(before: wxyz.endIndex)
@@ -448,22 +405,14 @@ class DirectSelection : XCTestCase {
 
 class IndexOffsetBy : XCTestCase {
 	let c = [ECSS(), ECSS(), ECSS(), ECSS()]
-	var _abcdef: RSS? = nil
-	var abcdef: RSS {
-		if let r = _abcdef {
-			return r
-		}
-		// (()(a)b(cd)ef)
-		let r: RSS = Rope(with:
+	// (()(a)b(cd)ef)
+	lazy var abcdef: RSS = Rope(with:
 		    .extent(under: c[0],
 		        .extent(under: c[1], .empty),
 		        .extent(under: c[2], .text("a")),
 			.text("b"),
 		        .extent(under: c[3], .text("cd")),
 			.text("ef")))
-		_abcdef = r
-		return r
-	}
 	func testStart() {
 		XCTAssert(abcdef.index(abcdef.startIndex, offsetBy: 0) ==
 		          abcdef.startIndex)
@@ -499,71 +448,18 @@ class SegmentingAtExtent : XCTestCase {
 	var _innermostExtent: NSS? = nil
 	var _innerExtent: NSS? = nil
 	var _otherExtent: NSS? = nil
-	var innermostExtent: NSS {
-		if let n = _innermostExtent {
-			return n
-		}
-		let n: NSS = .extent(under: c[2], .text("ghi"))
-		_innermostExtent = n
-		return n
-	}
-	var innerExtent: NSS {
-		if let n = _innerExtent {
-			return n
-		}
-		let n: NSS = .extent(under: c[1], .text("def"), innermostExtent)
-		_innerExtent = n
-		return n
-	}
-	var otherExtent: NSS {
-		if let n = _otherExtent {
-			return n
-		}
-		let n: NSS = .extent(under: c[3], .text("012"))
-		_otherExtent = n
-		return n
-	}
-	var extentInExtent: NSS {
-		if let n = _extentInExtent {
-			return n
-		}
-		let n: NSS = .extent(under: c[0], .text("abc"), innerExtent)
-		_extentInExtent = n
-		return n
-	}
-	var extentOnRight: NSS {
-		if let n = _extentOnRight {
-			return n
-		}
-		let n: NSS = .nodes(.text("abc"), innerExtent)
-		_extentOnRight = n
-		return n
-	}
-	var extentOnLeft: NSS {
-		if let n = _extentOnLeft {
-			return n
-		}
-		let n: NSS = .nodes(innerExtent, .text("jkl"))
-		_extentOnLeft = n
-		return n
-	}
-	var multipleExtentsInCenter: NSS {
-		if let n = _multipleExtentsInCenter {
-			return n
-		}
-		let n: NSS = .nodes(.text("abc"), innerExtent, otherExtent,
-		                    .text("jkl"))
-		_multipleExtentsInCenter = n
-		return n
-	}
-	var extentInCenter: NSS {
-		if let n = _extentInCenter {
-			return n
-		}
-		let n: NSS = .nodes(.text("abc"), innerExtent, .text("jkl"))
-		_extentInCenter = n
-		return n
-	}
+	lazy var innermostExtent: NSS = .extent(under: c[2], .text("ghi"))
+	lazy var innerExtent: NSS =
+	    .extent(under: c[1], .text("def"), innermostExtent)
+	lazy var otherExtent: NSS = .extent(under: c[3], .text("012"))
+	lazy var extentInExtent: NSS =
+	    .extent(under: c[0], .text("abc"), innerExtent)
+	lazy var extentOnRight: NSS = .nodes(.text("abc"), innerExtent)
+	lazy var extentOnLeft: NSS = .nodes(innerExtent, .text("jkl"))
+	lazy var multipleExtentsInCenter: NSS =
+	    .nodes(.text("abc"), innerExtent, otherExtent, .text("jkl"))
+	lazy var extentInCenter: NSS =
+	    .nodes(.text("abc"), innerExtent, .text("jkl"))
 	func testSegmentingEmbeddedExtents() {
 		XCTAssertThrowsError(try extentInExtent.segmenting(atExtent: c[1]))
 		XCTAssertThrowsError(try extentInExtent.segmenting(atExtent: c[2]))
@@ -765,37 +661,22 @@ class RopeIndexedControllerPaths: NestedExtentBase {
 
 class UTF16IndexedControllerPaths: XCTestCase {
 	let c = [ECSS(), ECSS(), ECSS()]
-	var _tree: NSS? = nil
-	var tree: NSS {
-		if let t = _tree {
-			return t
-		}
-		let t: NSS = .extent(under: c[0],
+	lazy var tree: NSS = .extent(under: c[0],
 		                     .nodes(.text("abc"),
 				     .extent(under: c[1],
 				         .text("def"),
 					 .extent(under: c[2], .text("ghi")))))
-		_tree = t
-		return t
-	}
-	var _expectations: [[Label]]? = nil
-	var expectations: [[Label]] {
-		if let olde = _expectations {
-			return olde
-		}
-		let newe: [[Label]] = [[c[0]],
-					[c[0]],
-					[c[0]],
-					[c[0], c[1]],
-					[c[0], c[1]],
-					[c[0], c[1]],
-					[c[0], c[1], c[2]],
-					[c[0], c[1], c[2]],
-					[c[0], c[1], c[2]],
-					[c[0], c[1], c[2]]]
-		_expectations = newe
-		return newe
-	}
+	lazy var expectations: [[Label]] =
+	    [[c[0]],
+	     [c[0]],
+	     [c[0]],
+	     [c[0], c[1]],
+	     [c[0], c[1]],
+	     [c[0], c[1]],
+	     [c[0], c[1], c[2]],
+	     [c[0], c[1], c[2]],
+	     [c[0], c[1], c[2]],
+	     [c[0], c[1], c[2]]]
 	let indices: [Offset] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map { i in
 	    Offset(of: i)
 	}
@@ -808,20 +689,9 @@ class UTF16IndexedControllerPaths: XCTestCase {
 
 class WholeRangeUsingRopeIndices: XCTestCase {
 	let ctlr = ECSS()
-	var _expectations: [NSS]? = nil
-	var _r: RSS? = nil
-	var r: RSS {
-		get {
-			if let oldr = _r {
-				return oldr
-			}
-			let newr: RSS = Rope(with: 
-			    .nodes(.extent(under: ctlr, .text("abc")),
-			           .text("def")))
-			_r = newr
-			return newr
-		}
-	}
+	lazy var r: RSS = Rope(with: 
+	    .nodes(.extent(under: ctlr, .text("abc")),
+		   .text("def")))
 	func testLookupByRange() {
 		XCTAssert(r[r.startIndex..<r.endIndex] ~ r.node)
 	}
@@ -830,17 +700,7 @@ class WholeRangeUsingRopeIndices: XCTestCase {
 class ExtentsOpeningClosing : XCTestCase {
 	let simpleCtlr = ECSS()
 	let empty: RSS = Rope()
-	var _simple: RSS? = nil
-	var _cplx: RSS? = nil
-	var simple: RSS {
-		if let old = _simple {
-			return old
-		}
-		let r: RSS = Rope()
-		r.node = .extent(under: simpleCtlr, .empty)
-		_simple = r
-		return r
-	}
+	lazy var simple: RSS = Rope(with: .extent(under: simpleCtlr, .empty))
 	let c = [ECSS(),	// 0
 	         ECSS(),	// 1
 	         ECSS(),	// 2
@@ -851,33 +711,26 @@ class ExtentsOpeningClosing : XCTestCase {
 	         ECSS(),	// 7
 	         ECSS(),	// 8
 	         ECSS()]	// 9
-	var cplx: RSS {
-		if let old = _cplx {
-			return old
-		}
-		// ()(a(b)c())(((def)))(((g)h)i)
-		// 00111111111444444444777777777
-		//     222 33  5555555  888888
-		//              66666    999
-		let r: RSS = Rope(with:
-                    .nodes(.extent(under: c[0], .empty),
-                           .extent(under: c[1],
-                               .text("a"),
-                               .extent(under: c[2], .text("b")),
-                               .text("c"),
-                               .extent(under: c[3], .empty)),
-                           .extent(under: c[4],
-                               .extent(under: c[5],
-                                   .extent(under: c[6],
-                                       .text("def")))),
-                           .extent(under: c[7],
-                               .extent(under: c[8],
-                                   .extent(under: c[9], .text("g")),
-                                   .text("h")),
-                               .text("i"))))
-		_cplx = r
-		return r
-	}
+	// ()(a(b)c())(((def)))(((g)h)i)
+	// 00111111111444444444777777777
+	//     222 33  5555555  888888
+	//              66666    999
+	lazy var cplx: RSS = Rope(with:
+	    .nodes(.extent(under: c[0], .empty),
+		   .extent(under: c[1],
+		       .text("a"),
+		       .extent(under: c[2], .text("b")),
+		       .text("c"),
+		       .extent(under: c[3], .empty)),
+		   .extent(under: c[4],
+		       .extent(under: c[5],
+			   .extent(under: c[6],
+			       .text("def")))),
+		   .extent(under: c[7],
+		       .extent(under: c[8],
+			   .extent(under: c[9], .text("g")),
+			   .text("h")),
+		       .text("i"))))
 	func testClosingEmpty() {
 		XCTAssert(try empty.extentsClosing(at: empty.startIndex) == [])
 		XCTAssert(try empty.extentsClosing(at: empty.endIndex) == [])
@@ -1042,37 +895,17 @@ class EmptyishRopeIndices : XCTestCase {
 
 class ThreeUnitRangesUsingRopeIndices: XCTestCase {
 	let ctlr = ECSS()
-	var _expectations: [NSS]? = nil
-	var _r: RSS? = nil
-	var expectations: [NSS] {
-		get {
-			if let olde = _expectations {
-				return olde
-			}
-			let newe: [NSS] = [
-			    .extent(under: ctlr, .text("ab")),
-			    .extent(under: ctlr, .text("abc")),
-			    .extent(under: ctlr, .text("bc")),
-			    .nodes(.extent(under: ctlr, .text("c")),
-			         .text("d")),
-			    .nodes(.extent(under: ctlr, .empty), .text("de")),
-			    .text("def")]
-			_expectations = newe
-			return newe
-		}
-	}
-	var r: RSS {
-		get {
-			if let oldr = _r {
-				return oldr
-			}
-			let newr: RSS = Rope(with:
-			    .nodes(.extent(under: ctlr, .text("abc")),
-			           .text("def")))
-			_r = newr
-			return newr
-		}
-	}
+	lazy var expectations: [NSS] = [
+	    .extent(under: ctlr, .text("ab")),
+	    .extent(under: ctlr, .text("abc")),
+	    .extent(under: ctlr, .text("bc")),
+	    .nodes(.extent(under: ctlr, .text("c")),
+		 .text("d")),
+	    .nodes(.extent(under: ctlr, .empty), .text("de")),
+	    .text("def")]
+	lazy var r: RSS = Rope(with:
+	    .nodes(.extent(under: ctlr, .text("abc")),
+		   .text("def")))
 	func testLookupByRangesForward() {
 		var prev = r.startIndex
 		for (idx, expected) in zip(r.indices.dropFirst(3),
@@ -1097,38 +930,17 @@ class ThreeUnitRangesUsingRopeIndices: XCTestCase {
 
 class TwoUnitRangesUsingRopeIndices: XCTestCase {
 	let ctlr = ECSS()
-	var _expectations: [NSS]? = nil
-	var _r: RSS? = nil
-	var expectations: [NSS] {
-		get {
-			if let olde = _expectations {
-				return olde
-			}
-			let newe: [NSS] = [
-			    .extent(under: ctlr, .text("a")),
-			    .extent(under: ctlr, .text("ab")),
-			    .extent(under: ctlr, .text("bc")),
-			    .extent(under: ctlr, .text("c")),
-			    .nodes(.extent(under: ctlr, .empty),
-			           .text("d")),
-			    .text("de"),
-			    .text("ef")]
-			_expectations = newe
-			return newe
-		}
-	}
-	var r: RSS {
-		get {
-			if let oldr = _r {
-				return oldr
-			}
-			let newr: RSS = Rope()
-			newr.node = .nodes(.extent(under: ctlr, .text("abc")),
-			                 .text("def"))
-			_r = newr
-			return newr
-		}
-	}
+	lazy var expectations: [NSS] = [
+	    .extent(under: ctlr, .text("a")),
+	    .extent(under: ctlr, .text("ab")),
+	    .extent(under: ctlr, .text("bc")),
+	    .extent(under: ctlr, .text("c")),
+	    .nodes(.extent(under: ctlr, .empty),
+		   .text("d")),
+	    .text("de"),
+	    .text("ef")]
+	lazy var r: RSS = Rope(with:
+	    .nodes(.extent(under: ctlr, .text("abc")), .text("def")))
 	func testLookupByRangesForward() {
 		var prev = r.startIndex
 		for (idx, expected) in zip(r.indices.dropFirst(2),
@@ -1153,38 +965,18 @@ class TwoUnitRangesUsingRopeIndices: XCTestCase {
 
 class UnitRangesUsingRopeIndices: XCTestCase {
 	let ctlr = ECSS()
-	var _expectations: [NSS]? = nil
-	var _r: RSS? = nil
-	var expectations: [NSS] {
-		get {
-			if let olde = _expectations {
-				return olde
-			}
-			let newe: [NSS] = [.empty,
-			    .extent(under: ctlr, .empty),
-			    .extent(under: ctlr, .text("a")),
-			    .extent(under: ctlr, .text("b")),
-			    .extent(under: ctlr, .text("c")),
-			    .extent(under: ctlr, .empty),
-			    .text("d"),
-			    .text("e"),
-			    .text("f")]
-			_expectations = newe
-			return newe
-		}
-	}
-	var r: RSS {
-		get {
-			if let oldr = _r {
-				return oldr
-			}
-			let newr: RSS = Rope(with:
-			    .nodes(.extent(under: ctlr, .text("abc")),
-			           .text("def")))
-			_r = newr
-			return newr
-		}
-	}
+	lazy var expectations: [NSS] = [
+	    .empty,
+	    .extent(under: ctlr, .empty),
+	    .extent(under: ctlr, .text("a")),
+	    .extent(under: ctlr, .text("b")),
+	    .extent(under: ctlr, .text("c")),
+	    .extent(under: ctlr, .empty),
+	    .text("d"),
+	    .text("e"),
+	    .text("f")]
+	lazy var r: RSS = Rope(with:
+	    .nodes(.extent(under: ctlr, .text("abc")), .text("def")))
 	func testLookupByRangesForward() {
 		var prev = r.startIndex
 		for (idx, expected) in zip(r.indices, expectations) {
@@ -1208,36 +1000,16 @@ class UnitRangesUsingRopeIndices: XCTestCase {
 
 class LookupUsingRopeIndicesDerivedFromUTF16Offsets: XCTestCase {
 	let ctlr = ECSS()
-	var _expectations: [NSS]? = nil
-	var _r: RSS? = nil
-	var expectations: [NSS] {
-		get {
-			if let olde = _expectations {
-				return olde
-			}
-			let newe: [NSS] = [
-			    .extent(under: ctlr, .text("a")),
-			    .extent(under: ctlr, .text("b")),
-			    .extent(under: ctlr, .text("c")),
-			    .text("d"),
-			    .text("e"),
-			    .text("f")]
-			_expectations = newe
-			return newe
-		}
-	}
-	var r: RSS {
-		get {
-			if let oldr = _r {
-				return oldr
-			}
-			let newr: RSS = Rope(with:
-			    .nodes(.extent(under: ctlr, .text("abc")),
-			           .text("def")))
-			_r = newr
-			return newr
-		}
-	}
+	lazy var expectations: [NSS] = [
+	    .extent(under: ctlr, .text("a")),
+	    .extent(under: ctlr, .text("b")),
+	    .extent(under: ctlr, .text("c")),
+	    .text("d"),
+	    .text("e"),
+	    .text("f")]
+	lazy var r: RSS  = Rope(with:
+	    .nodes(.extent(under: ctlr, .text("abc")),
+		   .text("def")))
 	func testIterateElements() {
 		for (i, expected) in expectations.enumerated() {
 			let ofs = Offset(of: i)
@@ -1256,37 +1028,18 @@ class LookupUsingRopeIndicesDerivedFromUTF16Offsets: XCTestCase {
 
 class ExtentElementLookupUsingRopeIndices: XCTestCase {
 	let ctlr = ECSS()
-	var _expectations: [NSS]? = nil
-	var _r: RSS? = nil
-	var expectations: [NSS] {
-		get {
-			if let olde = _expectations {
-				return olde
-			}
-			let newe: [NSS] = [.empty,
-			    .extent(under: ctlr, .text("a")),
-			    .extent(under: ctlr, .text("b")),
-			    .extent(under: ctlr, .text("c")),
-			    .extent(under: ctlr, .empty),
-			    .text("d"),
-			    .text("e"),
-			    .text("f")]
-			_expectations = newe
-			return newe
-		}
-	}
-	var r: RSS {
-		get {
-			if let oldr = _r {
-				return oldr
-			}
-			let newr: RSS = Rope(with:
-			    .nodes(.extent(under: ctlr, .text("abc")),
-			           .text("def")))
-			_r = newr
-			return newr
-		}
-	}
+	lazy var expectations: [NSS] = [
+	    .empty,
+	    .extent(under: ctlr, .text("a")),
+	    .extent(under: ctlr, .text("b")),
+	    .extent(under: ctlr, .text("c")),
+	    .extent(under: ctlr, .empty),
+	    .text("d"),
+	    .text("e"),
+	    .text("f")]
+	lazy var r: RSS = Rope(with:
+	    .nodes(.extent(under: ctlr, .text("abc")),
+		   .text("def")))
 	func testElementsCount() {
 		XCTAssert(r.count == expectations.count)
 	}
@@ -1632,30 +1385,14 @@ class NodeAttributes : XCTestCase {
 	static let abc: NSS = .text("abc", attributes: frontAttrs)
 	static let defgh: NSS = .text("defgh", attributes: middleAttrs)
 	static let ijkl: NSS = .text("ijkl", attributes: backAttrs)
+	// (abc(def(ghi)))
+	// 000000000000000
+	//     1111111111
+	//         22222
 	let n: NSS = .nodes(abc, defgh, ijkl)
-	var _rope: RSS? = nil
-	var rope: RSS {
-		if let r = _rope {
-			return r
-		}
-		// (abc(def(ghi)))
-		// 000000000000000
-		//     1111111111
-		//         22222
-		let r: RSS = Rope(with: n)
-		_rope = r
-		return r
-	}
+	lazy var rope: RSS = Rope(with: n)
 	let ctlr = ECSS()
-	var _contained: RSS? = nil
-	var contained: RSS {
-		if let r = _contained {
-			return r
-		}
-		let r: RSS = Rope(with: .extent(under: ctlr, n))
-		_contained = r
-		return r
-	}
+	lazy var contained: RSS = Rope(with: .extent(under: ctlr, n))
 	func testFrontAttributes() {
 		let (attrs, range) = n.attributes(at: 0)
 		XCTAssert(Self.frontAttrs ~ attrs)
