@@ -34,52 +34,18 @@ func *(_ s: String, _ times: Int) -> String {
 	return s + s * (times - 1)
 }
 
-extension Rope.ExtentController {
-	func subrope(of content: Rope.Node, from: Rope.Node.Offset,
-	    tightly: Bool, depth: Int = 0) -> Rope.Node {
-		let subcontent = content.subrope(from: from, depth: depth)
-		return .extent(self, subcontent)
-	}
-	func subrope(of content: Rope.Node, upTo boundary: Rope.Node.Offset,
-	    tightly: Bool, depth: Int = 0) -> Rope.Node {
-		let subcontent = content.subrope(upTo: boundary, depth: depth)
-		return .extent(self, subcontent)
-	}
-	func subrope(of content: Rope.Node, after boundary: Rope.Index,
-	    depth: Int = 0) -> Rope.Node? {
-		guard let subcontent = content.subrope(after: boundary,
-		    depth: depth) else {
-			return nil
+extension Rope {
+	class ReadonlyExtentController : ExtentController {
+		override func transformingAttributes(
+		    on range: Range<Rope.Index>, in content: Rope.Node,
+		    with fn: (Attributes) -> Attributes) throws -> Rope.Node {
+			throw Rope.Node.NodeError.readonlyExtent
 		}
-		return .extent(self, subcontent)
-	}
-	func subrope(of content: Rope.Node, upTo boundary: Rope.Index,
-	    depth: Int = 0) -> Rope.Node? {
-		guard let subcontent = content.subrope(upTo: boundary,
-		    depth: depth) else {
-			return nil
+		override func replacing(_ range: Range<Rope.Index>,
+		    in content: Rope.Node,
+		    with replacement: Rope.Node.Content) throws -> Rope.Node {
+			throw Rope.Node.NodeError.readonlyExtent
 		}
-		return .extent(self, subcontent)
-	}
-	func node(_ content: Rope.Node, inserting elt: Rope.Node,
-	    at target: Label) throws -> Rope.Node {
-		let augmented = try content.inserting(elt, at: target)
-		return .extent(self, augmented)
-	}
-	func replacing(_ range: Range<Rope.Index>, in content: Rope.Node,
-	    with replacement: Rope.Node.Content) throws -> Rope.Node {
-		let replaced = try content.replacing(range, with: replacement)
-		return .extent(self, replaced)
-	}
-	/* TBD Make this transformingAttributes where `fn` maps from
-	 * attributes to attributes.
-	 */
-	func transformingAttributes(on range: Range<Rope.Index>,
-	    in content: Rope.Node,
-	    with fn: (Attributes) -> Attributes) throws -> Rope.Node {
-		let xformed = try content.transformingAttributes(on: range,
-		    with: fn)
-		return .extent(self, xformed)
 	}
 }
 
