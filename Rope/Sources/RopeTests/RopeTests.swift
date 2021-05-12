@@ -1415,49 +1415,47 @@ class NodeAttributes : XCTestCase {
 	}
 	func testSettingFrontAndMiddleAttributes() {
 		let ir = Range(Offset.unitRange(0..<8), in: rope)
-		guard let newn = try? rope.node.settingAttributes(
-		    NodeAttributes.newAttrs, range: ir) else {
-			XCTFail("expected non-nil .settingAttributes()")
-			return
+		XCTAssertNoThrow { [rope] in
+			let newn = try rope.node.settingAttributes(
+			    NodeAttributes.newAttrs, range: ir)
+			let (attrs, frontRange) = newn.attributes(at: 0)
+			XCTAssert(Self.newAttrs ~ attrs)
+			XCTAssert(frontRange == Offset.unitRange(0..<3))
+			let (_, middleRange) =
+			    newn.attributes(at: Offset(of: 3))
+			XCTAssert(middleRange == Offset.unitRange(3..<8))
 		}
-		let (attrs, frontRange) = newn.attributes(at: 0)
-		XCTAssert(Self.newAttrs ~ attrs)
-		XCTAssert(frontRange == Offset.unitRange(0..<3))
-		let (_, middleRange) =
-		    newn.attributes(at: Offset(of: 3))
-		XCTAssert(middleRange == Offset.unitRange(3..<8))
 	}
 	static func helpTestSettingCentralAttributes(_ oldr: RSS) {
 		let ir = Range(Offset.unitRange(2..<9), in: oldr)
-		guard let newn = try? oldr.node.settingAttributes(
-		    NodeAttributes.newAttrs, range: ir) else {
-			XCTFail("expected non-nil .settingAttributes()")
-			return
+		XCTAssertNoThrow { [oldr] in
+			let newn = try oldr.node.settingAttributes(
+			    NodeAttributes.newAttrs, range: ir)
+
+			let (frontAttrs, frontRange) = newn.attributes(at: 0)
+			XCTAssert(frontRange == Offset.unitRange(0..<2))
+			XCTAssert(Self.frontAttrs ~ frontAttrs)
+
+			let (midAttrs1, midRange1) =
+			    newn.attributes(at: Offset(of: 2))
+			XCTAssert(midRange1 == Offset.unitRange(2..<3))
+			XCTAssert(Self.newAttrs ~ midAttrs1)
+
+			let (midAttrs2, midRange2) =
+			    newn.attributes(at: Offset(of: 3))
+			XCTAssert(midRange2 == Offset.unitRange(3..<8))
+			XCTAssert(Self.newAttrs ~ midAttrs2)
+
+			let (midAttrs3, midRange3) =
+			    newn.attributes(at: Offset(of: 8))
+			XCTAssert(midRange3 == Offset.unitRange(8..<9))
+			XCTAssert(Self.newAttrs ~ midAttrs3)
+
+			let (backAttrs, backRange) =
+			    newn.attributes(at: Offset(of: 9))
+			XCTAssert(backRange == Offset.unitRange(9..<12))
+			XCTAssert(Self.backAttrs ~ backAttrs)
 		}
-
-		let (frontAttrs, frontRange) = newn.attributes(at: 0)
-		XCTAssert(frontRange == Offset.unitRange(0..<2))
-		XCTAssert(Self.frontAttrs ~ frontAttrs)
-
-		let (midAttrs1, midRange1) =
-		    newn.attributes(at: Offset(of: 2))
-		XCTAssert(midRange1 == Offset.unitRange(2..<3))
-		XCTAssert(Self.newAttrs ~ midAttrs1)
-
-		let (midAttrs2, midRange2) =
-		    newn.attributes(at: Offset(of: 3))
-		XCTAssert(midRange2 == Offset.unitRange(3..<8))
-		XCTAssert(Self.newAttrs ~ midAttrs2)
-
-		let (midAttrs3, midRange3) =
-		    newn.attributes(at: Offset(of: 8))
-		XCTAssert(midRange3 == Offset.unitRange(8..<9))
-		XCTAssert(Self.newAttrs ~ midAttrs3)
-
-		let (backAttrs, backRange) =
-		    newn.attributes(at: Offset(of: 9))
-		XCTAssert(backRange == Offset.unitRange(9..<12))
-		XCTAssert(Self.backAttrs ~ backAttrs)
 	}
 	func testSettingCentralAttributes() {
 		NodeAttributes.helpTestSettingCentralAttributes(rope)
@@ -1467,29 +1465,29 @@ class NodeAttributes : XCTestCase {
 	}
 	func testSettingBackAttributes() {
 		let ir = Range(Offset.unitRange(8..<12), in: rope)
-		guard let newn = try? rope.node.settingAttributes(
-		    NodeAttributes.newAttrs, range: ir) else {
-			XCTFail("expected non-nil .settingAttributes()")
-			return
+		XCTAssertNoThrow { [self] in
+			let newn = try rope.node.settingAttributes(
+			    NodeAttributes.newAttrs, range: ir)
+			let (attrs, range) = newn.attributes(at: Offset(of: 8))
+			XCTAssert(Self.newAttrs ~ attrs)
+			XCTAssert(range == Offset.unitRange(8..<12),
+			    "actual range \(range) " +
+			    "newn \(newn.debugDescription) " +
+			    "n \(n.debugDescription)")
 		}
-		let (attrs, range) = newn.attributes(at: Offset(of: 8))
-		XCTAssert(Self.newAttrs ~ attrs)
-		XCTAssert(range == Offset.unitRange(8..<12),
-		    "actual range \(range) newn \(newn.debugDescription) " +
-		    "n \(n.debugDescription)")
 	}
 	func testSettingLastAttributes() {
 		let ir = Range(Offset.unitRange(11..<12), in: rope)
-		guard let newn = try? rope.node.settingAttributes(
-		    NodeAttributes.newAttrs, range: ir) else {
-			XCTFail("expected non-nil .settingAttributes()")
-			return
+		XCTAssertNoThrow { [rope] in
+			let newn = try rope.node.settingAttributes(
+			    NodeAttributes.newAttrs, range: ir)
+			let (attrs, range) = newn.attributes(at: Offset(of: 11))
+			XCTAssert(Self.newAttrs ~ attrs)
+			XCTAssert(range == Offset.unitRange(11..<12))
+			let (_, abuttingRange) =
+			    newn.attributes(at: Offset(of: 8))
+			XCTAssert(abuttingRange == Offset.unitRange(8..<11))
 		}
-		let (attrs, range) = newn.attributes(at: Offset(of: 11))
-		XCTAssert(Self.newAttrs ~ attrs)
-		XCTAssert(range == Offset.unitRange(11..<12))
-		let (_, abuttingRange) = newn.attributes(at: Offset(of: 8))
-		XCTAssert(abuttingRange == Offset.unitRange(8..<11))
 	}
 }
 
