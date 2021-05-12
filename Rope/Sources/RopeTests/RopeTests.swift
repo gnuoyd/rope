@@ -7,13 +7,18 @@ import XCTest
 typealias RSS = Rope<Substring>
 typealias NSS = RSS.Node
 typealias ECSS = RSS.ExtentController
+typealias ROCSS = RSS.ExtentController
 typealias Offset = NSS.Offset
 
 infix operator ⨯: MultiplicationPrecedence
 
 func ⨯<L, R, Lseq : Sequence, Rseq : Sequence>(_ l: Lseq, _ r: Rseq)
-    -> LazySequence<FlattenSequence<LazyMapSequence<Lseq, LazyMapSequence<Rseq, (L, R)>>>>  where Lseq.Element == L, Rseq.Element == R {
-	return l.lazy.flatMap({ lelt in r.lazy.map({ relt in (lelt, relt) })})
+    -> LazySequence<
+        FlattenSequence<LazyMapSequence<Lseq, LazyMapSequence<Rseq, (L, R)>>>>
+    where Lseq.Element == L, Rseq.Element == R {
+	return l.lazy.flatMap { lelt in
+		r.lazy.map { relt in (lelt, relt) }
+	}
 }
 
 class IndexOrder: XCTestCase {
