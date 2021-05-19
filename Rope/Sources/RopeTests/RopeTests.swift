@@ -6,8 +6,8 @@ import XCTest
 
 typealias RSS = Rope<Substring>
 typealias NSS = RSS.Node
-typealias ECSS = RSS.ExtentController
-typealias ROCSS = RSS.ExtentController
+typealias RWEC = RSS.ExtentController
+typealias ROEC = RSS.ReadonlyExtentController
 typealias Offset = NSS.Offset
 
 infix operator ⨯: MultiplicationPrecedence
@@ -47,7 +47,7 @@ class IndexOrder: XCTestCase {
 }
 
 class NestedExtentBase : XCTestCase {
-	let c = [ECSS(), ECSS(), ECSS()]
+	let c = [RWEC(), RWEC(), RWEC()]
 	// (abc(def(ghi)))
 	// 000000000000000
 	//     1111111111
@@ -62,7 +62,7 @@ class NestedExtentBase : XCTestCase {
 }
 
 class IndexedExtentBase : XCTestCase {
-	let c = [ECSS(), ECSS(), ECSS()]
+	let c = [RWEC(), RWEC(), RWEC()]
 	static let indices: ClosedRange<Int> = 0...9
 	let l = Array<Label>(indices.map { _ in Label() })
 	// (abc(def(ghi)))
@@ -122,7 +122,7 @@ class IndexedExtentBase : XCTestCase {
 }
 
 class DirectSelection : XCTestCase {
-	let c = [ECSS(), ECSS(), ECSS(), ECSS()]
+	let c = [RWEC(), RWEC(), RWEC(), RWEC()]
 	// (a)b(c)
 	lazy var abc: RSS = Rope(with:
 	    .nodes(.extent(under: c[0], .text("a")), .text("b"),
@@ -404,7 +404,7 @@ class DirectSelection : XCTestCase {
 }
 
 class IndexOffsetBy : XCTestCase {
-	let c = [ECSS(), ECSS(), ECSS(), ECSS()]
+	let c = [RWEC(), RWEC(), RWEC(), RWEC()]
 	// (()(a)b(cd)ef)
 	lazy var abcdef: RSS = Rope(with:
 		    .extent(under: c[0],
@@ -439,7 +439,7 @@ class IndexOffsetBy : XCTestCase {
 }
 
 class SegmentingAtExtent : XCTestCase {
-	let c: [ECSS] = [ECSS(), ECSS(), ECSS(), ECSS()]
+	let c: [RWEC] = [RWEC(), RWEC(), RWEC(), RWEC()]
 	var _extentInExtent: NSS? = nil
 	var _extentInCenter: NSS? = nil
 	var _multipleExtentsInCenter: NSS? = nil
@@ -660,7 +660,7 @@ class RopeIndexedControllerPaths: NestedExtentBase {
 }
 
 class UTF16IndexedControllerPaths: XCTestCase {
-	let c = [ECSS(), ECSS(), ECSS()]
+	let c = [RWEC(), RWEC(), RWEC()]
 	lazy var tree: NSS = .extent(under: c[0],
 		                     .nodes(.text("abc"),
 				     .extent(under: c[1],
@@ -688,7 +688,7 @@ class UTF16IndexedControllerPaths: XCTestCase {
 }
 
 class WholeRangeUsingRopeIndices: XCTestCase {
-	let ctlr = ECSS()
+	let ctlr = RWEC()
 	lazy var r: RSS = Rope(with: 
 	    .nodes(.extent(under: ctlr, .text("abc")),
 		   .text("def")))
@@ -698,19 +698,19 @@ class WholeRangeUsingRopeIndices: XCTestCase {
 }
 
 class ExtentsOpeningClosing : XCTestCase {
-	let simpleCtlr = ECSS()
+	let simpleCtlr = RWEC()
 	let empty: RSS = Rope()
 	lazy var simple: RSS = Rope(with: .extent(under: simpleCtlr, .empty))
-	let c = [ECSS(),	// 0
-	         ECSS(),	// 1
-	         ECSS(),	// 2
-	         ECSS(),	// 3
-	         ECSS(),	// 4
-	         ECSS(),	// 5
-	         ECSS(),	// 6
-	         ECSS(),	// 7
-	         ECSS(),	// 8
-	         ECSS()]	// 9
+	let c = [RWEC(),	// 0
+	         RWEC(),	// 1
+	         RWEC(),	// 2
+	         RWEC(),	// 3
+	         RWEC(),	// 4
+	         RWEC(),	// 5
+	         RWEC(),	// 6
+	         RWEC(),	// 7
+	         RWEC(),	// 8
+	         RWEC()]	// 9
 	// ()(a(b)c())(((def)))(((g)h)i)
 	// 00111111111444444444777777777
 	//     222 33  5555555  888888
@@ -846,10 +846,10 @@ class ExtentsOpeningClosing : XCTestCase {
 }
 
 class EmptyishRopeIndices : XCTestCase {
-	let one: RSS = Rope(with: .extent(under: ECSS(), .empty))
+	let one: RSS = Rope(with: .extent(under: RWEC(), .empty))
 	let two: RSS = Rope(with:
-	    .nodes(.extent(under: ECSS(), .empty),
-		   .extent(under: ECSS(), .empty)))
+	    .nodes(.extent(under: RWEC(), .empty),
+		   .extent(under: RWEC(), .empty)))
 	let empty: RSS = Rope()
 	func testStartIndexEmpty() {
 		XCTAssert(empty.startIndex == .end(of: empty))
@@ -894,7 +894,7 @@ class EmptyishRopeIndices : XCTestCase {
 }
 
 class ThreeUnitRangesUsingRopeIndices: XCTestCase {
-	let ctlr = ECSS()
+	let ctlr = RWEC()
 	lazy var expectations: [NSS] = [
 	    .extent(under: ctlr, .text("ab")),
 	    .extent(under: ctlr, .text("abc")),
@@ -929,7 +929,7 @@ class ThreeUnitRangesUsingRopeIndices: XCTestCase {
 }
 
 class TwoUnitRangesUsingRopeIndices: XCTestCase {
-	let ctlr = ECSS()
+	let ctlr = RWEC()
 	lazy var expectations: [NSS] = [
 	    .extent(under: ctlr, .text("a")),
 	    .extent(under: ctlr, .text("ab")),
@@ -964,7 +964,7 @@ class TwoUnitRangesUsingRopeIndices: XCTestCase {
 }
 
 class UnitRangesUsingRopeIndices: XCTestCase {
-	let ctlr = ECSS()
+	let ctlr = RWEC()
 	lazy var expectations: [NSS] = [
 	    .empty,
 	    .extent(under: ctlr, .empty),
@@ -999,7 +999,7 @@ class UnitRangesUsingRopeIndices: XCTestCase {
 }
 
 class LookupUsingRopeIndicesDerivedFromUTF16Offsets: XCTestCase {
-	let ctlr = ECSS()
+	let ctlr = RWEC()
 	lazy var expectations: [NSS] = [
 	    .extent(under: ctlr, .text("a")),
 	    .extent(under: ctlr, .text("b")),
@@ -1027,7 +1027,7 @@ class LookupUsingRopeIndicesDerivedFromUTF16Offsets: XCTestCase {
 }
 
 class ExtentElementLookupUsingRopeIndices: XCTestCase {
-	let ctlr = ECSS()
+	let ctlr = RWEC()
 	lazy var expectations: [NSS] = [
 	    .empty,
 	    .extent(under: ctlr, .text("a")),
@@ -1391,7 +1391,7 @@ class NodeAttributes : XCTestCase {
 	//         22222
 	let n: NSS = .nodes(abc, defgh, ijkl)
 	lazy var rope: RSS = Rope(with: n)
-	let ctlr = ECSS()
+	let ctlr = RWEC()
 	lazy var contained: RSS = Rope(with: .extent(under: ctlr, n))
 	func testFrontAttributes() {
 		let (attrs, range) = n.attributes(at: 0)
