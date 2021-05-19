@@ -405,9 +405,9 @@ extension Rope {
 }
 
 extension Rope {
-	public convenience init(with node: Node) {
+	public convenience init(with nodes: Node...) {
 		self.init()
-		top = node
+		top = .tree(from: nodes)
 	}
 }
 
