@@ -1942,3 +1942,90 @@ class CompareDisparateIndicesComplicatedRopes: NestedExtentBase {
 		}
 	}
 }
+
+class ExtentReplacementsBase : XCTestCase {
+	let rwc = [RWEC(), RWEC(), RWEC()]
+	let roc = [ROEC(), ROEC(), ROEC()]
+	// read-only inner extent, abc(defgh)ijk
+	lazy var innerRO: NSS = .nodes(
+	    .text("abc"),
+	    .extent(under: roc[1], .text("defgh")),
+	    .text("ijk"))
+	// read-write inner extent, abc(defgh)ijk
+	lazy var innerRW: NSS = .nodes(
+	    .text("abc"),
+	    .extent(under: rwc[1], .text("defgh")),
+	    .text("ijk"))
+	// read-only outer extents, (abc)defgh(ijk) 
+	lazy var outerRO: NSS = .nodes(
+	    .extent(under: roc[0], .text("abc")),
+	    .text("defgh"),
+	    .extent(under: roc[2], .text("ijk")))
+	// read-write outer extents, (abc)defgh(ijk) 
+	lazy var outerRW: NSS = .nodes(
+	    .extent(under: rwc[0], .text("abc")),
+	    .text("defgh"),
+	    .extent(under: rwc[2], .text("ijk")))
+	typealias CustomAssert = (_ expression: @autoclosure () throws -> NSS,
+		                  _ message: @autoclosure () -> String) -> ()
+	static func functionAssertingThrows(iff assert: Bool,
+	    file: StaticString = #filePath, line: UInt = #line)
+	    -> CustomAssert {
+		return assert
+		    ? { (f, message) in
+			    try! XCTAssertThrowsError(f(),
+				     "\(message()) should have thrown",
+				     file: file, line: line)
+		      } as CustomAssert
+		    : { (f, message) in
+			    try! XCTAssertNoThrow(f(),
+				     "\(message()) should not have thrown",
+				     file: file, line: line)
+		      } as CustomAssert
+	}
+	func testReplaceInner() {
+		let combinations = ([true, false] ⨯ (1...5)).flatMap {
+		    [self] (ro, width) in
+			(0...(innerRO.length - width)).map { start in
+			    (ro, width, start)
+			}
+		}
+		for (ro, width, start) in combinations {
+			let tree = ro ? innerRO : innerRW
+			let rope: RSS = Rope(with: tree)
+			let range = start..<(start + width)
+			let ir = Range(Offset.unitRange(range), in: rope)
+			let overlaps = range.overlaps(3...7)
+			let fails = ro && overlaps
+			let assert = Self.functionAssertingThrows(iff: fails)
+			assert(try rope.node.replacing(ir, with: "x"),
+			    "replacing \(width) at \(range)")
+			assert(try rope.node.replacing(ir,
+			              with: ("x" * width)[...]),
+			    "replacing \(width) at \(range)")
+		}
+	}
+	func testReplaceOuter() {
+		let combinations = ([true, false] ⨯ (1...5)).flatMap {
+		    [self] (ro, width) in
+			(0...(outerRO.length - width)).map { start in
+			    (ro, width, start)
+			}
+		}
+		for (ro, width, start) in combinations {
+			let tree = ro ? outerRO : outerRW
+			let rope: RSS = Rope(with: tree)
+			let range = start..<(start + width)
+			let ir = Range(Offset.unitRange(range), in: rope)
+			let overlaps = range.overlaps(0...2) ||
+			               range.overlaps(8...10)
+			let fails = ro && overlaps
+			let assert = Self.functionAssertingThrows(iff: fails)
+			assert(try rope.node.replacing(ir, with: "x"),
+			    "replacing \(width) at \(range)")
+			assert(try rope.node.replacing(ir,
+			              with: ("x" * width)[...]),
+			    "replacing \(width) at \(range)")
+		}
+	}
+}
