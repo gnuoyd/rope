@@ -78,7 +78,7 @@ public extension Rope.Node {
  * text attributes, and the *number* of leaves.  The *text* of leaves must
  * the same.
  */
-extension Rope.Node where Content == Substring {
+extension Rope.Node where C.Element : Equatable {
 	public static func ~(_ lhs: Self, _ rhs: Self) -> Bool {
 		let lleaves = lhs.leaves.makeIterator(),
 		    rleaves = rhs.leaves.makeIterator()
@@ -116,14 +116,14 @@ extension Rope.Node where Content == Substring {
 					rresidue = nil
 					continue
 				}
-				if l.hasPrefix(r) {
+				if l.starts(with: r) {
 					lresidue =
 					    Self(content: l.dropFirst(r.count),
 					         attributes: lattr)
 					rresidue = nil
 					continue
 				}
-				if r.hasPrefix(l) {
+				if r.starts(with: l) {
 					lresidue = nil
 					rresidue =
 					    Self(content: r.dropFirst(l.count),
@@ -872,6 +872,14 @@ public extension Rope.Node {
 				       1 + max(left.depth, right.depth),
 				       left.labels.union(right.labels), right,
 				       left.dimensions + right.dimensions)
+		}
+	}
+	init<S>(content s: S, attributes attrs: Attributes = [:]) where S : Sequence, C.Element == S.Element {
+		let c = C(s)
+		if c.isEmpty {
+			self = Self.empty
+		} else {
+			self = Self.leaf(attrs, c)
 		}
 	}
 	init(content c: C, attributes attrs: Attributes = [:]) {
