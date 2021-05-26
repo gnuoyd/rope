@@ -1983,7 +1983,7 @@ class ExtentReplacementsBase : XCTestCase {
 				     file: file, line: line)
 		      } as CustomAssert
 	}
-	func testReplaceInner() {
+	func testReplaceInnerThrows() {
 		let combinations = ([true, false] ⨯ (1...5)).flatMap {
 		    [self] (ro, width) in
 			(0...(innerRO.length - width)).map { start in
@@ -2005,7 +2005,7 @@ class ExtentReplacementsBase : XCTestCase {
 			    "replacing \(width) at \(range)")
 		}
 	}
-	func testReplaceOuter() {
+	func testReplaceOuterThrows() {
 		let combinations = ([true, false] ⨯ (1...5)).flatMap {
 		    [self] (ro, width) in
 			(0...(outerRO.length - width)).map { start in
