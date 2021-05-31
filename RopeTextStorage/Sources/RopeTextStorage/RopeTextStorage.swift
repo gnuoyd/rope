@@ -5,8 +5,8 @@ import AppKit
 import Rope
 
 public class RopeTextStorage: NSTextStorage {
-	typealias Offset = Rope<Array<UTF16.CodeUnit>>.Node.Offset
-	let rope: Rope<Array<UTF16.CodeUnit>>
+	typealias Offset = Rope<ContiguousArray<UTF16.CodeUnit>>.Node.Offset
+	let rope: Rope<ContiguousArray<UTF16.CodeUnit>>
 	let _string: RopeString
 	public override init() {
 		rope = Rope()
@@ -50,7 +50,7 @@ public class RopeTextStorage: NSTextStorage {
 	    with str: String) {
 		performEditing() {
 			rope[Offset.unitRange(range)] =
-			    Array<UTF16.CodeUnit>(str.utf16[...])
+			    ContiguousArray<UTF16.CodeUnit>(str.utf16[...])
 			let actions =
 			    NSTextStorageEditActions.editedCharacters.union(
 			    .editedAttributes)

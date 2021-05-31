@@ -5,10 +5,10 @@ import AppKit
 import Rope
 
 class RopeString : NSString {
-	typealias Offset = Rope<Array<UTF16.CodeUnit>>.Node.Offset
-	typealias Content = Rope<Array<UTF16.CodeUnit>>.Node.Content
-	let rope: Rope<Array<UTF16.CodeUnit>>
-	init(rope r: Rope<Array<UTF16.CodeUnit>>) {
+	typealias Offset = Rope<ContiguousArray<UTF16.CodeUnit>>.Node.Offset
+	typealias Content = Rope<ContiguousArray<UTF16.CodeUnit>>.Node.Content
+	let rope: Rope<ContiguousArray<UTF16.CodeUnit>>
+	init(rope r: Rope<ContiguousArray<UTF16.CodeUnit>>) {
 		rope = r
 		super.init()
 	}
