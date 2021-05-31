@@ -36,4 +36,7 @@ class RopeString : NSString {
 		var buffer = buffer_in
 		rope.extractUnits(Offset.unitRange(range), filling: &buffer)
 	}
+	override func copy(with zone: NSZone? = nil) -> Any {
+		return self
+	}
 }
