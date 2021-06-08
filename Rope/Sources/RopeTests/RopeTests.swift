@@ -845,6 +845,117 @@ class ExtentsOpeningClosing : XCTestCase {
 	}
 }
 
+class ReifyRopeIndices : XCTestCase {
+	let rope: RSS = Rope(with: .text("abc"))
+	func testStartIndex() {
+		let range = rope.startIndex..<rope.index(after: rope.startIndex)
+		guard let (_, rest) =
+		    try? rope.node.splitting(after: range.lowerBound) else {
+			XCTFail("lower split failed")
+			return
+		}
+		guard let (selection, _) =
+		    try? rest.splitting(before: range.upperBound) else {
+			XCTFail("upper split failed")
+			return
+		}
+		var lower = range.lowerBound,
+		    upper = range.upperBound
+		let labeled = selection.addingBoundaryLabels(reifying: range,
+		    lower: &lower, upper: &upper)
+		let leaves = labeled.leaves.map { $0 }
+		guard case .interior(_, let lowerLabel) = lower else {
+			XCTFail("lowerBound was not reified")
+			return
+		}
+		XCTAssert(leaves.count == 2)
+		XCTAssert([.index(label: lowerLabel), .text("a")] == leaves)
+	}
+	func testEndIndex() {
+		let range = rope.index(after: rope.startIndex)..<rope.endIndex
+		guard let (_, rest) =
+		    try? rope.node.splitting(after: range.lowerBound) else {
+			XCTFail("lower split failed")
+			return
+		}
+		guard let (selection, _) =
+		    try? rest.splitting(before: range.upperBound) else {
+			XCTFail("upper split failed")
+			return
+		}
+		var lower = range.lowerBound,
+		    upper = range.upperBound
+		let labeled = selection.addingBoundaryLabels(reifying: range,
+		    lower: &lower, upper: &upper)
+		let leaves = labeled.leaves.map { $0 }
+		guard case .interior(_, let upperLabel) = upper else {
+			XCTFail("upperBound was not reified")
+			return
+		}
+		XCTAssert(leaves.count == 2)
+		XCTAssert([.text("bc"), .index(label: upperLabel)] == leaves)
+	}
+	func testStartAndEndIndex() {
+		let range = rope.startIndex..<rope.endIndex
+		guard let (_, rest) =
+		    try? rope.node.splitting(after: range.lowerBound) else {
+			XCTFail("lower split failed")
+			return
+		}
+		guard let (selection, _) =
+		    try? rest.splitting(before: range.upperBound) else {
+			XCTFail("upper split failed")
+			return
+		}
+		var lower = range.lowerBound,
+		    upper = range.upperBound
+		let labeled = selection.addingBoundaryLabels(reifying: range,
+		    lower: &lower, upper: &upper)
+		let leaves = labeled.leaves.map { $0 }
+		guard case .interior(_, let lowerLabel) = lower else {
+			XCTFail("lowerBound was not reified")
+			return
+		}
+		guard case .interior(_, let upperLabel) = upper else {
+			XCTFail("upperBound was not reified")
+			return
+		}
+		XCTAssert(leaves.count == 3)
+		XCTAssert([.index(label: lowerLabel),
+		           .text("abc"),
+			   .index(label: upperLabel)] == leaves)
+	}
+	func testTwoInteriorIndices() {
+		let range = rope.index(after: rope.startIndex) ..<
+		            rope.index(before: rope.endIndex)
+		guard let (_, rest) =
+		    try? rope.node.splitting(after: range.lowerBound) else {
+			XCTFail("lower split failed")
+			return
+		}
+		guard let (selection, _) =
+		    try? rest.splitting(before: range.upperBound) else {
+			XCTFail("upper split failed")
+			return
+		}
+		var lower = range.lowerBound,
+		    upper = range.upperBound
+		let labeled = selection.addingBoundaryLabels(reifying: range,
+		    lower: &lower, upper: &upper)
+		let leaves = labeled.leaves.map { $0 }
+		guard case .interior(_, _) = lower else {
+			XCTFail("lowerBound was not reified")
+			return
+		}
+		guard case .interior(_, _) = upper else {
+			XCTFail("upperBound was not reified")
+			return
+		}
+		XCTAssert(leaves.count == 1)
+		XCTAssert([.text("b")] == leaves)
+	}
+}
+
 class EmptyishRopeIndices : XCTestCase {
 	let one: RSS = Rope(with: .extent(under: RWEC(), .empty))
 	let two: RSS = Rope(with:

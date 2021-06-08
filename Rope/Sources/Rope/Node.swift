@@ -143,7 +143,7 @@ extension Rope.Node where C.Element : Equatable {
 	}
 }
 
-extension Rope.Node {
+extension Rope.Node : Equatable {
 	public static func == (_ l: Self, _ r: Self) -> Bool {
 		switch (l, r) {
 		case (.cursor(let ll, let la),
@@ -1911,6 +1911,51 @@ public extension Rope.Node {
 			    filling: &c)
 		case .cursor(_, _), .empty, .index(_):
 			return
+		}
+	}
+}
+
+public extension Rope.Node {
+        /* "Reify" an "abstract" range---that is, a range with any bound
+	 * on the logical "start" or "end" `Index` of a `Rope`---and construct
+	 * a subtree containing the reified indices.
+	 *
+	 * Rewrite one bound, both or neither bounds of `range`,
+         * replacing lower bound `.start(of: rope)` with `.interior(of:
+         * rope, label: l)` replacing upper bound `.end(of: rope)`
+         * with `.interior(of: rope, label: r)` for new `Label`s `l`
+         * and `r`.
+	 *
+	 * Simultaneously construct a new `Node` subtree by
+         * augmenting `self`: prepend `.index(l)` if a `.start` bound
+         * is replaced, and append `.index(r)` if a `.end` bound is
+         * replaced.  Return the subtree thus constructed.
+	 */
+	func addingBoundaryLabels(reifying range: Range<Rope<C>.Index>,
+	    lower outLower: inout Rope<C>.Index,
+	    upper outUpper: inout Rope<C>.Index) -> Self {
+		switch (range.lowerBound, range.upperBound) {
+		case (.start(let owner), .end(_)):
+			let l = Label()
+			let r = Label()
+			outLower = .interior(of: owner, label: l)
+			outUpper = .interior(of: owner, label: r)
+			return Rope<C>.Node.index(label: l).appending(
+			    self).appending(.index(label: r))
+		case (.start(let owner), let upper):
+			let l = Label()
+			outLower = .interior(of: owner, label: l)
+			outUpper = upper
+			return Rope<C>.Node.index(label: l).appending(self)
+		case (let lower, .end(let owner)):
+			let r = Label()
+			outLower = lower
+			outUpper = .interior(of: owner, label: r)
+			return self.appending(.index(label: r))
+		case (let lower, let upper):
+			outLower = lower
+			outUpper = upper
+			return self
 		}
 	}
 }
