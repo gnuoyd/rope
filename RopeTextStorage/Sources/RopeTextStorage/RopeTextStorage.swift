@@ -5,12 +5,18 @@ import AppKit
 import Rope
 
 public class RopeTextStorage: NSTextStorage {
-	typealias Offset = Rope<ContiguousArray<UTF16.CodeUnit>>.Node.Offset
-	let rope: Rope<ContiguousArray<UTF16.CodeUnit>>
+	public typealias Backing = Rope<ContiguousArray<UTF16.CodeUnit>>
+	typealias Offset = Backing.Node.Offset
+	let backing: Backing
 	let _string: RopeString
+	public init(with backing: Backing) {
+		self.backing = backing
+		_string = RopeString(with: backing)
+		super.init()
+	}
 	public override init() {
-		rope = Rope()
-		_string = RopeString(rope: rope)
+		self.backing = Rope()
+		_string = RopeString(with: backing)
 		super.init()
 	}
 	required init?(coder: NSCoder) {
@@ -28,7 +34,7 @@ public class RopeTextStorage: NSTextStorage {
 	    effectiveRange _range: NSRangePointer?)
 	    -> [NSAttributedString.Key : Any] {
 		let i = Offset(of: location)
-		let (attrs, r) = rope.attributes(at: i)
+		let (attrs, r) = backing.attributes(at: i)
 		if let range = _range {
 			range.initialize(to: r.nsRange)
 		}
@@ -46,10 +52,13 @@ public class RopeTextStorage: NSTextStorage {
 		}
 		return f()
 	}
+	public func withRopeBacking<T>(_ f: (Backing) -> T) -> T {
+		performEditing { f(backing) }
+	}
 	override public func replaceCharacters(in range: NSRange,
 	    with str: String) {
 		performEditing() {
-			rope[Offset.unitRange(range)] =
+			backing[Offset.unitRange(range)] =
 			    ContiguousArray<UTF16.CodeUnit>(str.utf16[...])
 			let actions =
 			    NSTextStorageEditActions.editedCharacters.union(
@@ -64,9 +73,9 @@ public class RopeTextStorage: NSTextStorage {
 		performEditing() {
 			let range = Offset.unitRange(r)
 			if let attrs = optAttrs {
-				rope.setAttributes(attrs, range: range)
+				backing.setAttributes(attrs, range: range)
 			} else {
-				rope.clearAttributes(on: range)
+				backing.clearAttributes(on: range)
 			}
 			edited(.editedAttributes, range: r, changeInLength: 0)
 		}
