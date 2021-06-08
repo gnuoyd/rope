@@ -1565,6 +1565,11 @@ public extension Rope.Node {
 			 * nevertheless the bounds coincide.
 			 */
 			if range.isEmpty {
+				/* Undo: to do, insert .text(...) bracketed by 
+				 * two new indices because `range` is empty;
+				 * to undo, replace between indices
+				 * with `Content.empty`.
+				 */
 				return try inserting(.text(replacement), at:
 				    range.lowerBound)
 			}
@@ -1583,6 +1588,9 @@ public extension Rope.Node {
 			 */
 			switch middle.segmentingAtAnyExtent() {
 			case (_, nil, _):
+				/* Undo: insert .text(...); replace `range`
+				 * with `middle` to undo.
+				 */
 				return head.appending(
 				    .text(replacement)).appending(tail)
 			/* By our contract with `segmentingAtAnyExtent`, the
@@ -1605,6 +1613,9 @@ public extension Rope.Node {
 				let rReplaced = try r.replacing(
 				    owner.startIndex..<owner.endIndex,
 				    with: Content.empty)
+				/* Undo: replace `range` with `middle`.
+				 * XXX Interiorize `range`.
+				 */
 				return head.appending(
 				    .text(replacement)).appending(
 				    rReplaced).appending(tail)
@@ -1617,6 +1628,11 @@ public extension Rope.Node {
 			 * nevertheless the bounds are equal.
 			 */
 			if range.isEmpty {
+				/* Undo: insert .text(...) bracketed by 
+				 * two new indices because `range` is empty;
+				 * replace between indices
+				 * with `Content.empty` to undo.
+				 */
 				return try inserting(.text(replacement), at:
 				    range.lowerBound)
 			}
@@ -1624,6 +1640,7 @@ public extension Rope.Node {
 			    try segmenting(atExtent: loExt) else {
 				throw NodeError.expectedExtent
 			}
+			/* Undo: .replacing(...) adds an undo record. */
 			let mReplaced = try ctlr.replacing(range, in: m,
 			    with: replacement)
 			return l.appending(mReplaced).appending(r)
@@ -1632,9 +1649,11 @@ public extension Rope.Node {
 			    try segmenting(atExtent: loExt) else {
 				throw NodeError.expectedExtent
 			}
+			/* Undo: .replacing(...) adds an undo record. */
 			let mReplaced = try ctlr.replacing(
 			    range.lowerBound..<owner.endIndex, in: m,
 			    with: replacement)
+			/* Undo: .replacing(...) adds an undo record. */
 			let rTrimmed = try r.replacing(
 			    owner.startIndex..<range.upperBound,
 			    with: Content.empty)
@@ -1644,9 +1663,11 @@ public extension Rope.Node {
 			    try segmenting(atExtent: hiExt) else {
 				throw NodeError.expectedExtent
 			}
+			/* Undo: .replacing(...) adds an undo record. */
 			let lReplaced = try l.replacing(
 			    range.lowerBound..<owner.endIndex,
 			    with: replacement)
+			/* Undo: .replacing(...) adds an undo record. */
 			let mTrimmed = try ctlr.replacing(
 			    owner.startIndex..<range.upperBound, in: m,
 			    with: Content.empty)
