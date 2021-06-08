@@ -1562,7 +1562,7 @@ public extension Rope.Node {
 		case (nil, nil):
 			/* Deal with an empty `range` where the lowerBound
 			 * is right of the upperBound---it can happen---but
-			 * nevertheless the bounds are equal.
+			 * nevertheless the bounds coincide.
 			 */
 			if range.isEmpty {
 				return try inserting(.text(replacement), at:
@@ -1584,9 +1584,21 @@ public extension Rope.Node {
 			switch middle.segmentingAtAnyExtent() {
 			case (_, nil, _):
 				return head.appending(
-				    Self(content: replacement)).appending(tail)
+				    .text(replacement)).appending(tail)
+			/* By our contract with `segmentingAtAnyExtent`, the
+			 * `middle` subrope left of the .extent is
+			 * .extent-free, so we do not need to test for
+			 * a read-only .extent's "veto."  We replace it
+			 * entirely by `replacement`, so there is no need to
+			 * bind it.  Hence the `_` pattern.
+			 */
 			case (_, .extent(let ctlr, let m), let r):
 				Swift.print("\(#function): segmented at extent")
+				/* We have to try to replace using the
+				 * controller so that a read-only extent can
+				 * "veto" the replacement with .empty by
+				 * throwing.
+				 */
 				let _ = try ctlr.replacing(
 				    owner.startIndex..<owner.endIndex,
 				    in: m, with: Content.empty)
@@ -1594,7 +1606,7 @@ public extension Rope.Node {
 				    owner.startIndex..<owner.endIndex,
 				    with: Content.empty)
 				return head.appending(
-				    Self(content: replacement)).appending(
+				    .text(replacement)).appending(
 				    rReplaced).appending(tail)
 			case (_, _?, _):
 				throw NodeError.expectedExtent
