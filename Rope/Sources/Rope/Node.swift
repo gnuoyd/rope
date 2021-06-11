@@ -1561,14 +1561,24 @@ public extension Rope.Node {
 			try extentsEnclosing(range.upperBound).first) {
 		case (nil, nil):
 			/* Deal with an empty `range` where the lowerBound
-			 * is right of the upperBound---it can happen---but
-			 * nevertheless the bounds coincide.
+			 * is right of the upperBound in the rope---it can
+			 * happen---but nevertheless the bounds coincide
+			 * because between there are no indexable locations:
+			 * no extent boundaries, no non-empty leaves.
+			 *
+			 * XXX Danger!  This may leave upperBound on the
+			 * left side of lowerBound.  In that case, need to
+			 * use the range upperBound..<lowerBound for the
+			 * undo/redo record.
 			 */
 			if range.isEmpty {
 				/* Undo: to do, insert .text(...) bracketed by 
 				 * two new indices because `range` is empty;
 				 * to undo, replace between indices
 				 * with `Content.empty`.
+				 *
+				 * Something like `let inserted = try
+				 * inserting(..., on: .right, of: range.lowerBound)`
 				 */
 				return try inserting(.text(replacement), at:
 				    range.lowerBound)
@@ -1765,6 +1775,7 @@ public extension Rope.Node {
 		return subrope(from: 0, upTo: i).appending(
 		    cursor).appending(subrope(from: i, upTo: endIndex))
 	}
+	/* TBD Remove? Risky subrope use... */
 	func inserting(content node: Self, at i: Offset) -> Self {
 		if case .empty = node {
 			return self
