@@ -404,6 +404,9 @@ extension Rope {
 	func indices(precede target: Label) -> Bool? {
 		return top.indices(precede: target)
 	}
+	var hasSingleIndex: Bool {
+		return top.labels.extentCount == 0 && top.length == 0
+	}
 }
 
 extension Rope {

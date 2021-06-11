@@ -61,6 +61,65 @@ class NestedExtentBase : XCTestCase {
 				            .text("ghi")))))
 }
 
+class BoundaryIndexComparisons : XCTestCase {
+	let c = [RWEC(), RWEC(), RWEC()]
+	let l = Array<Label>((0..<3).map { _ in Label() })
+	lazy var empty: RSS = Rope(with: .empty)
+	lazy var allIndices: RSS = Rope(with:
+	    .index(label: l[0]), .index(label: l[1]), .index(label: l[2]))
+	lazy var emptyExtent: RSS = Rope(with: .extent(under: c[0], .empty))
+	lazy var indexInEmptyExtent: RSS = Rope(with:
+	    .extent(under: c[0], .index(label: l[0])))
+	lazy var text: RSS = Rope(with: .text("a"))
+	func testEmptyExtent() {
+		XCTAssert(emptyExtent.startIndex < emptyExtent.endIndex)
+	}
+	func testEmpty() {
+		XCTAssert(empty.startIndex == empty.endIndex)
+	}
+	func testIndexInEmptyExtent() {
+		let rope = indexInEmptyExtent
+		XCTAssert(rope.startIndex < rope.endIndex)
+		let index = RSS.Index.interior(of: rope, label: l[0])
+		XCTAssert(index < rope.endIndex)
+		XCTAssert(rope.startIndex < index)
+	}
+	func testAllIndices() {
+		XCTAssert(allIndices.startIndex == allIndices.endIndex)
+		let indices = l.map { label in
+		    RSS.Index.interior(of: allIndices, label: label)
+		}
+		for index in indices {
+			XCTAssert(index == allIndices.endIndex)
+			XCTAssert(allIndices.startIndex == index)
+		}
+	}
+	func testText() {
+		XCTAssert(text.startIndex < text.endIndex)
+	}
+}
+class HasSingleIndex : XCTestCase {
+	let c = [RWEC(), RWEC(), RWEC()]
+	let l = Array<Label>((0..<3).map { _ in Label() })
+	lazy var empty: RSS = Rope(with: .empty)
+	lazy var allIndices: RSS = Rope(with:
+	    .index(label: l[0]), .index(label: l[1]), .index(label: l[2]))
+	lazy var emptyExtent: RSS = Rope(with: .extent(under: c[0], .empty))
+	lazy var text: RSS = Rope(with: .text("a"))
+	func testEmptyExtent() {
+		XCTAssert(!emptyExtent.hasSingleIndex)
+	}
+	func testEmpty() {
+		XCTAssert(empty.hasSingleIndex)
+	}
+	func testAllIndices() {
+		XCTAssert(allIndices.hasSingleIndex)
+	}
+	func testText() {
+		XCTAssert(!text.hasSingleIndex)
+	}
+}
+
 class IndexedExtentBase : XCTestCase {
 	let c = [RWEC(), RWEC(), RWEC()]
 	static let indices: ClosedRange<Int> = 0...9

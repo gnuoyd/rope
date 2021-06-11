@@ -88,12 +88,22 @@ extension Rope.Index {
 		switch (self, other) {
 		case (.start(_), .start(_)):
 			return false
-		case (.start(_), _):
-			return true
+		case (.start(_), .interior(_, let h)):
+			guard let precede = self.owner.indices(precede: h)
+			    else {
+				throw RopeIndexComparisonError.IndexNotFound
+			}
+			return precede
+		case (.start(_), .end(_)):
+			return !self.owner.hasSingleIndex
 		case (.end(_), .end(_)):
 			return false
-		case (_, .end(_)):
-			return true
+		case (.interior(_, let h), .end(_)):
+			guard let follow = self.owner.indices(follow: h)
+			    else {
+				throw RopeIndexComparisonError.IndexNotFound
+			}
+			return follow
 		case (.interior(_, let h1),
 		      .interior(_, let h2)):
 			guard let precedes = self.owner.index(h1, precedes: h2)
