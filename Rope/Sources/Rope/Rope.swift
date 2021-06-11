@@ -140,8 +140,10 @@ public class Rope<C : Content> : Collection {
 			return .extent(self, subcontent)
 		}
 		func node(_ content: Rope.Node, inserting elt: Rope.Node,
-		    at target: Label) throws -> Rope.Node {
-			let augmented = try content.inserting(elt, at: target)
+		    on side: Rope.Node.Side, of target: Label)
+		    throws -> Rope.Node {
+			let augmented =
+			    try content.inserting(elt, on: side, of: target)
 			return .extent(self, augmented)
 		}
 		func replacing(_ range: Range<Rope.Index>,

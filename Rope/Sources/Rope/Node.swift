@@ -691,33 +691,43 @@ public extension Rope.Node {
 }
 
 public extension Rope.Node {
-	func inserting(_ elt: Self, at target: Rope.Index) throws -> Self {
+	func inserting(_ elt: Self, on side: Side, of target: Rope.Index)
+	    throws -> Self {
 		switch target {
 		case .start(_):
 			return .nodes(elt, self)
 		case .end(_):
 			return .nodes(self, elt)
 		case .interior(_, let l):
-			return try inserting(elt, at: l)
+			return try inserting(elt, on: side, of: l)
 		}
 	}
-	func inserting(_ elt: Self, at target: Label) throws -> Self {
+	func inserting(_ elt: Self, on side: Side, of target: Label)
+	    throws -> Self {
 		switch self {
 		case .index(let w):
 			guard let label = w.get(), label == target else {
 				throw NodeError.indexNotFound
 			}
-			return elt
+			switch side {
+			case .left:
+				return .nodes(elt, self)
+			case .right:
+				return .nodes(self, elt)
+			}
 		case .cursor(_, _):
 			throw NodeError.indexNotFound
 		case .extent(let ctlr, let r):
-			return try ctlr.node(r, inserting: elt, at: target)
+			return try ctlr.node(r, inserting: elt, on: side,
+			    of: target)
 		case .concat(let l, _, _, _, let r, _):
 			if l.contains(target) {
-				let newl = try l.inserting(elt, at: target)
+				let newl =
+				    try l.inserting(elt, on: side, of: target)
 				return Self(left: newl, right: r)
 			} else if r.contains(target) {
-				let newr = try r.inserting(elt, at: target)
+				let newr =
+				    try r.inserting(elt, on: side, of: target)
 				return Self(left: l, right: newr)
 			} else {
 				throw NodeError.indexNotFound
@@ -1580,8 +1590,8 @@ public extension Rope.Node {
 				 * Something like `let inserted = try
 				 * inserting(..., on: .right, of: range.lowerBound)`
 				 */
-				return try inserting(.text(replacement), at:
-				    range.lowerBound)
+				return try inserting(.text(replacement),
+				    on: .right, of: range.lowerBound)
 			}
 			/* Important: don't discard any embedded indices at
 			 * `range` boundaries!  Instead, use
@@ -1643,8 +1653,8 @@ public extension Rope.Node {
 				 * replace between indices
 				 * with `Content.empty` to undo.
 				 */
-				return try inserting(.text(replacement), at:
-				    range.lowerBound)
+				return try inserting(.text(replacement),
+				    on: .right, of: range.lowerBound)
 			}
 			guard case (let l, .extent(let ctlr, let m), let r) =
 			    try segmenting(atExtent: loExt) else {
