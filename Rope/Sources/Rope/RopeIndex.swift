@@ -81,33 +81,44 @@ extension Rope.Index {
 			return false
 		}
 	}
-	public func isLessThan( _ other: Self) throws -> Bool {
+	public func isLessThan(_ other: Self) throws -> Bool {
 		guard self.owner === other.owner else {
 			throw RopeIndexComparisonError.MismatchedOwners
 		}
-		switch (self, other) {
+		return try self.owner.index(self, precedes: other)
+	}
+}
+
+extension Rope {
+	public func index(_ l: Rope.Index, precedes r: Rope.Index)
+	    throws -> Bool {
+		return try node.index(l, precedes: r)
+	}
+}
+
+extension Rope.Node {
+	public func index(_ l: Rope.Index, precedes r: Rope.Index)
+	    throws -> Bool {
+		switch (l, r) {
 		case (.start(_), .start(_)):
 			return false
 		case (.start(_), .interior(_, let h)):
-			guard let precede = self.owner.indices(precede: h)
-			    else {
+			guard let precede = indices(precede: h) else {
 				throw RopeIndexComparisonError.IndexNotFound
 			}
 			return precede
 		case (.start(_), .end(_)):
-			return !self.owner.hasSingleIndex
+			return !hasSingleIndex
 		case (.end(_), .end(_)):
 			return false
 		case (.interior(_, let h), .end(_)):
-			guard let follow = self.owner.indices(follow: h)
-			    else {
+			guard let follow = indices(follow: h) else {
 				throw RopeIndexComparisonError.IndexNotFound
 			}
 			return follow
 		case (.interior(_, let h1),
 		      .interior(_, let h2)):
-			guard let precedes = self.owner.index(h1, precedes: h2)
-			    else {
+			guard let precedes = index(h1, precedes: h2) else {
 				throw RopeIndexComparisonError.IndexNotFound
 			}
 			return precedes

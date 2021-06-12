@@ -405,7 +405,13 @@ extension Rope {
 		return top.indices(precede: target)
 	}
 	var hasSingleIndex: Bool {
-		return top.labels.extentCount == 0 && top.length == 0
+		return top.hasSingleIndex
+	}
+}
+
+extension Rope.Node {
+	var hasSingleIndex: Bool {
+		return labels.extentCount == 0 && length == 0
 	}
 }
 
