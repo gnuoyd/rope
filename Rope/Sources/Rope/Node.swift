@@ -1572,9 +1572,9 @@ public extension Rope.Node {
 		case (nil, nil):
 			/* Deal with an empty `range` where the lowerBound
 			 * is right of the upperBound in the rope---it can
-			 * happen---but nevertheless the bounds coincide
-			 * because between there are no indexable locations:
-			 * no extent boundaries, no non-empty leaves.
+			 * happen---but nevertheless the bounds alias
+			 * because there are no indexable locations
+			 * between: no extent boundaries, no non-empty leaves.
 			 *
 			 * XXX Danger!  This may leave upperBound on the
 			 * left side of lowerBound.  In that case, need to
