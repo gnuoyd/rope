@@ -56,14 +56,14 @@ extension Rope.Index {
 		case (.start(_), .interior(_, let h)),
 		     (.interior(_, let h), .start(_)):
 			guard let precedingExist =
-			    self.owner.indices(precede: h) else {
+			    self.owner.steps(precede: h) else {
 				throw RopeIndexComparisonError.IndexNotFound
 			}
 			return !precedingExist
 		case (.end(_), .interior(_, let h)),
 		     (.interior(_, let h), .end(_)):
 			guard let followingExist =
-			    self.owner.indices(follow: h) else {
+			    self.owner.steps(follow: h) else {
 				throw RopeIndexComparisonError.IndexNotFound
 			}
 			return !followingExist
@@ -71,8 +71,8 @@ extension Rope.Index {
 		    where h == j:
 			return true
 		case (.interior(_, let h1), .interior(_, let h2)):
-			guard let precedes = self.owner.index(h1, precedes: h2),
-			      let follows = self.owner.index(h2, precedes: h1)
+			guard let precedes = self.owner.step(h1, precedes: h2),
+			      let follows = self.owner.step(h2, precedes: h1)
 			      else {
 				throw RopeIndexComparisonError.IndexNotFound
 			}
@@ -85,25 +85,25 @@ extension Rope.Index {
 		guard self.owner === other.owner else {
 			throw RopeIndexComparisonError.MismatchedOwners
 		}
-		return try self.owner.index(self, precedes: other)
+		return try self.owner.step(self, precedes: other)
 	}
 }
 
 extension Rope {
-	public func index(_ l: Rope.Index, precedes r: Rope.Index)
+	public func step(_ l: Rope.Index, precedes r: Rope.Index)
 	    throws -> Bool {
-		return try node.index(l, precedes: r)
+		return try node.step(l, precedes: r)
 	}
 }
 
 extension Rope.Node {
-	public func index(_ l: Rope.Index, precedes r: Rope.Index)
+	public func step(_ l: Rope.Index, precedes r: Rope.Index)
 	    throws -> Bool {
 		switch (l, r) {
 		case (.start(_), .start(_)):
 			return false
 		case (.start(_), .interior(_, let h)):
-			guard let precede = indices(precede: h) else {
+			guard let precede = steps(precede: h) else {
 				throw RopeIndexComparisonError.IndexNotFound
 			}
 			return precede
@@ -112,13 +112,13 @@ extension Rope.Node {
 		case (.end(_), .end(_)):
 			return false
 		case (.interior(_, let h), .end(_)):
-			guard let follow = indices(follow: h) else {
+			guard let follow = steps(follow: h) else {
 				throw RopeIndexComparisonError.IndexNotFound
 			}
 			return follow
 		case (.interior(_, let h1),
 		      .interior(_, let h2)):
-			guard let precedes = index(h1, precedes: h2) else {
+			guard let precedes = step(h1, precedes: h2) else {
 				throw RopeIndexComparisonError.IndexNotFound
 			}
 			return precedes

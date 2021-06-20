@@ -777,7 +777,7 @@ public extension Rope.Node {
 			return false
 		}
 	}
-	func indices(follow target: Label) -> Bool? {
+	func steps(follow target: Label) -> Bool? {
 		switch self {
 		case .index(let w):
 			if w.get() != target {
@@ -787,9 +787,9 @@ public extension Rope.Node {
 		case .extent(_, let rope):
 			return rope.contains(target) ? true : nil
 		case .concat(let l, let midx, _, _, let r, let w):
-			switch l.indices(follow: target) {
+			switch l.steps(follow: target) {
 			case nil:
-				return r.indices(follow: target)
+				return r.steps(follow: target)
 			case true?:
 				return true
 			case false?:
@@ -800,7 +800,7 @@ public extension Rope.Node {
 			return nil
 		}
 	}
-	func indices(precede target: Label) -> Bool? {
+	func steps(precede target: Label) -> Bool? {
 		switch self {
 		case .index(let w):
 			if w.get() != target {
@@ -810,9 +810,9 @@ public extension Rope.Node {
 		case .extent(_, let rope):
 			return rope.contains(target) ? true : nil
 		case .concat(let l, let midx, _, _, let r, _):
-			switch r.indices(precede: target) {
+			switch r.steps(precede: target) {
 			case nil:
-				return l.indices(precede: target)
+				return l.steps(precede: target)
 			case true?:
 				return true
 			case false?:
@@ -822,14 +822,14 @@ public extension Rope.Node {
 			return nil
 		}
 	}
-	func index(_ h1: Label, precedes h2: Label) -> Bool? {
+	func step(_ h1: Label, precedes h2: Label) -> Bool? {
 		switch self {
 		case .index(_):
 			return nil
 		case .cursor(_, _):
 			return nil
 		case .extent(_, let rope):
-			return rope.index(h1, precedes: h2)
+			return rope.step(h1, precedes: h2)
 		case .concat(let l, _, _, let labels, let r, _):
 			/* I'm not sure if short-circuiting here actually
 			 * saves us much work.  Benchmark and see?
@@ -838,14 +838,14 @@ public extension Rope.Node {
 			    else {
 				return nil
 			}
-			if let ordered = l.index(h1, precedes: h2) {
+			if let ordered = l.step(h1, precedes: h2) {
 				return ordered
 			}
-			if let ordered = r.index(h1, precedes: h2) {
+			if let ordered = r.step(h1, precedes: h2) {
 				return ordered
 			}
-			guard let follow = l.indices(follow: h1),
-			      let precede = r.indices(precede: h2) else {
+			guard let follow = l.steps(follow: h1),
+			      let precede = r.steps(precede: h2) else {
 				if l.contains(h2) && r.contains(h1) {
 					return false
 				}
