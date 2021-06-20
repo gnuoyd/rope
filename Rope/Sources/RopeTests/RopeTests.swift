@@ -1325,19 +1325,19 @@ class CompareDisparateRopeIndices: XCTestCase {
 		let idx1 = rope1.startIndex
 		let idx2 = rope2.startIndex
 		XCTAssertThrowsError(try idx1.isLessThan(idx2))
-		XCTAssertThrowsError(try idx1.equals(idx2))
+		XCTAssertThrowsError(try idx1.aliases(idx2))
 	}
 	func testSecondIndices() {
 		let idx1 = rope1.index(after: rope1.startIndex)
 		let idx2 = rope2.index(after: rope2.startIndex)
 		XCTAssertThrowsError(try idx1.isLessThan(idx2))
-		XCTAssertThrowsError(try idx1.equals(idx2))
+		XCTAssertThrowsError(try idx1.aliases(idx2))
 	}
 	func testEndIndices() {
 		let idx1 = rope1.endIndex
 		let idx2 = rope2.endIndex
 		XCTAssertThrowsError(try idx1.isLessThan(idx2))
-		XCTAssertThrowsError(try idx1.equals(idx2))
+		XCTAssertThrowsError(try idx1.aliases(idx2))
 	}
 }
 

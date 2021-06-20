@@ -31,7 +31,7 @@ extension Rope.Index {
 
 	public static func == (_ l: Self, _ r: Self) -> Bool {
 		do {
-			return try l.equals(r)
+			return try l.aliases(r)
 		} catch {
 			fatalError("Not comparable")
 		}
@@ -46,7 +46,7 @@ extension Rope.Index {
 }
 
 extension Rope.Index {
-        public func equals(_ other: Self) throws -> Bool {
+        public func aliases(_ other: Self) throws -> Bool {
 		guard self.owner === other.owner else {
 			throw RopeIndexComparisonError.MismatchedOwners
 		}
