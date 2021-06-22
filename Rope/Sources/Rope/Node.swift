@@ -774,7 +774,7 @@ public extension Rope.Node {
 	}
 	func steps(follow target: Label) throws -> Bool {
 		switch self {
-		case .index(let w) where w.get() == target :
+		case .index(let w) where w.get() == target:
 			return false
 		case .extent(_, let rope) where rope.contains(target):
 			return true
