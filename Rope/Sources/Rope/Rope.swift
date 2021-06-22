@@ -227,8 +227,8 @@ public class Rope<C : Content> : Collection {
 			top = newValue
 		}
 	}
-	public func step(_ h1: Label, precedes h2: Label) -> Bool? {
-		return top.step(h1, precedes: h2)
+	public func step(_ h1: Label, precedes h2: Label) throws -> Bool {
+		return try top.step(h1, precedes: h2)
 	}
 	public init<T>(content t: T) where C.SubSequence == T {
 		_top = Node(content: t)
@@ -398,11 +398,11 @@ public class Rope<C : Content> : Collection {
 }
 
 extension Rope {
-	func steps(follow target: Label) -> Bool? {
-		return top.steps(follow: target)
+	func steps(follow target: Label) throws -> Bool {
+		return try top.steps(follow: target)
 	}
-	func steps(precede target: Label) -> Bool? {
-		return top.steps(precede: target)
+	func steps(precede target: Label) throws -> Bool {
+		return try top.steps(precede: target)
 	}
 	var hasSingleIndex: Bool {
 		return top.hasSingleIndex

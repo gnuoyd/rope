@@ -777,19 +777,21 @@ public extension Rope.Node {
 			return false
 		}
 	}
-	func steps(follow target: Label) -> Bool? {
+	func steps(follow target: Label) throws -> Bool {
 		switch self {
 		case .index(let w):
 			if w.get() != target {
-				return nil
+				throw NodeError.indexNotFound
 			}
 			return false
-		case .extent(_, let rope):
-			return rope.contains(target) ? true : nil
+		case .extent(_, let rope) where rope.contains(target):
+			return true
+		case .extent(_, _):
+			throw NodeError.indexNotFound
 		case .concat(let l, let midx, _, _, let r, let w):
-			switch l.steps(follow: target) {
+			switch try? l.steps(follow: target) {
 			case nil:
-				return r.steps(follow: target)
+				return try r.steps(follow: target)
 			case true?:
 				return true
 			case false?:
@@ -797,65 +799,67 @@ public extension Rope.Node {
 				       midx != w.unitOffset
 			}
 		case .cursor(_, _), .leaf(_, _), .empty:
-			return nil
+			throw NodeError.indexNotFound
 		}
 	}
-	func steps(precede target: Label) -> Bool? {
+	func steps(precede target: Label) throws -> Bool {
 		switch self {
 		case .index(let w):
 			if w.get() != target {
-				return nil
+				throw NodeError.indexNotFound
 			}
 			return false
-		case .extent(_, let rope):
-			return rope.contains(target) ? true : nil
+		case .extent(_, let rope) where rope.contains(target):
+			return true
+		case .extent(_, _):
+			throw NodeError.indexNotFound
 		case .concat(let l, let midx, _, _, let r, _):
-			switch r.steps(precede: target) {
+			switch try? r.steps(precede: target) {
 			case nil:
-				return l.steps(precede: target)
+				return try l.steps(precede: target)
 			case true?:
 				return true
 			case false?:
 				return l.labels.extentCount > 0 || 0 != midx
 			}
 		case .cursor(_, _), .leaf(_, _), .empty:
-			return nil
+			throw NodeError.indexNotFound
 		}
 	}
-	func step(_ h1: Label, precedes h2: Label) -> Bool? {
+	func step(_ h1: Label, precedes h2: Label) throws -> Bool {
 		switch self {
 		case .index(_):
-			return nil
+			throw NodeError.indexNotFound
 		case .cursor(_, _):
-			return nil
+			throw NodeError.indexNotFound
 		case .extent(_, let rope):
-			return rope.step(h1, precedes: h2)
+			return try rope.step(h1, precedes: h2)
 		case .concat(let l, _, _, let labels, let r, _):
 			/* I'm not sure if short-circuiting here actually
 			 * saves us much work.  Benchmark and see?
 			 */
 			guard labels.contains(h1.id) && labels.contains(h2.id)
 			    else {
-				return nil
+				throw NodeError.indexNotFound
 			}
-			if let ordered = l.step(h1, precedes: h2) {
+			if let ordered = try? l.step(h1, precedes: h2) {
 				return ordered
 			}
-			if let ordered = r.step(h1, precedes: h2) {
+			if let ordered = try? r.step(h1, precedes: h2) {
 				return ordered
 			}
-			guard let follow = l.steps(follow: h1),
-			      let precede = r.steps(precede: h2) else {
+			guard let follow = try? l.steps(follow: h1),
+			      let precede = try? r.steps(precede: h2) else {
 				if l.contains(h2) && r.contains(h1) {
 					return false
 				}
-				return nil
+				throw NodeError.indexNotFound
 			}
 			return follow || precede
 		case .leaf(_, _):
-			return nil
+			throw NodeError.indexNotFound
 		case .empty:
-			return nil
+			throw NodeError.indexNotFound
 		}
 	}
 }

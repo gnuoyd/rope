@@ -17,8 +17,8 @@ extension Rope.Index {
 }
 
 enum RopeIndexComparisonError : Error {
-case MismatchedOwners
-case IndexNotFound
+case mismatchedOwners
+case indexNotFound
 }
 
 extension Rope.Index {
@@ -48,33 +48,28 @@ extension Rope.Index {
 extension Rope.Index {
         public func aliases(_ other: Self) throws -> Bool {
 		guard self.owner === other.owner else {
-			throw RopeIndexComparisonError.MismatchedOwners
+			throw RopeIndexComparisonError.mismatchedOwners
 		}
 		switch (self, other) {
 		case (.start(_), .start(_)), (.end(_), .end(_)):
 			return true
 		case (.start(_), .interior(_, let h)),
 		     (.interior(_, let h), .start(_)):
-			guard let precedingExist =
-			    self.owner.steps(precede: h) else {
-				throw RopeIndexComparisonError.IndexNotFound
-			}
-			return !precedingExist
+			let precedes = try self.owner.steps(precede: h)
+			return !precedes
 		case (.end(_), .interior(_, let h)),
 		     (.interior(_, let h), .end(_)):
-			guard let followingExist =
-			    self.owner.steps(follow: h) else {
-				throw RopeIndexComparisonError.IndexNotFound
-			}
-			return !followingExist
-		case (.interior(_, let h), .interior(_, let j))
-		    where h == j:
+			let follows = try self.owner.steps(follow: h)
+			return !follows
+		case (.interior(_, let h), .interior(_, let j)) where h == j:
 			return true
 		case (.interior(_, let h1), .interior(_, let h2)):
-			guard let precedes = self.owner.step(h1, precedes: h2),
-			      let follows = self.owner.step(h2, precedes: h1)
+			guard let precedes = try? self.owner.step(h1,
+			                                          precedes: h2),
+			      let follows = try? self.owner.step(h2,
+			                                         precedes: h1)
 			      else {
-				throw RopeIndexComparisonError.IndexNotFound
+				throw RopeIndexComparisonError.indexNotFound
 			}
 			return !precedes && !follows
 		default:
@@ -83,7 +78,7 @@ extension Rope.Index {
 	}
 	public func isLessThan(_ other: Self) throws -> Bool {
 		guard self.owner === other.owner else {
-			throw RopeIndexComparisonError.MismatchedOwners
+			throw RopeIndexComparisonError.mismatchedOwners
 		}
 		return try self.owner.step(self, precedes: other)
 	}
@@ -103,25 +98,16 @@ extension Rope.Node {
 		case (.start(_), .start(_)):
 			return false
 		case (.start(_), .interior(_, let h)):
-			guard let precede = steps(precede: h) else {
-				throw RopeIndexComparisonError.IndexNotFound
-			}
-			return precede
+			return try steps(precede: h)
 		case (.start(_), .end(_)):
 			return !hasSingleIndex
 		case (.end(_), .end(_)):
 			return false
 		case (.interior(_, let h), .end(_)):
-			guard let follow = steps(follow: h) else {
-				throw RopeIndexComparisonError.IndexNotFound
-			}
-			return follow
+			return try steps(follow: h)
 		case (.interior(_, let h1),
 		      .interior(_, let h2)):
-			guard let precedes = step(h1, precedes: h2) else {
-				throw RopeIndexComparisonError.IndexNotFound
-			}
-			return precedes
+			return try step(h1, precedes: h2)
 		default:
 			return false
 		}
