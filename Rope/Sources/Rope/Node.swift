@@ -705,18 +705,13 @@ public extension Rope.Node {
 	func inserting(_ elt: Self, on side: Side, of target: Label)
 	    throws -> Self {
 		switch self {
-		case .index(let w):
-			guard let label = w.get(), label == target else {
-				throw NodeError.indexNotFound
-			}
+		case .index(let w) where w.get() == target:
 			switch side {
 			case .left:
 				return .nodes(elt, self)
 			case .right:
 				return .nodes(self, elt)
 			}
-		case .cursor(_, _):
-			throw NodeError.indexNotFound
 		case .extent(let ctlr, let r):
 			return try ctlr.node(r, inserting: elt, on: side,
 			    of: target)
@@ -732,7 +727,7 @@ public extension Rope.Node {
 			} else {
 				throw NodeError.indexNotFound
 			}
-		case .leaf(_, _), .empty:
+		case .cursor(_, _), .empty, .index(_), .leaf(_, _):
 			throw NodeError.indexNotFound
 		}
 	}
@@ -779,15 +774,10 @@ public extension Rope.Node {
 	}
 	func steps(follow target: Label) throws -> Bool {
 		switch self {
-		case .index(let w):
-			if w.get() != target {
-				throw NodeError.indexNotFound
-			}
+		case .index(let w) where w.get() == target :
 			return false
 		case .extent(_, let rope) where rope.contains(target):
 			return true
-		case .extent(_, _):
-			throw NodeError.indexNotFound
 		case .concat(let l, let midx, _, _, let r, let w):
 			switch try? l.steps(follow: target) {
 			case nil:
@@ -798,21 +788,17 @@ public extension Rope.Node {
 				return r.labels.extentCount > 0 ||
 				       midx != w.unitOffset
 			}
-		case .cursor(_, _), .leaf(_, _), .empty:
+		case .cursor(_, _), .empty, .extent(_, _), .index(_),
+		     .leaf(_, _):
 			throw NodeError.indexNotFound
 		}
 	}
 	func steps(precede target: Label) throws -> Bool {
 		switch self {
-		case .index(let w):
-			if w.get() != target {
-				throw NodeError.indexNotFound
-			}
+		case .index(let w) where w.get() == target:
 			return false
 		case .extent(_, let rope) where rope.contains(target):
 			return true
-		case .extent(_, _):
-			throw NodeError.indexNotFound
 		case .concat(let l, let midx, _, _, let r, _):
 			switch try? r.steps(precede: target) {
 			case nil:
@@ -822,16 +808,13 @@ public extension Rope.Node {
 			case false?:
 				return l.labels.extentCount > 0 || 0 != midx
 			}
-		case .cursor(_, _), .leaf(_, _), .empty:
+		case .cursor(_, _), .empty, .extent(_, _), .index(_),
+		     .leaf(_, _):
 			throw NodeError.indexNotFound
 		}
 	}
 	func step(_ h1: Label, precedes h2: Label) throws -> Bool {
 		switch self {
-		case .index(_):
-			throw NodeError.indexNotFound
-		case .cursor(_, _):
-			throw NodeError.indexNotFound
 		case .extent(_, let rope):
 			return try rope.step(h1, precedes: h2)
 		case .concat(let l, _, _, let labels, let r, _):
@@ -856,9 +839,7 @@ public extension Rope.Node {
 				throw NodeError.indexNotFound
 			}
 			return follow || precede
-		case .leaf(_, _):
-			throw NodeError.indexNotFound
-		case .empty:
+		case .cursor(_, _), .empty, .index(_), .leaf(_, _):
 			throw NodeError.indexNotFound
 		}
 	}
