@@ -748,8 +748,8 @@ public extension Rope.Node {
 			return [label.id]
 		case .extent(let ctlr, let rope):
 			return rope.labelSet.union([ctlr.id])
-		case .concat(_, _, _, let labels, _, _):
-			return labels
+		case .concat(_, _, _, let set, _, _):
+			return set
 		case .leaf(_, _), .empty:
 			return []
 		}
@@ -763,10 +763,10 @@ public extension Rope.Node {
 			return label == target
 		case .cursor(target, _):
 			return true
-		case .extent(_, let rope):
-			return rope.contains(target)
-		case .concat(_, _, _, let labels, _, _):
-			return labels.contains(target.id)
+		case .extent(_, let n):
+			return n.contains(target)
+		case .concat(_, _, _, let set, _, _):
+			return set.contains(target.id)
 		case .leaf(_, _), .empty:
 			return false
 		case .cursor(_, _):
@@ -777,7 +777,7 @@ public extension Rope.Node {
 		switch self {
 		case .index(let w) where w.get() == target:
 			return false
-		case .extent(_, let rope) where rope.contains(target):
+		case .extent(_, let n) where n.contains(target):
 			return true
 		case .concat(let l, let midx, _, _, let r, let w):
 			switch try? l.steps(follow: target) {
@@ -1137,8 +1137,8 @@ public extension Rope.Node {
 			                              in: controllers + [ctlr])
 		case (.index(let w), .interior(_, let h)) where w.get() == h:
 			return controllers
-		case (.concat(let l, let midx, _, let labels, let r, _),
-		      .interior(_, let h)) where labels.contains(h.id):
+		case (.concat(let l, let midx, _, let set, let r, _),
+		      .interior(_, let h)) where set.contains(h.id):
 			do {
 				return try l.extentsOpening(at: i,
 				    in: controllers)
@@ -1174,8 +1174,8 @@ public extension Rope.Node {
 			                              in: controllers + [ctlr])
 		case (.index(let w), .interior(_, let h)) where w.get() == h:
 			return controllers
-		case (.concat(let l, let midx, _, let labels, let r, let w),
-		      .interior(_, let h)) where labels.contains(h.id):
+		case (.concat(let l, let midx, _, let set, let r, let w),
+		      .interior(_, let h)) where set.contains(h.id):
 			do {
 				return try r.extentsClosing(at: i,
 				    in: controllers)
@@ -1793,8 +1793,8 @@ public extension Rope.Node {
 				return nil
 			}
 			return .extent(under: ctlr, newn)
-		case .concat(let l, _, _, let labels, let r, _):
-			guard labels.contains(target.id) else {
+		case .concat(let l, _, _, let set, let r, _):
+			guard set.contains(target.id) else {
 				return nil
 			}
 			if let newl = l.transformingExtent(
