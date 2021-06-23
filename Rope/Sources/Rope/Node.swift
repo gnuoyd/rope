@@ -756,11 +756,10 @@ public extension Rope.Node {
 	}
 	func contains(_ target: Label) -> Bool {
 		switch self {
-		case .index(let w):
-			guard let label = w.get() else {
-				return false
-			}
-			return label == target
+		case .index(let w) where w.get() == target:
+			return true
+		case .index(_):
+			return false
 		case .cursor(target, _):
 			return true
 		case .extent(_, let n):
