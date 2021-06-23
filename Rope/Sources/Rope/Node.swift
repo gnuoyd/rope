@@ -391,13 +391,13 @@ public extension Rope.Node {
 			}
 		case (.concat(let l, _, _, _, let r, _), _):
 			let id = i.id
-			switch (l.labels.contains(id), r.labels.contains(id),
-				step) {
+			switch (l.labelSet.contains(id),
+				r.labelSet.contains(id), step) {
 			case (false, false, _):
 				return .absent
 			case (true, true, _):
-				assert(l.labels.contains(id) !=
-				       r.labels.contains(id))
+				assert(l.labelSet.contains(id) !=
+				       r.labelSet.contains(id))
 				return .inchOut
 			case (true, false, .rightStep):
 				return l.inserting(j, one: .rightStep, after: i,
@@ -490,7 +490,8 @@ public extension Rope.Node {
 			return r.firstElement()
 		case .concat(let l, _, _, _, let r, _):
 			let id = i.id
-			switch (l.labels.contains(id), r.labels.contains(id)) {
+			switch (l.labelSet.contains(id),
+				r.labelSet.contains(id)) {
 			case (false, false):
 				return .absent
 			case (true, true):
@@ -736,7 +737,7 @@ public extension Rope.Node {
 public extension Rope.Node {
 	// TBD introduce a property for all Labels but the
 	// index Labels?
-	var labels: LabelSet {
+	var labelSet: LabelSet {
 		switch self {
 		case .index(let w):
 			guard let label = w.get() else {
@@ -746,7 +747,7 @@ public extension Rope.Node {
 		case .cursor(let label, _):
 			return [label.id]
 		case .extent(let ctlr, let rope):
-			return rope.labels.union([ctlr.id])
+			return rope.labelSet.union([ctlr.id])
 		case .concat(_, _, _, let labels, _, _):
 			return labels
 		case .leaf(_, _), .empty:
@@ -865,7 +866,8 @@ public extension Rope.Node {
 		default:
 			self = .concat(left, left.endIndex,
 				       1 + max(left.depth, right.depth),
-				       left.labels.union(right.labels), right,
+				       left.labelSet.union(right.labelSet),
+				       right,
 				       left.dimensions + right.dimensions)
 		}
 	}
@@ -1148,7 +1150,7 @@ public extension Rope.Node {
 				 * they open at an index on the left.  So
 				 * leave them out of the list.
 				 */
-				guard 0 == midx && l.labels.extentCount == 0
+				guard 0 == midx && l.labelSet.extentCount == 0
 				    else {
 					return try r.extentsOpening(at: i)
 				}
@@ -1186,7 +1188,7 @@ public extension Rope.Node {
 				 * leave them out of the list.
 				 */
 				guard midx == w.unitOffset &&
-				      r.labels.extentCount == 0 else {
+				      r.labelSet.extentCount == 0 else {
 					return try l.extentsClosing(at: i)
 				}
 				return try l.extentsClosing(at: i,

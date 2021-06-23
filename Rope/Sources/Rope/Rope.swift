@@ -209,7 +209,7 @@ public class Rope<C : Content> : Collection {
 		 * .start(of: self) in that case.
 		 */
 		if top.startIndex == top.endIndex &&
-		   top.labels.extentCount == 0 {
+		   top.labelSet.extentCount == 0 {
 			return .end(of: self)
 		}
 		return .start(of: self)
@@ -411,7 +411,7 @@ extension Rope {
 
 extension Rope.Node {
 	var hasSingleIndex: Bool {
-		return labels.extentCount == 0 && length == 0
+		return labelSet.extentCount == 0 && length == 0
 	}
 }
 
