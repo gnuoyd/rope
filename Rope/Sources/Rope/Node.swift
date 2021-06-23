@@ -735,6 +735,10 @@ public extension Rope.Node {
 }
 
 public extension Rope.Node {
+	enum LabelKind {
+	case index
+	case step
+	}
 	// TBD introduce a property for all Labels but the
 	// index Labels?
 	var labelSet: LabelSet {
@@ -773,20 +777,26 @@ public extension Rope.Node {
 		}
 	}
 	func steps(follow target: Label) throws -> Bool {
+		return try labels(of: .step, follow: target)
+	}
+	func indices(follow target: Label) throws -> Bool {
+		return try labels(of: .index, follow: target)
+	}
+	func labels(of kind: LabelKind, follow target: Label) throws -> Bool {
 		switch self {
 		case .index(let w) where w.get() == target:
 			return false
 		case .extent(_, let n) where n.contains(target):
 			return true
 		case .concat(let l, let midx, _, _, let r, let w):
-			switch try? l.steps(follow: target) {
-			case nil:
-				return try r.steps(follow: target)
-			case true?:
-				return true
-			case false?:
-				return r.labels.extentCount > 0 ||
-				       midx != w.unitOffset
+			do {
+				return try l.labels(of: kind, follow: target) ||
+				    r.labelSet.extentCount > 0 ||
+				    midx != w.unitOffset ||
+				    (kind == .index &&
+				     r.rightmostIndexLabel() != nil)
+			} catch {
+				return try r.labels(of: kind, follow: target)
 			}
 		case .cursor(_, _), .empty, .extent(_, _), .index(_),
 		     .leaf(_, _):
@@ -819,19 +829,27 @@ public extension Rope.Node {
 		}
 	}
 	func steps(precede target: Label) throws -> Bool {
+		return try labels(of: .step, precede: target)
+	}
+	func indices(precede target: Label) throws -> Bool {
+		return try labels(of: .index, precede: target)
+	}
+	func labels(of kind: LabelKind, precede target: Label) throws -> Bool {
 		switch self {
 		case .index(let w) where w.get() == target:
 			return false
 		case .extent(_, let rope) where rope.contains(target):
 			return true
 		case .concat(let l, let midx, _, _, let r, _):
-			switch try? r.steps(precede: target) {
-			case nil:
-				return try l.steps(precede: target)
-			case true?:
-				return true
-			case false?:
-				return l.labels.extentCount > 0 || 0 != midx
+			do {
+				return
+				    try r.labels(of: kind, precede: target) ||
+				    l.labelSet.extentCount > 0 ||
+				    0 != midx ||
+				    (kind == .index &&
+				     l.leftmostIndexLabel() != nil)
+			} catch {
+				return try l.labels(of: kind, precede: target)
 			}
 		case .cursor(_, _), .empty, .extent(_, _), .index(_),
 		     .leaf(_, _):
@@ -839,31 +857,34 @@ public extension Rope.Node {
 		}
 	}
 	func step(_ h1: Label, precedes h2: Label) throws -> Bool {
+		return try label(h1, precedes: h2, by: .step)
+	}
+	func index(_ h1: Label, precedes h2: Label) throws -> Bool {
+		return try label(h1, precedes: h2, by: .index)
+	}
+	func label(_ h1: Label, precedes h2: Label, by kind: LabelKind)
+	    throws -> Bool {
 		switch self {
 		case .extent(_, let rope):
-			return try rope.step(h1, precedes: h2)
-		case .concat(let l, _, _, let labels, let r, _):
-			/* I'm not sure if short-circuiting here actually
-			 * saves us much work.  Benchmark and see?
-			 */
-			guard labels.contains(h1.id) && labels.contains(h2.id)
-			    else {
-				throw NodeError.indexNotFound
+			return try rope.label(h1, precedes: h2, by: kind)
+		case .concat(let l, _, _, _, let r, _):
+			if l.contains(h2) && r.contains(h1) {
+				return false
 			}
-			if let ordered = try? l.step(h1, precedes: h2) {
+			if l.contains(h1) && r.contains(h2) {
+				return try kind == .index ||
+				           l.labels(of: kind, follow: h1) ||
+				           r.labels(of: kind, precede: h2)
+			}
+			if let ordered = try? l.label(h1, precedes: h2,
+			    by: kind) {
 				return ordered
 			}
-			if let ordered = try? r.step(h1, precedes: h2) {
+			if let ordered = try? r.label(h1, precedes: h2,
+			    by: kind) {
 				return ordered
 			}
-			guard let follow = try? l.steps(follow: h1),
-			      let precede = try? r.steps(precede: h2) else {
-				if l.contains(h2) && r.contains(h1) {
-					return false
-				}
-				throw NodeError.indexNotFound
-			}
-			return follow || precede
+			throw NodeError.indexNotFound
 		case .cursor(_, _), .empty, .index(_), .leaf(_, _):
 			throw NodeError.indexNotFound
 		}
