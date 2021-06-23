@@ -793,6 +793,31 @@ public extension Rope.Node {
 			throw NodeError.indexNotFound
 		}
 	}
+	func leftmostIndexLabel() -> Label? {
+		switch self {
+		case .index(let w):
+			return w.get()
+		case .extent(_, let n):
+			return n.leftmostIndexLabel()
+		case .concat(let l, _, _, _, let r, _):
+			return l.leftmostIndexLabel() ?? r.leftmostIndexLabel()
+		case .cursor(_, _), .empty, .leaf(_, _):
+			return nil
+		}
+	}
+	func rightmostIndexLabel() -> Label? {
+		switch self {
+		case .index(let w):
+			return w.get()
+		case .extent(_, let n):
+			return n.rightmostIndexLabel()
+		case .concat(let l, _, _, _, let r, _):
+			return r.rightmostIndexLabel() ??
+			       l.rightmostIndexLabel()
+		case .cursor(_, _), .empty, .leaf(_, _):
+			return nil
+		}
+	}
 	func steps(precede target: Label) throws -> Bool {
 		switch self {
 		case .index(let w) where w.get() == target:
