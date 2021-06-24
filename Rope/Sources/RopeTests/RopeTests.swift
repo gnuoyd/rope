@@ -39,7 +39,11 @@ class IndexOrderByIndex: XCTestCase {
 		}
 	}
 	func testComparingIndicesPairwise() {
-		let rope: RSS = Rope(content: "pqrstuvwxyz")
+		let labels = [Label(), Label(), Label()]
+		let rope: RSS = Rope(with:
+		    labels.map { NSS.index(label: $0) }
+		          .reduce(.empty) { (tree, next) in
+			                    .nodes(tree, next) } )
 		let indices = rope.indices.enumerated()
 		for (l, r) in indices ⨯ indices {
 			guard case (.interior(_, let l1),
