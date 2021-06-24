@@ -21,7 +21,39 @@ func ⨯<L, R, Lseq : Sequence, Rseq : Sequence>(_ l: Lseq, _ r: Rseq)
 	}
 }
 
-class IndexOrder: XCTestCase {
+class IndexOrderByIndex: XCTestCase {
+	func testComparingIndicesSequentially() {
+		let labels = [Label(), Label(), Label()]
+		let rope: RSS = Rope(with:
+		    labels.map { NSS.index(label: $0) }
+		          .reduce(.empty) { (tree, next) in
+			                    .nodes(tree, next) } )
+		var previous: Label? = nil
+		for label in labels {
+			guard let p = previous else {
+				previous = label
+				continue
+			}
+			XCTAssert(try rope.node.index(p, precedes: label))
+			XCTAssert(try !rope.node.index(label, precedes: p))
+		}
+	}
+	func testComparingIndicesPairwise() {
+		let rope: RSS = Rope(content: "pqrstuvwxyz")
+		let indices = rope.indices.enumerated()
+		for (l, r) in indices ⨯ indices {
+			guard case (.interior(_, let l1),
+			            .interior(_, let l2)) =
+				   (l.element, r.element) else {
+				continue
+			}
+			XCTAssert(try (l.offset < r.offset) ==
+			          (rope.node.index(l1,
+				                  precedes: l2)))
+		}
+	}
+}
+class IndexOrderByStep: XCTestCase {
 	func testComparingIndicesSequentially() {
 		let rope: RSS = Rope(content: "pqrstuvwxyz")
 		var previous: Rope<Substring>.Index? = nil
