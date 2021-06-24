@@ -56,7 +56,38 @@ class IndexOrderByIndex: XCTestCase {
 				                  precedes: l2)))
 		}
 	}
+	func testFollow() {
+		let labels = [Label(), Label(), Label()]
+		let rope: RSS = Rope(with:
+		    labels.map { NSS.index(label: $0) }
+		          .reduce(.empty) { (tree, next) in
+			                    .nodes(tree, next) } )
+		for label in labels.dropLast() {
+			XCTAssert(try rope.node.indices(follow: label))
+		}
+		guard let last = labels.last else {
+			XCTFail("No last array element.")
+			return
+		}
+		XCTAssert(try !rope.node.indices(follow: last))
+	}
+	func testPrecede() {
+		let labels = [Label(), Label(), Label()]
+		let rope: RSS = Rope(with:
+		    labels.map { NSS.index(label: $0) }
+		          .reduce(.empty) { (tree, next) in
+			                    .nodes(tree, next) } )
+		for label in labels.dropFirst() {
+			XCTAssert(try rope.node.indices(precede: label))
+		}
+		guard let first = labels.first else {
+			XCTFail("No first array element.")
+			return
+		}
+		XCTAssert(try !rope.node.indices(precede: first))
+	}
 }
+
 class IndexOrderByStep: XCTestCase {
 	func testComparingIndicesSequentially() {
 		let rope: RSS = Rope(content: "pqrstuvwxyz")
