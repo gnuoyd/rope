@@ -18,6 +18,7 @@ extension Range {
 		    in: rope)
 		self = lower..<upper
 	}
+	// TBD add (Bound, Bound) property `orderedAliasedBounds`
 }
 
 extension Rope.Node {
@@ -104,7 +105,6 @@ public class Rope<C : Content> : Collection {
 	public typealias Element = Node
 	public typealias Offset = Node.Offset
 	public enum Index : Comparable {
-	case start(of: Rope)
 	case end(of: Rope)
 	case interior(of: Rope, label: Label)
 	}
@@ -146,21 +146,19 @@ public class Rope<C : Content> : Collection {
 			    try content.inserting(elt, on: side, of: target)
 			return .extent(self, augmented)
 		}
-		func replacing(_ range: Range<Rope.Index>,
+		func replacing(after lowerBound: Label, upTo upperBound: Label,
 		    in content: Rope.Node, with replacement: Rope.Node.Content)
 		    throws -> Rope.Node {
-			let replaced = try content.replacing(range,
+			let replaced = try content.replacing(
+			    after: lowerBound, upTo: upperBound,
 			    with: replacement)
 			return .extent(self, replaced)
 		}
-		/* TBD Make this transformingAttributes where `fn` maps from
-		 * attributes to attributes.
-		 */
-		func transformingAttributes(on range: Range<Rope.Index>,
-		    in content: Rope.Node,
+		func transformingAttributes(after lowerBound: Label,
+		    upTo upperBound: Label, in content: Rope.Node,
 		    with fn: (Attributes) -> Attributes) throws -> Rope.Node {
 			let xformed = try content.transformingAttributes(
-			    on: range, with: fn)
+			    after: lowerBound, upTo: upperBound, with: fn)
 			return .extent(self, xformed)
 		}
 	}
@@ -188,36 +186,73 @@ public class Rope<C : Content> : Collection {
 
 	private var mutations: UInt = 0
 	private var rebalanceInterval: UInt = 32
+	internal var _startLabel: Label
+	internal var _endLabel: Label
 	private var _top: Node
 	private var top: Node {
 		get {
 			return _top
 		}
 		set {
+			var tmp: Node
 			mutations += 1
 			if mutations.isMultiple(of: rebalanceInterval) {
-				_top =
-				    newValue.cleaned()?.rebalanced() ?? .empty
+				tmp = newValue.cleaned() ?? .empty
 			} else {
-				_top = newValue
+				tmp = newValue
+			}
+			switch try? tmp.indices(precede: _startLabel) {
+			case false?:
+				break
+			default:
+				_startLabel = Label()
+				tmp = .nodes(.index(label: _startLabel), tmp)
+			}
+			switch try? tmp.indices(follow: _endLabel) {
+			case false?:
+				break
+			default:
+				_endLabel = Label()
+				tmp = .nodes(tmp, .index(label: _endLabel))
+			}
+			if mutations.isMultiple(of: rebalanceInterval) {
+				_top = tmp.rebalanced()
+			} else {
+				_top = tmp
 			}
 		}
 	}
 	public var startIndex: Index {
-		/* There are at least three index positions, start and
-		 * end, if there is even a solitary extent.  Need to return
-		 * .start(of: self) in that case.
-		 */
-		if top.startIndex == top.endIndex &&
-		   top.labelSet.extentCount == 0 {
-			return .end(of: self)
-		}
-		return .start(of: self)
+		return .interior(of: self, label: _startLabel)
 	}
-	public var endIndex: Index { return .end(of: self) }
+	public var endIndex: Index {
+		return .interior(of: self, label: _endLabel)
+	}
 
 	public init() {
-		_top = .empty
+		_startLabel = Label()
+		_endLabel = Label()
+		_top = .nodes(.index(label: _startLabel),
+		              .index(label: _endLabel))
+	}
+	public init(with nodes: Node...) {
+		let prototype = Node.tree(from: nodes)
+		var tmp = prototype
+		if let leftmost = prototype.leftmostIndexLabel(),
+		    case false? = try? prototype.indices(precede: leftmost) {
+			_startLabel = leftmost
+		} else {
+			_startLabel = Label()
+			tmp = .nodes(.index(label: _startLabel), tmp)
+		}
+		if let rightmost = prototype.rightmostIndexLabel(),
+		    case false? = try? prototype.indices(follow: rightmost) {
+			_endLabel = rightmost
+		} else {
+			_endLabel = Label()
+			tmp = .nodes(tmp, .index(label: _endLabel))
+		}
+		_top = tmp
 	}
 	public var node: Node {
 		get {
@@ -230,22 +265,26 @@ public class Rope<C : Content> : Collection {
 	public func step(_ h1: Label, precedes h2: Label) throws -> Bool {
 		return try top.step(h1, precedes: h2)
 	}
+	public func label(_ h1: Label, aliases h2: Label) throws -> Bool {
+		if h1 == h2 {
+			return true
+		}
+		let precedes = try top.step(h1, precedes: h2)
+		let follows = try top.step(h2, precedes: h1)
+		return !precedes && !follows
+	}
 	public init<T>(content t: T) where C.SubSequence == T {
-		_top = Node(content: t)
+		_startLabel = Label()
+		_endLabel = Label()
+		_top = .nodes(.index(label: _startLabel),
+		              Node(content: t),
+			      .index(label: _endLabel))
 	}
 	public func index(after i: Index) -> Index {
 		guard i.owner === self else {
 			fatalError("Mismatched owner")
 		}
 		switch i {
-		case .start(_):
-			let h = Label()
-			guard case .step(let n) =
-			    top.inserting(h, after: .rightStep) else {
-				return .end(of: self)
-			}
-			top = n
-			return .interior(of: self, label: h)
 		case .end(_):
 			fatalError("No index after .endIndex")
 		case .interior(_, let h):
@@ -256,7 +295,7 @@ public class Rope<C : Content> : Collection {
 			case .absent:
 				fatalError(".interior(_, \(h)) is absent")
 			case .stepOut:
-				return .end(of: self)
+				return endIndex
 			case .step(let node):
 				top = node
 				return .interior(of: self, label: j)
@@ -268,13 +307,11 @@ public class Rope<C : Content> : Collection {
 			fatalError("Mismatched owner")
 		}
 		switch i {
-		case .start(_):
-			fatalError("No index before .startIndex")
 		case .end(_):
 			let h = Label()
 			guard case .step(let n) =
 			    top.inserting(h, after: .leftStep) else {
-				return .start(of: self)
+				return startIndex
 			}
 			top = n
 			return .interior(of: self, label: h)
@@ -287,7 +324,7 @@ public class Rope<C : Content> : Collection {
 			case .absent:
 				fatalError(".interior(_, \(h)) is absent")
 			case .stepOut:
-				return .start(of: self)
+				return startIndex
 			case .step(let node):
 				top = node
 				return .interior(of: self, label: j)
@@ -299,6 +336,9 @@ public class Rope<C : Content> : Collection {
 	}
 	public subscript(r: Range<Index>) -> Element {
 		get {
+			if r.isEmpty {
+				return .empty
+			}
 			guard let e = top.subrope(after: r.lowerBound,
 			    upTo: r.upperBound) else {
 				fatalError("No such range")
@@ -317,11 +357,6 @@ public class Rope<C : Content> : Collection {
 	}
 	public func element(at i: Index) throws -> Element {
 		switch i {
-		case .start(_):
-			guard case .step(let node) = top.firstElement() else {
-				throw RopeNoSuchElement.atStart
-			}
-			return node
 		case .interior(_, let h):
 			let result = top.element(at: h)
 			guard case .step(let node) = result else {
@@ -341,8 +376,6 @@ public class Rope<C : Content> : Collection {
 			return false
 		}
 		switch i {
-		case .start(_):
-			top = .nodes(elt, top)
 		case .end(_):
 			top = .nodes(top, elt)
 		case .interior(_, let h):
@@ -358,7 +391,8 @@ public class Rope<C : Content> : Collection {
 	public subscript(_ r: Range<Offset>) -> Content {
 		set(newValue) {
 			let ir = Range(r, in: self)
-			guard let newtop = try? top.replacing(ir,
+			guard let newtop = try? top.replacing(
+			    after: ir.lowerBound, upTo: ir.upperBound,
 			    with: newValue) else {
 				fatalError("No such range")
 			}
@@ -416,13 +450,6 @@ extension Rope.Node {
 }
 
 extension Rope {
-	public convenience init(with nodes: Node...) {
-		self.init()
-		top = .tree(from: nodes)
-	}
-}
-
-extension Rope {
         public struct UnitView {
 		let rope: Rope
 		init(rope r: Rope) {
@@ -474,8 +501,17 @@ extension Rope {
 extension Rope {
 	public func index(after i: Index, climbing dir: Climb,
 	    bottom: inout ExtentController?) -> Index? {
-		if case .end(_) = i {
+		switch i {
+		case .end(_):
 			return nil
+		case .interior(_, let label):
+			do {
+				if try !top.indices(follow: label) {
+					return nil
+				}
+			} catch {
+				return nil
+			}
 		}
 		let j = index(after: i)
 		switch ((try? extentsEnclosing(i))?.count,
@@ -491,8 +527,17 @@ extension Rope {
 	}
 	public func index(before i: Index, climbing dir: Climb,
 	    bottom: inout ExtentController?) -> Index? {
-		if case .start(_) = i {
-			return nil
+		switch i {
+		case .interior(_, let label):
+			do {
+				if try !top.indices(precede: label) {
+					return nil
+				}
+			} catch {
+				return nil
+			}
+		default:
+			break
 		}
 		let j = index(before: i)
 		switch (try? extentsEnclosing(i),
