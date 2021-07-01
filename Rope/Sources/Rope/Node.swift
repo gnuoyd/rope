@@ -583,7 +583,8 @@ public extension Rope.Node {
 			switch middle.segmentingAtAnyExtent() {
 			case (_, nil, _):
 				return head.appending(
-				    try middle.transformingAttributes(with: fn)).appending(tail)
+				    try middle.transformingAttributes(
+				        with: fn)).appending(tail)
 			case (let l, .extent(let ctlr, let m), let r):
 				Swift.print("\(#function): segmented at extent")
 				let newl = try l.withFreshBoundaries {
