@@ -562,7 +562,9 @@ public extension Rope.Node {
 			 */
 			if try label(lowerBound, aliases: upperBound) {
 				// TBD perform an alternate, "inserting"
-				// transformation
+				// transformation if this routine is ever
+				// adapted to perform generic transformations.
+				// This is fine, for now.
 				return self
 			}
 			/* Important: don't discard any embedded indices at
@@ -616,7 +618,9 @@ public extension Rope.Node {
 			 */
 			if try label(lowerBound, aliases: upperBound) {
 				// TBD perform an alternate, "inserting"
-				// transformation
+				// transformation if this routine is ever
+				// adapted to perform generic transformations.
+				// This is fine, for now.
 				return self
 			}
 			guard case (let l, .extent(let ctlr, let m), let r) =
