@@ -147,7 +147,7 @@ public class Rope<C : Content> : Collection {
 			return .extent(self, augmented)
 		}
 		func replacing(after lowerBound: Label, upTo upperBound: Label,
-		    in content: Rope.Node, with replacement: Rope.Node.Content)
+		    in content: Rope.Node, with replacement: Rope.Node)
 		    throws -> Rope.Node {
 			let replaced = try content.replacing(
 			    after: lowerBound, upTo: upperBound,

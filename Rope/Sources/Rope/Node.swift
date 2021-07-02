@@ -31,7 +31,7 @@ extension Rope {
 		override func replacing(
 		    after lowerBound: Label, upTo upperBound: Label,
 		    in content: Rope.Node,
-		    with replacement: Rope.Node.Content) throws -> Rope.Node {
+		    with replacement: Rope.Node) throws -> Rope.Node {
 			throw Rope.Node.NodeError.readonlyExtent
 		}
 	}
@@ -721,6 +721,9 @@ public extension Rope.Node {
 	}
 }
 
+public typealias UndoItem<C : Content> = (Rope<C>.Node) throws -> Rope<C>.Node
+public typealias UndoList<C : Content> = Array<UndoItem<C>>
+
 public extension Rope.Node {
 	func inserting(_ elt: Self, on side: Side, of target: Rope.Index)
 	    throws -> Self {
@@ -729,6 +732,42 @@ public extension Rope.Node {
 			return .nodes(self, elt)
 		case .interior(_, let l):
 			return try inserting(elt, on: side, of: l)
+		}
+	}
+	/* This routine deals with the empty range where `target.lower`
+	 * is right of `target.upper` in the rope---it can happen---but
+	 * nevertheless the bounds alias because there are no indexable
+	 * locations between: no extent boundaries, no non-empty leaves.
+	 *
+	 * When inserting(:between:undoList:) leaves `target.upper` on
+	 * the left side of `target.lower`, it carefully produces the
+	 * correct undo record for that order.
+	 */
+	func inserting(_ elt: Self,
+	    between target: (lower: Label, upper: Label),
+	    undoList: inout UndoList<Content>) throws -> Self {
+		if try index(target.lower, precedes: target.upper) {
+			undoList.append({ node in
+				try node.replacing(after: target.lower,
+				    upTo: target.upper, with: .empty)
+			})
+			return try inserting(elt, on: .right, of: target.lower)
+		} else if try index(target.upper, precedes: target.lower) {
+			undoList.append({ node in
+				try node.replacing(after: target.upper,
+				    upTo: target.lower, with: .empty)
+			})
+			return try inserting(elt, on: .right, of: target.upper)
+		} else {
+			return try elt.withFreshBoundaries {
+			    (lower, upper, node) in
+				undoList.append({ node in
+					try node.replacing(after: lower,
+					    upTo: upper, with: .empty)
+				})
+			        return try inserting(node, on: .right,
+				    of: target.lower)
+			}
 		}
 	}
 	func inserting(_ elt: Self, on side: Side, of target: Label)
@@ -1673,41 +1712,27 @@ public extension Rope.Node {
 	func replacing(after lowerBound: Rope.Index,
 	    upTo upperBound: Rope.Index, with replacement: Content) throws
 	    -> Self {
-		return try replacing(after: lowerBound.label,
-		                 upTo: upperBound.label, with: replacement)
+		return try replacing(
+		    after: lowerBound.label, upTo: upperBound.label,
+		    with: .text(replacement))
 	}
 	/* A naive version of `replacing(after:upTo:with:)` splits extents.
 	 * This version finds affected extents, splits before and after each
 	 * extent, and performs replacement/deletion on each affected extent.
 	 */
 	func replacing(after lowerBound: Label, upTo upperBound: Label,
-	    with replacement: Content) throws -> Self {
+	    with replacement: Self) throws -> Self {
+		var undoList: UndoList<Content> = []
 		switch (try extentsEnclosing(lowerBound).first,
 			try extentsEnclosing(upperBound).first) {
 		case (nil, nil):
-			/* Deal with an empty `range` where the lowerBound
-			 * is right of the upperBound in the rope---it can
-			 * happen---but nevertheless the bounds alias
-			 * because there are no indexable locations
-			 * between: no extent boundaries, no non-empty leaves.
-			 *
-			 * XXX Danger!  This may leave upperBound on the
-			 * left side of lowerBound.  In that case, need to
-			 * use the range upperBound..<lowerBound for the
-			 * undo/redo record.
+			/* Deal with an empty range where the lowerBound
+			 * aliases the upperBound.
 			 */
 			if try label(lowerBound, aliases: upperBound) {
-				/* Undo: to do, insert .text(...) bracketed by 
-				 * two new indices because `range` is empty;
-				 * to undo, replace between indices
-				 * with `Content.empty`.
-				 *
-				 * Something like `let inserted = try
-				 * inserting(..., on: .right,
-				 *           of: range.lowerBound)`
-				 */
-				return try inserting(.text(replacement),
-				    on: .right, of: lowerBound)
+				return try inserting(replacement,
+				    between: (lowerBound, upperBound),
+				    undoList: &undoList)
 			}
 			/* Important: don't discard any embedded indices at
 			 * `range` boundaries!  Instead, use
@@ -1727,7 +1752,7 @@ public extension Rope.Node {
 				 * with `middle` to undo.
 				 */
 				return head.appending(
-				    .text(replacement)).appending(tail)
+				    replacement).appending(tail)
 			/* By our contract with `segmentingAtAnyExtent`, the
 			 * `middle` subrope left of the .extent is
 			 * .extent-free, so we do not need to test for
@@ -1746,37 +1771,32 @@ public extension Rope.Node {
 				    (lower, upper, node) in
 					try ctlr.replacing(
 					    after: lower, upTo: upper,
-					    in: node, with: Content.empty)
+					    in: node, with: .empty)
 				}
 				let rReplaced =
 				    try r.withFreshBoundaries {
 					(lower, upper, node) in
 					    try node.replacing(
 					        after: lower, upTo: upper,
-						with: Content.empty)
+						with: .empty)
 				}
 				/* Undo: replace `range` with `middle`.
 				 * XXX Interiorize `range`.
 				 */
 				return head.appending(
-				    .text(replacement)).appending(
+				    replacement).appending(
 				    rReplaced).appending(tail)
 			case (_, _?, _):
 				throw NodeError.expectedExtent
 			}
 		case (let loExt?, let hiExt?) where loExt == hiExt:
-			/* Deal with an empty `range` where the lowerBound
-			 * is right of the upperBound---it can happen---but
-			 * nevertheless the bounds are equal.
+			/* Deal with an empty range where the lowerBound
+			 * aliases the upperBound.
 			 */
 			if try label(lowerBound, aliases: upperBound) {
-				/* Undo: insert .text(...) bracketed by 
-				 * two new indices because `range` is empty;
-				 * replace between indices
-				 * with `Content.empty` to undo.
-				 */
-				return try inserting(.text(replacement),
-				    on: .right, of: lowerBound)
+				return try inserting(replacement,
+				    between: (lowerBound, upperBound),
+				    undoList: &undoList)
 			}
 			guard case (let l, .extent(let ctlr, let m), let r) =
 			    try segmenting(atExtent: loExt) else {
@@ -1804,7 +1824,7 @@ public extension Rope.Node {
 			    (lower, node) in
 			        try node.replacing(
 				    after: lower, upTo: upperBound,
-				    with: Content.empty)
+				    with: .empty)
 			}
 			return l.appending(mReplaced).appending(rTrimmed)
 		case (nil, let hiExt?):
@@ -1824,7 +1844,7 @@ public extension Rope.Node {
 			    (lower, node) in
 			        try ctlr.replacing(
 				    after: lower, upTo: upperBound,
-				    in: node, with: Content.empty)
+				    in: node, with: .empty)
 			}
 			return lReplaced.appending(mTrimmed).appending(r)
 		}

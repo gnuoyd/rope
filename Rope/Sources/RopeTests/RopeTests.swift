@@ -2235,12 +2235,12 @@ class ExtentReplacementsBase : XCTestCase {
 			let assert = Self.functionAssertingThrows(iff: fails)
 			assert(try rope.node.replacing(
 			    after: ir.lowerBound.label,
-			    upTo: ir.upperBound.label, with: "x"),
+			    upTo: ir.upperBound.label, with: .text("x")),
 			    "replacing \(width) at \(range)")
 			assert(try rope.node.replacing(
-			    after: ir.lowerBound.label,
-			    upTo: ir.upperBound.label,
-			    with: ("x" * width)[...]),
+			        after: ir.lowerBound.label,
+			        upTo: ir.upperBound.label,
+			        with: .text(("x" * width)[...])),
 			    "replacing \(width) at \(range)")
 		}
 	}
@@ -2263,12 +2263,12 @@ class ExtentReplacementsBase : XCTestCase {
 			assert(try rope.node.replacing(
 			                        after: ir.lowerBound.label,
 						upTo: ir.upperBound.label,
-						with: "x"),
+						with: .text("x")),
 			    "replacing \(width) at \(range)")
 			assert(try rope.node.replacing(
-			                        after: ir.lowerBound.label,
-						upTo: ir.upperBound.label,
-						with: ("x" * width)[...]),
+			        after: ir.lowerBound.label,
+			        upTo: ir.upperBound.label,
+			        with: .text(("x" * width)[...])),
 			    "replacing \(width) at \(range)")
 		}
 	}
@@ -2386,7 +2386,8 @@ class ExtentReplacementsBase : XCTestCase {
 			let ir = Range(Offset.unitRange(range), in: rope)
 			guard let after = try? rope.node.replacing(
 			    after: ir.lowerBound.label,
-			    upTo: ir.upperBound.label, with: replacement) else {
+			    upTo: ir.upperBound.label,
+			    with: .text(replacement)) else {
 				XCTFail("replacement failed")
 				return
 			}
