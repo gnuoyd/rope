@@ -78,7 +78,7 @@ extension Rope.Node.Offset {
  * Get/set/add/remove attributes on a cursor.
  *
  * Enclose a range in an extent.  The range must be
- * well-formed: must begin and end inside the same extent. 
+ * well-formed: must begin and end inside the same extent.
  *
  * Insert a cursor between characters or nested between extents.
  *
