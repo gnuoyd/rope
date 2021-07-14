@@ -1402,7 +1402,7 @@ public extension Rope.Node {
 	var balanced: Bool {
 		return halfPerimeter >= fibonacci(index: depth + 2)
 	}
-	// Return this Node with all of the expired indices removed. 
+	// Return this Node with all of the expired indices removed.
 	func cleaned() -> Self? {
 		switch self {
 		case .empty, .cursor(_, _), .leaf(_, _):
