@@ -2233,14 +2233,17 @@ class ExtentReplacementsBase : XCTestCase {
 			let overlaps = range.overlaps(3...7)
 			let fails = ro && overlaps
 			let assert = Self.functionAssertingThrows(iff: fails)
+			let undoList = NSS.UndoList()
 			assert(try rope.node.replacing(
 			    after: ir.lowerBound.label,
-			    upTo: ir.upperBound.label, with: .text("x")),
+			    upTo: ir.upperBound.label, with: .text("x"),
+			    undoList: undoList),
 			    "replacing \(width) at \(range)")
 			assert(try rope.node.replacing(
 			        after: ir.lowerBound.label,
 			        upTo: ir.upperBound.label,
-			        with: .text(("x" * width)[...])),
+			        with: .text(("x" * width)[...]),
+				undoList: undoList),
 			    "replacing \(width) at \(range)")
 		}
 	}
@@ -2260,15 +2263,18 @@ class ExtentReplacementsBase : XCTestCase {
 			               range.overlaps(8...10)
 			let fails = ro && overlaps
 			let assert = Self.functionAssertingThrows(iff: fails)
+			let undoList = NSS.UndoList()
 			assert(try rope.node.replacing(
 			                        after: ir.lowerBound.label,
 						upTo: ir.upperBound.label,
-						with: .text("x")),
+						with: .text("x"),
+						undoList: undoList),
 			    "replacing \(width) at \(range)")
 			assert(try rope.node.replacing(
 			        after: ir.lowerBound.label,
 			        upTo: ir.upperBound.label,
-			        with: .text(("x" * width)[...])),
+			        with: .text(("x" * width)[...]),
+				undoList: undoList),
 			    "replacing \(width) at \(range)")
 		}
 	}
@@ -2381,13 +2387,16 @@ class ExtentReplacementsBase : XCTestCase {
 			    .text("defgh"),
 			    .extent(under: rwc[2], .text("ij01234"))))
 			]
+		let undoList = NSS.UndoList()
+
 		for (before, range, replacement, expected) in combinations {
 			let rope: RSS = Rope(with: before)
 			let ir = Range(Offset.unitRange(range), in: rope)
 			guard let after = try? rope.node.replacing(
 			    after: ir.lowerBound.label,
 			    upTo: ir.upperBound.label,
-			    with: .text(replacement)) else {
+			    with: .text(replacement),
+			    undoList: undoList) else {
 				XCTFail("replacement failed")
 				return
 			}

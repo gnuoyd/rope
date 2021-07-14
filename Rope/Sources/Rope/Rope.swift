@@ -10,7 +10,7 @@ case atEnd
 }
 
 extension Range {
-	init<C : Content>(_ r: Range<Rope<C>.Node.Offset>,
+	public init<C : Content>(_ r: Range<Rope<C>.Node.Offset>,
 	                   in rope: Rope<C>) where Bound == Rope<C>.Index {
 		let lower = Rope.Index(abutting: r.lowerBound, on: .right,
 		    in: rope)
@@ -147,11 +147,12 @@ public class Rope<C : Content> : Collection {
 			return .extent(self, augmented)
 		}
 		func replacing(after lowerBound: Label, upTo upperBound: Label,
-		    in content: Rope.Node, with replacement: Rope.Node)
+		    in content: Rope.Node, with replacement: Rope.Node,
+		    undoList: Rope.Node.UndoList)
 		    throws -> Rope.Node {
 			let replaced = try content.replacing(
 			    after: lowerBound, upTo: upperBound,
-			    with: replacement)
+			    with: replacement, undoList: undoList)
 			return .extent(self, replaced)
 		}
 		func transformingAttributes(after lowerBound: Label,
@@ -389,19 +390,31 @@ public class Rope<C : Content> : Collection {
 */
 	/* TBD tests */
 	public subscript(_ r: Range<Offset>) -> Content {
-		set(newValue) {
-			let ir = Range(r, in: self)
-			guard let newtop = try? top.replacing(
-			    after: ir.lowerBound, upTo: ir.upperBound,
-			    with: newValue) else {
+		set(replacement) {
+			do {
+				let undoList = Rope.Node.UndoList()
+				try replacing(r, with: replacement,
+				              undoList: undoList)
+			} catch {
 				fatalError("No such range")
 			}
-			top = newtop
 		}
 		get {
 			let ir = Range(r, in: self)
 			return top[ir]
 		}
+	}
+	public func replacing(_ r: Range<Offset>, with replacement: Content,
+	    undoList: Rope.Node.UndoList) throws {
+		let ir = Range(r, in: self)
+		try replacing(ir, with: replacement, undoList: undoList)
+	}
+	public func replacing(_ r: Range<Index>, with replacement: Content,
+	    undoList: Rope.Node.UndoList) throws {
+		let newtop = try top.replacing(
+		    after: r.lowerBound, upTo: r.upperBound,
+		    with: replacement, undoList: undoList)
+		top = newtop
 	}
 	public subscript<I>(_ r: Range<Offset>) -> I where C.SubSequence == I {
 		set(newValue) {

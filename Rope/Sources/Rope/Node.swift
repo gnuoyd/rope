@@ -31,7 +31,8 @@ extension Rope {
 		override func replacing(
 		    after lowerBound: Label, upTo upperBound: Label,
 		    in content: Rope.Node,
-		    with replacement: Rope.Node) throws -> Rope.Node {
+		    with replacement: Rope.Node, undoList: Rope.Node.UndoList)
+		    throws -> Rope.Node {
 			throw Rope.Node.NodeError.readonlyExtent
 		}
 	}
@@ -721,10 +722,28 @@ public extension Rope.Node {
 	}
 }
 
-public typealias UndoItem<C : Content> = (Rope<C>.Node) throws -> Rope<C>.Node
-public typealias UndoList<C : Content> = Array<UndoItem<C>>
-
 public extension Rope.Node {
+	class UndoList {
+		public typealias UndoItem = (Rope.Node, UndoList)
+		    throws -> Rope.Node
+		private var items: [UndoItem]
+		public required init() {
+			items = []
+		}
+		public func registerUndo(_ item: @escaping UndoItem) {
+			items.append(item)
+		}
+		public func undo(withTarget targetIn: Rope.Node) throws
+		    -> (Rope.Node, UndoList) {
+			let undoList = Self()
+			var target = targetIn
+			while let item = items.popLast() {
+				target = try item(target, undoList)
+			}
+			return (target, undoList)
+		}
+	}
+
 	func inserting(_ elt: Self, on side: Side, of target: Rope.Index)
 	    throws -> Self {
 		switch target {
@@ -745,26 +764,29 @@ public extension Rope.Node {
 	 */
 	func inserting(_ elt: Self,
 	    between target: (lower: Label, upper: Label),
-	    undoList: inout UndoList<Content>) throws -> Self {
+	    undoList: UndoList) throws -> Self {
 		if try index(target.lower, precedes: target.upper) {
-			undoList.append({ node in
+			undoList.registerUndo { (node, undoList) in
 				try node.replacing(after: target.lower,
-				    upTo: target.upper, with: .empty)
-			})
+				    upTo: target.upper, with: .empty,
+				    undoList: undoList)
+			}
 			return try inserting(elt, on: .right, of: target.lower)
 		} else if try index(target.upper, precedes: target.lower) {
-			undoList.append({ node in
+			undoList.registerUndo { (node, undoList) in
 				try node.replacing(after: target.upper,
-				    upTo: target.lower, with: .empty)
-			})
+				    upTo: target.lower, with: .empty,
+				    undoList: undoList)
+			}
 			return try inserting(elt, on: .right, of: target.upper)
 		} else {
 			return try elt.withFreshBoundaries {
 			    (lower, upper, node) in
-				undoList.append({ node in
+				undoList.registerUndo { (node, undoList) in
 					try node.replacing(after: lower,
-					    upTo: upper, with: .empty)
-				})
+					    upTo: upper, with: .empty,
+					    undoList: undoList)
+				}
 			        return try inserting(node, on: .right,
 				    of: target.lower)
 			}
@@ -1710,19 +1732,20 @@ public extension Rope.Node {
 		               upTo: range.upperBound)?.content ?? Content.empty
 	}
 	func replacing(after lowerBound: Rope.Index,
-	    upTo upperBound: Rope.Index, with replacement: Content) throws
+	    upTo upperBound: Rope.Index, with replacement: Content,
+	    undoList: UndoList) throws
 	    -> Self {
 		return try replacing(
 		    after: lowerBound.label, upTo: upperBound.label,
-		    with: .text(replacement))
+		    with: .text(replacement), undoList: undoList)
 	}
 	/* A naive version of `replacing(after:upTo:with:)` splits extents.
 	 * This version finds affected extents, splits before and after each
 	 * extent, and performs replacement/deletion on each affected extent.
 	 */
 	func replacing(after lowerBound: Label, upTo upperBound: Label,
-	    with replacement: Self) throws -> Self {
-		var undoList: UndoList<Content> = []
+	    with replacement: Self, undoList: UndoList)
+	    throws -> Self {
 		switch (try extentsEnclosing(lowerBound).first,
 			try extentsEnclosing(upperBound).first) {
 		case (nil, nil):
@@ -1732,7 +1755,7 @@ public extension Rope.Node {
 			if try label(lowerBound, aliases: upperBound) {
 				return try inserting(replacement,
 				    between: (lowerBound, upperBound),
-				    undoList: &undoList)
+				    undoList: undoList)
 			}
 			/* Important: don't discard any embedded indices at
 			 * `range` boundaries!  Instead, use
@@ -1748,19 +1771,21 @@ public extension Rope.Node {
 			 */
 			switch middle.segmentingAtAnyExtent() {
 			case (_, nil, _):
-				/* Undo: insert .text(...); replace `range`
-				 * with `middle` to undo.
-				 */
+				undoList.registerUndo { (node, undoList) in
+					try node.replacing(after: lowerBound,
+					    upTo: upperBound, with: middle,
+					    undoList: undoList)
+				}
 				return head.appending(
 				    replacement).appending(tail)
 			/* By our contract with `segmentingAtAnyExtent`, the
 			 * `middle` subrope left of the .extent is
 			 * .extent-free, so we do not need to test for
-			 * a read-only .extent's "veto."  We replace it
-			 * entirely by `replacement`, so there is no need to
-			 * bind it.  Hence the `_` pattern.
+			 * a read-only .extent's "veto."  We bind `l` only
+			 * so that we can record an undo record that
+			 * re-inserts it.
 			 */
-			case (_, .extent(let ctlr, let m), let r):
+			case (let l, .extent(let ctlr, let m), let r):
 				Swift.print("\(#function): segmented at extent")
 				/* We have to try to replace using the
 				 * controller so that a read-only extent can
@@ -1771,18 +1796,22 @@ public extension Rope.Node {
 				    (lower, upper, node) in
 					try ctlr.replacing(
 					    after: lower, upTo: upper,
-					    in: node, with: .empty)
+					    in: node, with: .empty,
+					    undoList: undoList)
 				}
 				let rReplaced =
 				    try r.withFreshBoundaries {
 					(lower, upper, node) in
 					    try node.replacing(
 					        after: lower, upTo: upper,
-						with: .empty)
+						with: .empty,
+						undoList: undoList)
 				}
-				/* Undo: replace `range` with `middle`.
-				 * XXX Interiorize `range`.
-				 */
+				undoList.registerUndo { (node, undoList) in
+					try node.inserting(l,
+					    between: (lowerBound, lowerBound),
+					    undoList: undoList)
+				}
 				return head.appending(
 				    replacement).appending(
 				    rReplaced).appending(tail)
@@ -1796,35 +1825,32 @@ public extension Rope.Node {
 			if try label(lowerBound, aliases: upperBound) {
 				return try inserting(replacement,
 				    between: (lowerBound, upperBound),
-				    undoList: &undoList)
+				    undoList: undoList)
 			}
 			guard case (let l, .extent(let ctlr, let m), let r) =
 			    try segmenting(atExtent: loExt) else {
 				throw NodeError.expectedExtent
 			}
-			/* Undo: .replacing(...) adds an undo record. */
 			let mReplaced = try ctlr.replacing(after: lowerBound,
 			    upTo: upperBound, in: m,
-			    with: replacement)
+			    with: replacement, undoList: undoList)
 			return l.appending(mReplaced).appending(r)
 		case (let loExt?, _):
 			guard case (let l, .extent(let ctlr, let m), let r) =
 			    try segmenting(atExtent: loExt) else {
 				throw NodeError.expectedExtent
 			}
-			/* Undo: .replacing(...) adds an undo record. */
 			let mReplaced = try m.withFreshRightBoundary {
 			    (upper, node) in
 			        try ctlr.replacing(
 				    after: lowerBound, upTo: upper, in: node,
-				    with: replacement)
+				    with: replacement, undoList: undoList)
 			}
-			/* Undo: .replacing(...) adds an undo record. */
 			let rTrimmed = try r.withFreshLeftBoundary {
 			    (lower, node) in
 			        try node.replacing(
 				    after: lower, upTo: upperBound,
-				    with: .empty)
+				    with: .empty, undoList: undoList)
 			}
 			return l.appending(mReplaced).appending(rTrimmed)
 		case (nil, let hiExt?):
@@ -1832,19 +1858,17 @@ public extension Rope.Node {
 			    try segmenting(atExtent: hiExt) else {
 				throw NodeError.expectedExtent
 			}
-			/* Undo: .replacing(...) adds an undo record. */
 			let lReplaced = try l.withFreshRightBoundary {
 			    (upper, node) in
 			        try node.replacing(
 				    after: lowerBound, upTo: upper,
-				    with: replacement)
+				    with: replacement, undoList: undoList)
 			}
-			/* Undo: .replacing(...) adds an undo record. */
 			let mTrimmed = try m.withFreshLeftBoundary {
 			    (lower, node) in
 			        try ctlr.replacing(
 				    after: lower, upTo: upperBound,
-				    in: node, with: .empty)
+				    in: node, with: .empty, undoList: undoList)
 			}
 			return lReplaced.appending(mTrimmed).appending(r)
 		}

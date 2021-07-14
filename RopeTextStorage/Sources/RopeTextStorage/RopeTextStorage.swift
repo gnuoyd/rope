@@ -58,8 +58,15 @@ public class RopeTextStorage: NSTextStorage {
 	override public func replaceCharacters(in range: NSRange,
 	    with str: String) {
 		performEditing() {
-			backing[Offset.unitRange(range)] =
-			    ContiguousArray<UTF16.CodeUnit>(str.utf16[...])
+			let undoList = Backing.Node.UndoList()
+			do {
+				try backing.replacing(Offset.unitRange(range),
+				    with: ContiguousArray<UTF16.CodeUnit>(
+				              str.utf16[...]),
+				    undoList: undoList)
+			} catch {
+				fatalError("invalid range")
+			}
 			let actions =
 			    NSTextStorageEditActions.editedCharacters.union(
 			    .editedAttributes)
