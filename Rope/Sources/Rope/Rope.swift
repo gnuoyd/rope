@@ -393,8 +393,8 @@ public class Rope<C : Content> : Collection {
 		set(replacement) {
 			do {
 				let undoList = Rope.Node.UndoList()
-				try replacing(r, with: replacement,
-				              undoList: undoList)
+				try replace(r, with: replacement,
+				            undoList: undoList)
 			} catch {
 				fatalError("No such range")
 			}
@@ -404,12 +404,12 @@ public class Rope<C : Content> : Collection {
 			return top[ir]
 		}
 	}
-	public func replacing(_ r: Range<Offset>, with replacement: Content,
+	public func replace(_ r: Range<Offset>, with replacement: Content,
 	    undoList: Rope.Node.UndoList) throws {
 		let ir = Range(r, in: self)
-		try replacing(ir, with: replacement, undoList: undoList)
+		try replace(ir, with: replacement, undoList: undoList)
 	}
-	public func replacing(_ r: Range<Index>, with replacement: Content,
+	public func replace(_ r: Range<Index>, with replacement: Content,
 	    undoList: Rope.Node.UndoList) throws {
 		let newtop = try top.replacing(
 		    after: r.lowerBound, upTo: r.upperBound,

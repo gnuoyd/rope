@@ -60,7 +60,7 @@ public class RopeTextStorage: NSTextStorage {
 		performEditing() {
 			let undoList = Backing.Node.UndoList()
 			do {
-				try backing.replacing(Offset.unitRange(range),
+				try backing.replace(Offset.unitRange(range),
 				    with: ContiguousArray<UTF16.CodeUnit>(
 				              str.utf16[...]),
 				    undoList: undoList)
