@@ -105,7 +105,6 @@ public class Rope<C : Content> : Collection {
 	public typealias Element = Node
 	public typealias Offset = Node.Offset
 	public enum Index : Comparable {
-	case end(of: Rope)
 	case interior(of: Rope, label: Label)
 	}
 	public class ExtentController : Label {
@@ -285,51 +284,35 @@ public class Rope<C : Content> : Collection {
 		guard i.owner === self else {
 			fatalError("Mismatched owner")
 		}
-		switch i {
-		case .end(_):
-			fatalError("No index after .endIndex")
-		case .interior(_, let h):
-			let j = Label()
-			switch top.inserting(j, one: .rightStep, after: h) {
-			case .inchOut:
-				fatalError(".interior(_, \(h)) already at end?")
-			case .absent:
-				fatalError(".interior(_, \(h)) is absent")
-			case .stepOut:
-				return endIndex
-			case .step(let node):
-				top = node
-				return .interior(of: self, label: j)
-			}
+		let j = Label()
+		switch top.inserting(j, one: .rightStep, after: i.label) {
+		case .inchOut:
+			fatalError(".interior(_, \(i.label)) already at end?")
+		case .absent:
+			fatalError(".interior(_, \(i.label)) is absent")
+		case .stepOut:
+			return endIndex
+		case .step(let node):
+			top = node
+			return .interior(of: self, label: j)
 		}
 	}
 	public func index(before i: Index) -> Index {
 		guard i.owner === self else {
 			fatalError("Mismatched owner")
 		}
-		switch i {
-		case .end(_):
-			let h = Label()
-			guard case .step(let n) =
-			    top.inserting(h, after: .leftStep) else {
-				return startIndex
-			}
-			top = n
-			return .interior(of: self, label: h)
-		case .interior(_, let h):
-			let j = Label()
-			switch top.inserting(j, one: .leftStep, after: h) {
-			case .inchOut:
-				fatalError(
-				    ".interior(_, \(h)) already at start?")
-			case .absent:
-				fatalError(".interior(_, \(h)) is absent")
-			case .stepOut:
-				return startIndex
-			case .step(let node):
-				top = node
-				return .interior(of: self, label: j)
-			}
+		let j = Label()
+		switch top.inserting(j, one: .leftStep, after: i.label) {
+		case .inchOut:
+			fatalError(
+			    ".interior(_, \(i.label)) already at start?")
+		case .absent:
+			fatalError(".interior(_, \(i.label)) is absent")
+		case .stepOut:
+			return startIndex
+		case .step(let node):
+			top = node
+			return .interior(of: self, label: j)
 		}
 	}
 	public subscript(i: Offset) -> Content.Element {
@@ -357,16 +340,11 @@ public class Rope<C : Content> : Collection {
 		}
 	}
 	public func element(at i: Index) throws -> Element {
-		switch i {
-		case .interior(_, let h):
-			let result = top.element(at: h)
-			guard case .step(let node) = result else {
-				throw RopeNoSuchElement.onInterior
-			}
-			return node
-		case .end(_):
-			throw RopeNoSuchElement.atEnd
+		let result = top.element(at: i.label)
+		guard case .step(let node) = result else {
+			throw RopeNoSuchElement.onInterior
 		}
+		return node
 	}
 /*
 	public func insert(_ elt: Element, at i: Index) -> Bool {
@@ -376,15 +354,10 @@ public class Rope<C : Content> : Collection {
 		if case .empty = elt {
 			return false
 		}
-		switch i {
-		case .end(_):
-			top = .nodes(top, elt)
-		case .interior(_, let h):
-			guard let newtop = top.inserting(elt, at: h) else {
-				return false
-			}
-			top = newtop
+		guard let newtop = top.inserting(elt, at: i.label) else {
+			return false
 		}
+		top = newtop
 		return true
 	}
 */
@@ -514,17 +487,12 @@ extension Rope {
 extension Rope {
 	public func index(after i: Index, climbing dir: Climb,
 	    bottom: inout ExtentController?) -> Index? {
-		switch i {
-		case .end(_):
-			return nil
-		case .interior(_, let label):
-			do {
-				if try !top.indices(follow: label) {
-					return nil
-				}
-			} catch {
+		do {
+			if try !top.indices(follow: i.label) {
 				return nil
 			}
+		} catch {
+			return nil
 		}
 		let j = index(after: i)
 		switch ((try? extentsEnclosing(i))?.count,
@@ -540,17 +508,12 @@ extension Rope {
 	}
 	public func index(before i: Index, climbing dir: Climb,
 	    bottom: inout ExtentController?) -> Index? {
-		switch i {
-		case .interior(_, let label):
-			do {
-				if try !top.indices(precede: label) {
-					return nil
-				}
-			} catch {
+		do {
+			if try !top.indices(precede: i.label) {
 				return nil
 			}
-		default:
-			break
+		} catch {
+			return nil
 		}
 		let j = index(before: i)
 		switch (try? extentsEnclosing(i),

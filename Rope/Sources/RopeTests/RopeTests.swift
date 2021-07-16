@@ -46,14 +46,9 @@ class IndexOrderByIndex: XCTestCase {
 			                    .nodes(tree, next) } )
 		let indices = rope.indices.enumerated()
 		for (l, r) in indices ⨯ indices {
-			guard case (.interior(_, let l1),
-			            .interior(_, let l2)) =
-				   (l.element, r.element) else {
-				continue
-			}
 			XCTAssert(try (l.offset < r.offset) ==
-			          (rope.node.index(l1,
-				                  precedes: l2)))
+			          (rope.node.index(l.element.label,
+				                  precedes: r.element.label)))
 		}
 	}
 	func testFollow() {
@@ -971,115 +966,6 @@ class ExtentsOpeningClosing : XCTestCase {
 	}
 }
 
-class ReifyRopeIndices : XCTestCase {
-	let rope: RSS = Rope(with: .text("abc"))
-	func testStartIndex() {
-		let range = rope.startIndex..<rope.index(after: rope.startIndex)
-		guard let (_, rest) =
-		    try? rope.node.splitting(after: range.lowerBound) else {
-			XCTFail("lower split failed")
-			return
-		}
-		guard let (selection, _) =
-		    try? rest.splitting(before: range.upperBound) else {
-			XCTFail("upper split failed")
-			return
-		}
-		var lower = range.lowerBound,
-		    upper = range.upperBound
-		let labeled = selection.addingBoundaryLabels(reifying: range,
-		    lower: &lower, upper: &upper)
-		let leaves = labeled.leaves.map { $0 }
-		guard case .interior(_, _) = lower else {
-			XCTFail("lowerBound was not reified")
-			return
-		}
-		XCTAssert(leaves.count == 1)
-		XCTAssert([.text("a")] == leaves)
-	}
-	func testEndIndex() {
-		let range = rope.index(after: rope.startIndex)..<rope.endIndex
-		guard let (_, rest) =
-		    try? rope.node.splitting(after: range.lowerBound) else {
-			XCTFail("lower split failed")
-			return
-		}
-		guard let (selection, _) =
-		    try? rest.splitting(before: range.upperBound) else {
-			XCTFail("upper split failed")
-			return
-		}
-		var lower = range.lowerBound,
-		    upper = range.upperBound
-		let labeled = selection.addingBoundaryLabels(reifying: range,
-		    lower: &lower, upper: &upper)
-		let leaves = labeled.leaves.map { $0 }
-		guard case .interior(_, _) = upper else {
-			XCTFail("upperBound was not reified")
-			return
-		}
-		XCTAssert(leaves.count == 1)
-		XCTAssert([.text("bc")] == leaves)
-	}
-	func testStartAndEndIndex() {
-		let range = rope.startIndex..<rope.endIndex
-		guard let (_, rest) =
-		    try? rope.node.splitting(after: range.lowerBound) else {
-			XCTFail("lower split failed")
-			return
-		}
-		guard let (selection, _) =
-		    try? rest.splitting(before: range.upperBound) else {
-			XCTFail("upper split failed")
-			return
-		}
-		var lower = range.lowerBound,
-		    upper = range.upperBound
-		let labeled = selection.addingBoundaryLabels(reifying: range,
-		    lower: &lower, upper: &upper)
-		let leaves = labeled.leaves.map { $0 }
-		guard case .interior(_, _) = lower else {
-			XCTFail("lowerBound was not reified")
-			return
-		}
-		guard case .interior(_, _) = upper else {
-			XCTFail("upperBound was not reified")
-			return
-		}
-		XCTAssert(leaves.count == 1)
-		XCTAssert([.text("abc")] == leaves)
-	}
-	func testTwoInteriorIndices() {
-		let range = rope.index(after: rope.startIndex) ..<
-		            rope.index(before: rope.endIndex)
-		guard let (_, rest) =
-		    try? rope.node.splitting(after: range.lowerBound) else {
-			XCTFail("lower split failed")
-			return
-		}
-		guard let (selection, _) =
-		    try? rest.splitting(before: range.upperBound) else {
-			XCTFail("upper split failed")
-			return
-		}
-		var lower = range.lowerBound,
-		    upper = range.upperBound
-		let labeled = selection.addingBoundaryLabels(reifying: range,
-		    lower: &lower, upper: &upper)
-		let leaves = labeled.leaves.map { $0 }
-		guard case .interior(_, _) = lower else {
-			XCTFail("lowerBound was not reified")
-			return
-		}
-		guard case .interior(_, _) = upper else {
-			XCTFail("upperBound was not reified")
-			return
-		}
-		XCTAssert(leaves.count == 1)
-		XCTAssert([.text("b")] == leaves)
-	}
-}
-
 class EmptyishRopeIndices : XCTestCase {
 	let one: RSS = Rope(with: .extent(under: RWEC(), .empty))
 	let two: RSS = Rope(with:
@@ -1087,10 +973,10 @@ class EmptyishRopeIndices : XCTestCase {
 		   .extent(under: RWEC(), .empty)))
 	let empty: RSS = Rope()
 	func testStartIndexEmpty() {
-		XCTAssert(empty.startIndex == .end(of: empty))
+		// XCTAssert(empty.startIndex == .end(of: empty))
 	}
 	func testEndIndexEmpty() {
-		XCTAssert(empty.endIndex == .end(of: empty))
+		// XCTAssert(empty.endIndex == .end(of: empty))
 	}
 	func testStartIndexOneEmptyExtent() {
 		// XCTAssert(one.startIndex == .start(of: one))
@@ -1100,7 +986,7 @@ class EmptyishRopeIndices : XCTestCase {
 		    one.endIndex)
 	}
 	func testEndIndexOneEmptyExtent() {
-		XCTAssert(one.endIndex == .end(of: one))
+		// XCTAssert(one.endIndex == .end(of: one))
 		XCTAssert(one.index(before: one.endIndex) != one.startIndex)
 		XCTAssert(one.index(one.endIndex, offsetBy: -2) ==
 		    one.startIndex)
@@ -1117,7 +1003,7 @@ class EmptyishRopeIndices : XCTestCase {
 		    two.endIndex)
 	}
 	func testEndIndexTwoEmptyExtents() {
-		XCTAssert(two.endIndex == .end(of: two))
+		// XCTAssert(two.endIndex == .end(of: two))
 		XCTAssert(two.index(before: two.endIndex) != two.startIndex)
 		XCTAssert(two.index(two.endIndex, offsetBy: -2) !=
 		    two.startIndex)

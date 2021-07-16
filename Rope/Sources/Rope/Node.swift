@@ -746,12 +746,7 @@ public extension Rope.Node {
 
 	func inserting(_ elt: Self, on side: Side, of target: Rope.Index)
 	    throws -> Self {
-		switch target {
-		case .end(_):
-			return .nodes(self, elt)
-		case .interior(_, let l):
-			return try inserting(elt, on: side, of: l)
-		}
+		return try inserting(elt, on: side, of: target.label)
 	}
 	/* This routine deals with the empty range where `target.lower`
 	 * is right of `target.upper` in the rope---it can happen---but
@@ -1579,20 +1574,18 @@ public extension Rope.Node {
 	}
 	func subrope(after boundary: Rope.Index, rightSibling: Self = .empty,
 	    depth: Int = 0) -> Self? {
-		switch (self, boundary) {
-		case (_, .end(_)):
-			return .empty
-		case (.extent(let ctlr, let content), _):
+		switch self {
+		case .extent(let ctlr, let content):
 			guard let subextent = ctlr.subrope(of: content,
 			    after: boundary, depth: depth) else {
 				return rightSibling.subrope(after: boundary,
 				    depth: depth)
 			}
 			return subextent.appending(rightSibling)
-		case (.index(let w), .interior(_, let h)) where w.get() == h:
+		case .index(let w) where w.get() == boundary.label:
 			return rightSibling
-		case (.concat(let l, _, _, _, let r, _), .interior(_, let h))
-		    where self.contains(h):
+		case .concat(let l, _, _, _, let r, _)
+		    where self.contains(boundary.label):
 			guard let match = l.subrope(after: boundary,
 			    rightSibling: r.appending(rightSibling),
 			    depth: depth + 1) else {
@@ -1601,8 +1594,10 @@ public extension Rope.Node {
 				    depth: depth + 1)
 			}
 			return match
-		case (.cursor(_, _), _), (.empty, _), (.index(_), _),
-		     (.leaf(_, _), _) where rightSibling == .empty:
+		case .cursor(_, _) where rightSibling == .empty,
+		     .empty where rightSibling == .empty,
+		     .index(_) where rightSibling == .empty,
+		     .leaf(_, _) where rightSibling == .empty:
 			return nil
 		default:
 			return rightSibling.subrope(after: boundary, depth:
@@ -1647,24 +1642,14 @@ public extension Rope.Node {
 		return try splitting(at: boundary, indexOn: .right)
 	}
 	func splitting(before boundary: Rope.Index) throws -> (Self, Self) {
-		switch boundary {
-		case .end(_):
-			return (self, .empty)
-		default:
-			return try splitting(at: boundary.label,
-			                     indexOn: .right)
-		}
+		return try splitting(at: boundary.label,
+				     indexOn: .right)
 	}
 	func splitting(after boundary: Label) throws -> (Self, Self) {
 		return try splitting(at: boundary, indexOn: .left)
 	}
 	func splitting(after boundary: Rope.Index) throws -> (Self, Self) {
-		switch boundary {
-		case .end(_):
-			return (self, .empty)
-		default:
-			return try splitting(at: boundary.label, indexOn: .left)
-		}
+		return try splitting(at: boundary.label, indexOn: .left)
 	}
 	func subrope(leftSibling: Self = .empty, upTo boundary: Rope.Index,
 	    depth: Int = 0) -> Self? {
@@ -1673,20 +1658,18 @@ public extension Rope.Node {
 		            "leftSibling \(leftSibling) self \(self) " +
 			    "upTo \(boundary)", terminator: ": ")
 		*/
-		switch (self, boundary) {
-		case (_, .end(_)):
-			return leftSibling.appending(self)
-		case (.extent(let ctlr, let content), _):
+		switch self {
+		case .extent(let ctlr, let content):
 			guard let subextent = ctlr.subrope(of: content,
 			    upTo: boundary, depth: depth + 1) else {
 				return leftSibling.subrope(upTo: boundary,
 				                           depth: depth + 1)
 			}
 			return leftSibling.appending(subextent)
-		case (.index(let w), .interior(_, let h)) where w.get() == h:
+		case .index(let w) where w.get() == boundary.label:
 			return leftSibling
-		case (.concat(let l, _, _, _, let r, _),
-		      .interior(_, let h)) where self.contains(h):
+		case .concat(let l, _, _, _, let r, _)
+		    where self.contains(boundary.label):
 			guard let match = r.subrope(
 			    leftSibling: leftSibling.appending(l),
 			    upTo: boundary, depth: depth + 1) else {
@@ -1694,8 +1677,10 @@ public extension Rope.Node {
 				    upTo: boundary, depth: depth + 1)
 			}
 			return match
-		case (.cursor(_, _), _), (.empty, _), (.index(_), _),
-		     (.leaf(_, _), _) where leftSibling == .empty:
+		case .cursor(_, _) where leftSibling == .empty,
+		     .empty where leftSibling == .empty,
+		     .index(_) where leftSibling == .empty,
+		     .leaf(_, _) where leftSibling == .empty:
 			return nil
 		default:
 			return leftSibling.subrope(upTo: boundary,
@@ -1939,18 +1924,12 @@ public extension Rope.Node {
 		guard try extentsEnclosing(index).isEmpty else {
 			return nil
 		}
-		switch index {
-		case .interior(_, let h):
-			guard let l = subrope(upTo: index),
-			      let r = subrope(after: index) else {
-				return nil
-			}
-			return r.indexingFirstExtent(label: label,
-				leftSibling: l.appending(.index(label: h)))
-		case .end(_):
-			// right of .end(_) is .empty
-			return self.appending(.index(label: label))
+		guard let l = subrope(upTo: index),
+		      let r = subrope(after: index) else {
+			return nil
 		}
+		return r.indexingFirstExtent(label: label,
+			leftSibling: l.appending(.index(label: index.label)))
 	}
 	/* TBD tighten up cursor placement?  Check if any nodes are
 	 * excluded or doubly-included?
@@ -2149,38 +2128,6 @@ public extension Rope.Node {
 			    filling: &c)
 		case .cursor(_, _), .empty, .index(_):
 			return
-		}
-	}
-}
-
-public extension Rope.Node {
-        /* "Reify" an "abstract" range---that is, a range with any bound
-	 * on the logical "start" or "end" `Index` of a `Rope`---and construct
-	 * a subtree containing the reified indices.
-	 *
-	 * Rewrite one bound or neither bounds of `range`,
-         * replacing * upper bound `.end(of: rope)`
-         * with `.interior(of: rope, label: r)` for new `Label`s `l`
-         * and `r`.
-	 *
-	 * Simultaneously construct a new `Node` subtree by
-         * augmenting `self`: prepend `.index(l)` if a `.start` bound
-         * is replaced, and append `.index(r)` if a `.end` bound is
-         * replaced.  Return the subtree thus constructed.
-	 */
-	func addingBoundaryLabels(reifying range: Range<Rope<C>.Index>,
-	    lower outLower: inout Rope<C>.Index,
-	    upper outUpper: inout Rope<C>.Index) -> Self {
-		switch (range.lowerBound, range.upperBound) {
-		case (let lower, .end(let owner)):
-			let r = Label()
-			outLower = lower
-			outUpper = .interior(of: owner, label: r)
-			return self.appending(.index(label: r))
-		case (let lower, let upper):
-			outLower = lower
-			outUpper = upper
-			return self
 		}
 	}
 }
