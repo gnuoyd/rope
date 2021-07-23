@@ -1129,8 +1129,8 @@ class LookupUsingRopeIndicesDerivedFromUTF16Offsets: XCTestCase {
 	    .text("e"),
 	    .text("f")]
 	lazy var r: RSS  = Rope(with:
-	    .nodes(.extent(under: ctlr, .text("abc")),
-		   .text("def")))
+	    .extent(under: ctlr, .text("abc")),
+		   .text("def"))
 	func testIterateElements() {
 		for (i, expected) in expectations.enumerated() {
 			let ofs = Offset(of: i)
