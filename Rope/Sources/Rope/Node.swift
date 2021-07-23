@@ -1336,6 +1336,24 @@ public extension Rope.Node {
 	    throws -> [Rope.ExtentController] {
 		return try extentsClosing(at: i.label, in: controllers)
 	}
+	func offset(of label: Label,
+	            origin: Offset = Offset.offset(0)) throws -> Offset {
+		switch self {
+		case .extent(_, let content):
+			return try content.offset(of: label, origin: origin)
+		case .index(let w) where w.get() == label:
+			return origin
+		case .concat(let l, let midx, _, _, let r, _):
+			do {
+				return try l.offset(of: label, origin: origin)
+			} catch NodeError.indexNotFound {
+				return try r.offset(of: label,
+				    origin: origin + midx)
+			}
+		default:
+			throw NodeError.indexNotFound
+		}
+	}
 	func extentsClosing(at label: Label,
 	                    in controllers: [Rope.ExtentController] = [])
 	    throws -> [Rope.ExtentController] {

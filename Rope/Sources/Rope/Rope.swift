@@ -413,6 +413,12 @@ public class Rope<C : Content> : Collection {
 		}
 		top = newtop
 	}
+	public func offset(of index: Index) throws -> Offset {
+		guard case .interior(_, let label) = index else {
+			throw RopeNoSuchElement.onInterior
+		}
+		return try top.offset(of: label)
+	}
 }
 
 extension Rope {

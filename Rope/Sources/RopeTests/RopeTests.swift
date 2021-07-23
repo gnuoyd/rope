@@ -1119,6 +1119,40 @@ class UnitRangesUsingRopeIndices: XCTestCase {
 	}
 }
 
+class ConvertIndicesToUTF16Offsets : XCTestCase {
+	let ctlr = [RWEC(), RWEC()]
+	lazy var r: RSS  = Rope(with:
+	    .extent(under: ctlr[0], .text("abc")),
+		                    .text("def"),
+	    .extent(under: ctlr[1], .text("ghi")))
+	let expectations: [Int] = [
+		0, // .(abc)def(ghi)
+		0, // (.abc)def(ghi)
+		1, // (a.bc)def(ghi)
+		2, // (ab.c)def(ghi)
+		3, // (abc.)def(ghi)
+		3, // (abc).def(ghi)
+		4, // (abc)d.ef(ghi)
+		5, // (abc)de.f(ghi)
+		6, // (abc)def.(ghi)
+		6, // (abc)def(.ghi)
+		7, // (abc)def(g.hi)
+		8, // (abc)def(gh.i)
+		9, // (abc)def(ghi.)
+		9  // (abc)def(ghi).
+		]
+	func testEveryIndex() {
+		XCTAssert(expectations.count == r.indices.count + 1,
+		    "expectations.count \(expectations.count) != r.indices.count \(r.indices.count + 1)")
+		for (index, expectation) in zip(r.indices + [r.endIndex],
+			                        expectations) {
+			XCTAssert(try Offset(of: expectation) ==
+			              r.offset(of: index),
+				      "Offset(of: \(expectation)) != r.offset(of: \(index))")
+		}
+	}
+}
+
 class LookupUsingRopeIndicesDerivedFromUTF16Offsets: XCTestCase {
 	let ctlr = RWEC()
 	lazy var expectations: [NSS] = [
