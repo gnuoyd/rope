@@ -5,8 +5,6 @@ import Foundation
 
 enum RopeNoSuchElement : Error {
 case onInterior
-case atStart
-case atEnd
 }
 
 extension Range {
