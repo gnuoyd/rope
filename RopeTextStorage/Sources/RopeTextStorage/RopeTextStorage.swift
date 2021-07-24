@@ -5,7 +5,8 @@ import AppKit
 import Rope
 
 public class RopeTextStorage: NSTextStorage {
-	public typealias Backing = Rope<ContiguousArray<UTF16.CodeUnit>>
+	public typealias Content = ContiguousArray<UTF16.CodeUnit>
+	public typealias Backing = Rope<Content>
 	typealias Offset = Backing.Node.Offset
 	let backing: Backing
 	let _string: RopeString
@@ -61,8 +62,7 @@ public class RopeTextStorage: NSTextStorage {
 			let undoList = Backing.Node.UndoList()
 			do {
 				try backing.replace(Offset.unitRange(range),
-				    with: ContiguousArray<UTF16.CodeUnit>(
-				              str.utf16[...]),
+				    with: Content(str.utf16[...]),
 				    undoList: undoList)
 			} catch {
 				fatalError("invalid range")
