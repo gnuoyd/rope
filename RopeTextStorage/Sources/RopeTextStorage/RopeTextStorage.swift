@@ -59,7 +59,7 @@ public class RopeTextStorage: NSTextStorage {
 	override public func replaceCharacters(in range: NSRange,
 	    with str: String) {
 		performEditing() {
-			let undoList = Backing.Node.UndoList()
+			let undoList = Backing.Node.ChangeList()
 			do {
 				try backing.replace(Offset.unitRange(range),
 				    with: Content(str.utf16[...]),

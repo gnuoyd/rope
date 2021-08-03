@@ -31,7 +31,7 @@ extension Rope {
 		override func replacing(
 		    after lowerBound: Label, upTo upperBound: Label,
 		    in content: Rope.Node,
-		    with replacement: Rope.Node, undoList: Rope.Node.UndoList)
+		    with replacement: Rope.Node, undoList: Rope.Node.ChangeList)
 		    throws -> Rope.Node {
 			throw Rope.Node.NodeError.readonlyExtent
 		}
@@ -723,18 +723,18 @@ public extension Rope.Node {
 }
 
 public extension Rope.Node {
-	class UndoList {
-		public typealias UndoItem = (Rope.Node, UndoList)
+	class ChangeList {
+		public typealias Change = (Rope.Node, ChangeList)
 		    throws -> Rope.Node
-		private var items: [UndoItem]
+		private var items: [Change]
 		public required init() {
 			items = []
 		}
-		public func registerUndo(_ item: @escaping UndoItem) {
+		public func record(_ item: @escaping Change) {
 			items.append(item)
 		}
-		public func undo(withTarget targetIn: Rope.Node) throws
-		    -> (Rope.Node, UndoList) {
+		public func play(withTarget targetIn: Rope.Node) throws
+		    -> (Rope.Node, ChangeList) {
 			let undoList = Self()
 			var target = targetIn
 			while let item = items.popLast() {
@@ -759,16 +759,16 @@ public extension Rope.Node {
 	 */
 	func inserting(_ elt: Self,
 	    between target: (lower: Label, upper: Label),
-	    undoList: UndoList) throws -> Self {
+	    undoList: ChangeList) throws -> Self {
 		if try index(target.lower, precedes: target.upper) {
-			undoList.registerUndo { (node, undoList) in
+			undoList.record { (node, undoList) in
 				try node.replacing(after: target.lower,
 				    upTo: target.upper, with: .empty,
 				    undoList: undoList)
 			}
 			return try inserting(elt, on: .right, of: target.lower)
 		} else if try index(target.upper, precedes: target.lower) {
-			undoList.registerUndo { (node, undoList) in
+			undoList.record { (node, undoList) in
 				try node.replacing(after: target.upper,
 				    upTo: target.lower, with: .empty,
 				    undoList: undoList)
@@ -777,7 +777,7 @@ public extension Rope.Node {
 		} else {
 			return try elt.withFreshBoundaries {
 			    (lower, upper, node) in
-				undoList.registerUndo { (node, undoList) in
+				undoList.record { (node, undoList) in
 					try node.replacing(after: lower,
 					    upTo: upper, with: .empty,
 					    undoList: undoList)
@@ -1736,7 +1736,7 @@ public extension Rope.Node {
 	}
 	func replacing(after lowerBound: Rope.Index,
 	    upTo upperBound: Rope.Index, with replacement: Content,
-	    undoList: UndoList) throws
+	    undoList: ChangeList) throws
 	    -> Self {
 		return try replacing(
 		    after: lowerBound.label, upTo: upperBound.label,
@@ -1747,7 +1747,7 @@ public extension Rope.Node {
 	 * extent, and performs replacement/deletion on each affected extent.
 	 */
 	func replacing(after lowerBound: Label, upTo upperBound: Label,
-	    with replacement: Self, undoList: UndoList)
+	    with replacement: Self, undoList: ChangeList)
 	    throws -> Self {
 		switch (try extentsEnclosing(lowerBound).first,
 			try extentsEnclosing(upperBound).first) {
@@ -1774,7 +1774,7 @@ public extension Rope.Node {
 			 */
 			switch middle.segmentingAtAnyExtent() {
 			case (_, nil, _):
-				undoList.registerUndo { (node, undoList) in
+				undoList.record { (node, undoList) in
 					try node.replacing(after: lowerBound,
 					    upTo: upperBound, with: middle,
 					    undoList: undoList)
@@ -1810,7 +1810,7 @@ public extension Rope.Node {
 						with: .empty,
 						undoList: undoList)
 				}
-				undoList.registerUndo { (node, undoList) in
+				undoList.record { (node, undoList) in
 					try node.inserting(l,
 					    between: (lowerBound, lowerBound),
 					    undoList: undoList)

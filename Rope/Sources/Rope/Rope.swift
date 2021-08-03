@@ -145,7 +145,7 @@ public class Rope<C : Content> : Collection {
 		}
 		func replacing(after lowerBound: Label, upTo upperBound: Label,
 		    in content: Rope.Node, with replacement: Rope.Node,
-		    undoList: Rope.Node.UndoList)
+		    undoList: Rope.Node.ChangeList)
 		    throws -> Rope.Node {
 			let replaced = try content.replacing(
 			    after: lowerBound, upTo: upperBound,
@@ -363,7 +363,7 @@ public class Rope<C : Content> : Collection {
 	public subscript(_ r: Range<Offset>) -> Content {
 		set(replacement) {
 			do {
-				let undoList = Rope.Node.UndoList()
+				let undoList = Rope.Node.ChangeList()
 				try replace(r, with: replacement,
 				            undoList: undoList)
 			} catch {
@@ -376,12 +376,12 @@ public class Rope<C : Content> : Collection {
 		}
 	}
 	public func replace(_ r: Range<Offset>, with replacement: Content,
-	    undoList: Rope.Node.UndoList) throws {
+	    undoList: Rope.Node.ChangeList) throws {
 		let ir = Range(r, in: self)
 		try replace(ir, with: replacement, undoList: undoList)
 	}
 	public func replace(_ r: Range<Index>, with replacement: Content,
-	    undoList: Rope.Node.UndoList) throws {
+	    undoList: Rope.Node.ChangeList) throws {
 		let newtop = try top.replacing(
 		    after: r.lowerBound, upTo: r.upperBound,
 		    with: replacement, undoList: undoList)
