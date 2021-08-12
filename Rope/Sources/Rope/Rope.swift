@@ -145,12 +145,25 @@ public class Rope<C : Content> : Collection {
 		}
 		func replacing(after lowerBound: Label, upTo upperBound: Label,
 		    in content: Rope.Node, with replacement: Rope.Node,
-		    undoList: Rope.Node.ChangeList)
+		    recording optChanges: Rope.Node.ChangeList?)
 		    throws -> Rope.Node {
 			let replaced = try content.replacing(
 			    after: lowerBound, upTo: upperBound,
-			    with: replacement, undoList: undoList)
-			return .extent(self, replaced)
+			    with: replacement, recording: optChanges)
+			guard let changes = optChanges else {
+				return .extent(self, replaced)
+			}
+			let newLower = Label(), newUpper = Label()
+			changes.record { (node, undoList, delegate) in
+				return try node.performingReplacement(
+				    after: newLower, upTo: newUpper,
+				    new: .extent(self, replaced),
+				    old: .extent(self, content),
+				    undoList: undoList, delegate: delegate)
+			}
+			return .nodes(.index(label: newLower),
+			              .extent(self, content),
+				      .index(label: newUpper))
 		}
 		func transformingAttributes(after lowerBound: Label,
 		    upTo upperBound: Label, in content: Rope.Node,
@@ -382,6 +395,15 @@ public class Rope<C : Content> : Collection {
 	}
 	public func replace(_ r: Range<Index>, with replacement: Content,
 	    undoList: Rope.Node.ChangeList) throws {
+		/* Create a ChangeList and record .replacing(...) changes on
+		 * it.
+		 *
+		 * Replace `top` with `newtop`, which .replacing(...) has
+		 * labeled with each change location.
+		 *
+		 * Then apply the ChangeList to `top`, recording the inverse
+		 * on undoList.
+		 */
 		let newtop = try top.replacing(
 		    after: r.lowerBound, upTo: r.upperBound,
 		    with: replacement, undoList: undoList)
