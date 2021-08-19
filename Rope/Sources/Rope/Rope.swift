@@ -195,6 +195,17 @@ public class Rope<C : Content> : Collection {
 	case empty
 	}
 
+	private var _delegate: TypeErasedOffsetDelegate? = nil
+	var delegate: TypeErasedOffsetDelegate {
+		set {
+			_delegate = newValue
+		}
+		get {
+			return _delegate ?? AnyRopeOffsetDelegate(
+			    didChange: self.ropeDidChange,
+			    attributesDidChange: self.ropeAttributesDidChange)
+		}
+	}
 	private var mutations: UInt = 0
 	private var rebalanceInterval: UInt = 32
 	internal var _startLabel: Label
@@ -396,18 +407,35 @@ public class Rope<C : Content> : Collection {
 	public func replace(_ r: Range<Index>, with replacement: Content,
 	    undoList: Rope.Node.ChangeList) throws {
 		/* Create a ChangeList and record .replacing(...) changes on
-		 * it.
+		 * it. .replacing(...) has labels each change location.
 		 *
-		 * Replace `top` with `newtop`, which .replacing(...) has
-		 * labeled with each change location.
+		 * Apply the ChangeList to `top` to produce `newtop`,
+		 * recording the inverse on undoList.
 		 *
-		 * Then apply the ChangeList to `top`, recording the inverse
-		 * on undoList.
+		 * Finally, record an indication that a text range
+		 * was edited with its offsets and any change in length.
 		 */
-		let newtop = try top.replacing(
+		let changes = Rope.Node.ChangeList()
+		let oldOffsets: (lower: Offset, upper: Offset) =
+		    try (top.offset(of: r.lowerBound.label),
+		         top.offset(of: r.upperBound.label))
+		let labeled = try top.replacing(
 		    after: r.lowerBound, upTo: r.upperBound,
-		    with: replacement, undoList: undoList)
+		    with: replacement, recording: changes)
+		let (newtop, reversedChanges) =
+		    try changes.play(withTarget: labeled, delegate: delegate)
+		let newOffsets: (lower: Offset, upper: Offset) =
+		    try (newtop.offset(of: r.lowerBound.label),
+		         newtop.offset(of: r.upperBound.label))
 		top = newtop
+		undoList.append(reversedChanges)
+		undoList.record { (node, undoList, delegate) in
+			delegate.indicateChanges(
+			    new: oldOffsets,
+			    old: newOffsets,
+			    undoList: undoList)
+			return node
+		}
 	}
 	public subscript<I>(_ r: Range<Offset>) -> I where C.SubSequence == I {
 		set(newValue) {
@@ -440,6 +468,15 @@ public class Rope<C : Content> : Collection {
 			throw RopeNoSuchElement.onInterior
 		}
 		return try top.offset(of: label)
+	}
+}
+
+extension Rope : RopeOffsetDelegate {
+	public func ropeDidChange(on: Range<Offset>, changeInLength: Int) {
+		return
+	}
+	public func ropeAttributesDidChange(on: Range<Offset>) {
+		return
 	}
 }
 
@@ -732,3 +769,23 @@ extension Rope : ExpressibleByStringLiteral,
 	}
 }
 */
+extension RopeOffsetDelegate {
+	func indicateChanges<T>(
+	    new: (lower: Rope<T>.Offset, upper: Rope<T>.Offset),
+	    old: (lower: Rope<T>.Offset, upper: Rope<T>.Offset),
+	    undoList: Rope<T>.Node.ChangeList) where Rope<T>.Offset == Offset {
+		undoList.record { (node, undoList, delegate) in
+			delegate.indicateChanges(
+			    new: old,
+			    old: new,
+			    undoList: undoList)
+			return node
+		}
+		let length: (old: Int, new: Int) =
+		    ((new.upper - new.lower).unitOffset,
+		     (old.upper - old.lower).unitOffset)
+		let range: Range<Rope<T>.Offset> = old.lower..<old.upper
+		ropeDidChange(on: range,
+		    changeInLength: length.new - length.old)
+	}
+}

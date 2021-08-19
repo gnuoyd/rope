@@ -2153,17 +2153,17 @@ class ExtentReplacementsBase : XCTestCase {
 			let overlaps = range.overlaps(3...7)
 			let fails = ro && overlaps
 			let assert = Self.functionAssertingThrows(iff: fails)
-			let undoList = NSS.ChangeList()
+			let changes = NSS.ChangeList()
 			assert(try rope.node.replacing(
 			    after: ir.lowerBound.label,
 			    upTo: ir.upperBound.label, with: .text("x"),
-			    undoList: undoList),
+			    recording: changes),
 			    "replacing \(width) at \(range)")
 			assert(try rope.node.replacing(
 			        after: ir.lowerBound.label,
 			        upTo: ir.upperBound.label,
 			        with: .text(("x" * width)[...]),
-				undoList: undoList),
+				recording: changes),
 			    "replacing \(width) at \(range)")
 		}
 	}
@@ -2183,18 +2183,18 @@ class ExtentReplacementsBase : XCTestCase {
 			               range.overlaps(8...10)
 			let fails = ro && overlaps
 			let assert = Self.functionAssertingThrows(iff: fails)
-			let undoList = NSS.ChangeList()
+			let changes = NSS.ChangeList()
 			assert(try rope.node.replacing(
 			                        after: ir.lowerBound.label,
 						upTo: ir.upperBound.label,
 						with: .text("x"),
-						undoList: undoList),
+						recording: changes),
 			    "replacing \(width) at \(range)")
 			assert(try rope.node.replacing(
 			        after: ir.lowerBound.label,
 			        upTo: ir.upperBound.label,
 			        with: .text(("x" * width)[...]),
-				undoList: undoList),
+				recording: changes),
 			    "replacing \(width) at \(range)")
 		}
 	}
@@ -2307,17 +2307,23 @@ class ExtentReplacementsBase : XCTestCase {
 			    .text("defgh"),
 			    .extent(under: rwc[2], .text("ij01234"))))
 			]
-		let undoList = NSS.ChangeList()
+		let changes = NSS.ChangeList()
 
 		for (before, range, replacement, expected) in combinations {
 			let rope: RSS = Rope(with: before)
 			let ir = Range(Offset.unitRange(range), in: rope)
-			guard let after = try? rope.node.replacing(
+			guard let labeled = try? rope.node.replacing(
 			    after: ir.lowerBound.label,
 			    upTo: ir.upperBound.label,
 			    with: .text(replacement),
-			    undoList: undoList) else {
-				XCTFail("replacement failed")
+			    recording: changes) else {
+				XCTFail("labeling for replacement failed")
+				return
+			}
+			guard let (after, _) =
+			    try? changes.play(withTarget: labeled,
+			                     delegate: rope.delegate) else {
+				XCTFail("playing replacement failed")
 				return
 			}
 			XCTAssert(expected ~ after, "\(expected) !~ \(after)")

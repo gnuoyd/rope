@@ -734,6 +734,9 @@ public extension Rope.Node {
 		public func record(_ item: @escaping Change) {
 			items.append(item)
 		}
+		public func append(_ changes: ChangeList) {
+			items = items + changes.items
+		}
 		public func play(withTarget targetIn: Rope.Node,
 		    delegate: Rope.TypeErasedOffsetDelegate) throws
 		    -> (Rope.Node, ChangeList) {
@@ -1862,8 +1865,8 @@ public extension Rope.Node {
 			changes.record { (node, undoList, delegate) in
 				try node.performingReplacement(
 				    after: lowerBound, upTo: upperBound,
-				    new: result,
-				    old: self,
+				    new: replacement,
+				    old: middle,
 				    undoList: undoList, delegate: delegate)
 			}
 			return self
@@ -1887,17 +1890,7 @@ public extension Rope.Node {
 			    upTo: upperBound, in: m,
 			    with: replacement, recording: nil)
 			result = l.appending(mReplaced).appending(r)
-			guard let changes = optChanges else {
-				return result
-			}
-			changes.record { (node, undoList, delegate) in
-				try node.performingReplacement(
-				    after: lowerBound, upTo: upperBound,
-				    new: result,
-				    old: self,
-				    undoList: undoList, delegate: delegate)
-			}
-			return self
+			break
 		case (let loExt?, _):
 			guard case (let l, .extent(let ctlr, let m), let r) =
 			    try segmenting(atExtent: loExt) else {
@@ -1916,17 +1909,7 @@ public extension Rope.Node {
 				    with: .empty, recording: nil)
 			}
 			result = l.appending(mReplaced).appending(rTrimmed)
-			guard let changes = optChanges else {
-				return result
-			}
-			changes.record { (node, undoList, delegate) in
-				try node.performingReplacement(
-				    after: lowerBound, upTo: upperBound,
-				    new: result,
-				    old: self,
-				    undoList: undoList, delegate: delegate)
-			}
-			return self
+			break
 		case (nil, let hiExt?):
 			guard case (let l, .extent(let ctlr, let m), let r) =
 			    try segmenting(atExtent: hiExt) else {
@@ -1945,17 +1928,21 @@ public extension Rope.Node {
 				    in: node, with: .empty, recording: nil)
 			}
 			result = lReplaced.appending(mTrimmed).appending(r)
-			guard let changes = optChanges else {
-				return result
-			}
+			break
+		}
+		guard let changes = optChanges else {
+			return result
+		}
+		return self.withFreshBoundaries {
+		    (lower, upper, node) in
 			changes.record { (node, undoList, delegate) in
 				try node.performingReplacement(
-				    after: lowerBound, upTo: upperBound,
-				    new: result,
-				    old: self,
-				    undoList: undoList, delegate: delegate)
+				    after: lower, upTo: upper,
+				    new: result, old: self,
+				    undoList: undoList,
+				    delegate: delegate)
 			}
-			return self
+			return node
 		}
 	}
 	func segmenting(atExtent target: Rope.ExtentController,
