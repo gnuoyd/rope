@@ -2099,6 +2099,12 @@ class CompareDisparateIndicesComplicatedRopes: NestedExtentBase {
 }
 
 class ExtentReplacementsBase : XCTestCase {
+	typealias BeforeAfterCombo = (before: NSS, range: Range<Int>,
+			    replacement: NSS.Content, expected: NSS,
+			    changeInLength: Int)
+	typealias CustomAssert = (_ expression: @autoclosure () throws -> NSS,
+		                  _ message: @autoclosure () -> String) -> ()
+
 	let rwc = [RWEC(), RWEC(), RWEC()]
 	let roc = [ROEC(), ROEC(), ROEC()]
 	// read-only inner extent, abc(defgh)ijk
@@ -2121,8 +2127,112 @@ class ExtentReplacementsBase : XCTestCase {
 	    .extent(under: rwc[0], .text("abc")),
 	    .text("defgh"),
 	    .extent(under: rwc[2], .text("ijk")))
-	typealias CustomAssert = (_ expression: @autoclosure () throws -> NSS,
-		                  _ message: @autoclosure () -> String) -> ()
+	lazy var beforeAfterCombos: [BeforeAfterCombo] = [
+		/* replace 0..<5 on abc(defgh)ijk with 01234, result
+		 * 01234(fgh)ijk
+		 */
+		(innerRW, 0..<5, "01234", .nodes(
+			    .text("01234"),
+			    .extent(under: rwc[1], .text("fgh")),
+			    .text("ijk")), 0),
+		/* replace 0..<5 on (abc)defgh(ijk) with 01234, result
+		 * (01234)fgh(ijk)
+		 */
+		(outerRW, 0..<5, "01234", .nodes(
+			    .extent(under: rwc[0], .text("01234")),
+			    .text("fgh"),
+			    .extent(under: rwc[2], .text("ijk"))), 0),
+		/* replace 2..<5 on abc(defgh)ijk with 01234, result
+		 * ab01234(fgh)ijk
+		 */
+		(innerRW, 2..<5, "01234", .nodes(
+			    .text("ab01234"),
+			    .extent(under: rwc[1], .text("fgh")),
+			    .text("ijk")), 2),
+		/* replace 2..<5 on (abc)defgh(ijk) with 01234, result
+		 * (ab01234)fgh(ijk)
+		 */
+		(outerRW, 2..<5, "01234", .nodes(
+			    .extent(under: rwc[0], .text("ab01234")),
+			    .text("fgh"),
+			    .extent(under: rwc[2], .text("ijk"))), 2),
+		/* replace 3..<8 on abc(defgh)ijk with 01234, result
+		 * abc(01234)ijk
+		 */
+		(innerRW, 3..<8, "01234", .nodes(.text("abc"),
+		    .extent(under: rwc[1], .text("01234")),
+		    .text("ijk")), 0),
+		/* replace 3..<8 on (abc)defgh(ijk) with 01234, result
+		 * (abc)01234(ijk)
+		 */
+		(outerRW, 3..<8, "01234", .nodes(.extent(under: rwc[0], .text("abc")),
+		    .text("01234"),
+		    .extent(under: rwc[2], .text("ijk"))), 0),
+		/* replace 7..<8 on abc(defgh)ijk with 01234, result
+		 * abc(defg01234)ijk
+		 */
+		(innerRW, 7..<8, "01234", .nodes(.text("abc"),
+		    .extent(under: rwc[1], .text("defg01234")),
+		    .text("ijk")), 4),
+		/* replace 7..<8 on (abc)defgh(ijk) with 01234, result
+		 * (abc)defg01234(ijk)
+		 */
+		(outerRW, 7..<8, "01234", .nodes(.extent(under: rwc[0], .text("abc")),
+		    .text("defg01234"),
+		    .extent(under: rwc[2], .text("ijk"))), 4),
+		/* replace 8..<9 on abc(defgh)ijk with 01234, result
+		 * abc(defgh)01234jk
+		 */
+		(innerRW, 8..<9, "01234", .nodes(.text("abc"),
+		    .extent(under: rwc[1], .text("defgh")),
+		    .text("01234jk")), 4),
+		/* replace 8..<9 on (abc)defgh(ijk) with 01234, result
+		 * (abc)defgh(01234jk)
+		 */
+		(outerRW, 8..<9, "01234",
+		    .nodes(.extent(under: rwc[0], .text("abc")),
+		    .text("defgh"),
+		    .extent(under: rwc[2], .text("01234jk"))), 4),
+		/* replace 5..<9 on abc(defgh)ijk with 01234, result
+		 * abc(de01234)jk
+		 */
+		(innerRW, 5..<9, "01234", .nodes(.text("abc"),
+		    .extent(under: rwc[1], .text("de01234")),
+		    .text("jk")), 1),
+		/* replace 5..<9 on (abc)defgh(ijk) with 01234, result
+		 * (abc)de01234(jk)
+		 */
+		(outerRW, 5..<9, "01234",
+		    .nodes(.extent(under: rwc[0], .text("abc")),
+		    .text("de01234"),
+		    .extent(under: rwc[2], .text("jk"))), 1),
+		/* replace 8..<11 on abc(defgh)ijk with 01234, result
+		 * abc(defgh)01234
+		 */
+		(innerRW, 8..<11, "01234", .nodes(.text("abc"),
+		    .extent(under: rwc[1], .text("defgh")),
+		    .text("01234")), 2),
+		/* replace 8..<11 on (abc)defgh(ijk) with 01234, result
+		 * (abc)defgh(01234)
+		 */
+		(outerRW, 8..<11, "01234",
+		    .nodes(.extent(under: rwc[0], .text("abc")),
+		    .text("defgh"),
+		    .extent(under: rwc[2], .text("01234"))), 2),
+		/* replace 10..<11 on abc(defgh)ijk with 01234, result
+		 * abc(defgh)ij01234
+		 */
+		(innerRW, 10..<11, "01234", .nodes(.text("abc"),
+		    .extent(under: rwc[1], .text("defgh")),
+		    .text("ij01234")), 4),
+		/* replace 10..<11 on (abc)defgh(ijk) with 01234, result
+		 * (abc)defgh(ij01234)
+		 */
+		(outerRW, 10..<11, "01234",
+		    .nodes(.extent(under: rwc[0], .text("abc")),
+		    .text("defgh"),
+		    .extent(under: rwc[2], .text("ij01234"))), 4)
+		]
 	static func functionAssertingThrows(iff assert: Bool,
 	    file: StaticString = #filePath, line: UInt = #line)
 	    -> CustomAssert {
@@ -2199,117 +2309,10 @@ class ExtentReplacementsBase : XCTestCase {
 		}
 	}
 	func testReplacementResults() {
-		typealias Combination = (before: NSS, range: Range<Int>,
-		                    replacement: NSS.Content, expected: NSS)
-		let combinations: [Combination] = [
-			/* replace 0..<5 on abc(defgh)ijk with 01234, result
-			 * 01234(fgh)ijk
-			 */
-			(innerRW, 0..<5, "01234", .nodes(
-				    .text("01234"),
-				    .extent(under: rwc[1], .text("fgh")),
-				    .text("ijk"))),
-			/* replace 0..<5 on (abc)defgh(ijk) with 01234, result
-			 * (01234)fgh(ijk)
-			 */
-			(outerRW, 0..<5, "01234", .nodes(
-				    .extent(under: rwc[0], .text("01234")),
-				    .text("fgh"),
-				    .extent(under: rwc[2], .text("ijk")))),
-			/* replace 2..<5 on abc(defgh)ijk with 01234, result
-			 * ab01234(fgh)ijk
-			 */
-			(innerRW, 2..<5, "01234", .nodes(
-				    .text("ab01234"),
-				    .extent(under: rwc[1], .text("fgh")),
-				    .text("ijk"))),
-			/* replace 2..<5 on (abc)defgh(ijk) with 01234, result
-			 * (ab01234)fgh(ijk)
-			 */
-			(outerRW, 2..<5, "01234", .nodes(
-				    .extent(under: rwc[0], .text("ab01234")),
-				    .text("fgh"),
-				    .extent(under: rwc[2], .text("ijk")))),
-			/* replace 3..<8 on abc(defgh)ijk with 01234, result
-			 * abc(01234)ijk
-			 */
-			(innerRW, 3..<8, "01234", .nodes(.text("abc"),
-			    .extent(under: rwc[1], .text("01234")),
-			    .text("ijk"))),
-			/* replace 3..<8 on (abc)defgh(ijk) with 01234, result
-			 * (abc)01234(ijk)
-			 */
-			(outerRW, 3..<8, "01234", .nodes(.extent(under: rwc[0], .text("abc")),
-			    .text("01234"),
-			    .extent(under: rwc[2], .text("ijk")))),
-			/* replace 7..<8 on abc(defgh)ijk with 01234, result
-			 * abc(defg01234)ijk
-			 */
-			(innerRW, 7..<8, "01234", .nodes(.text("abc"),
-			    .extent(under: rwc[1], .text("defg01234")),
-			    .text("ijk"))),
-			/* replace 7..<8 on (abc)defgh(ijk) with 01234, result
-			 * (abc)defg01234(ijk)
-			 */
-			(outerRW, 7..<8, "01234", .nodes(.extent(under: rwc[0], .text("abc")),
-			    .text("defg01234"),
-			    .extent(under: rwc[2], .text("ijk")))),
-			/* replace 8..<9 on abc(defgh)ijk with 01234, result
-			 * abc(defgh)01234jk
-			 */
-			(innerRW, 8..<9, "01234", .nodes(.text("abc"),
-			    .extent(under: rwc[1], .text("defgh")),
-			    .text("01234jk"))),
-			/* replace 8..<9 on (abc)defgh(ijk) with 01234, result
-			 * (abc)defgh(01234jk)
-			 */
-			(outerRW, 8..<9, "01234",
-			    .nodes(.extent(under: rwc[0], .text("abc")),
-			    .text("defgh"),
-			    .extent(under: rwc[2], .text("01234jk")))),
-			/* replace 5..<9 on abc(defgh)ijk with 01234, result
-			 * abc(de01234)jk
-			 */
-			(innerRW, 5..<9, "01234", .nodes(.text("abc"),
-			    .extent(under: rwc[1], .text("de01234")),
-			    .text("jk"))),
-			/* replace 5..<9 on (abc)defgh(ijk) with 01234, result
-			 * (abc)de01234(jk)
-			 */
-			(outerRW, 5..<9, "01234",
-			    .nodes(.extent(under: rwc[0], .text("abc")),
-			    .text("de01234"),
-			    .extent(under: rwc[2], .text("jk")))),
-			/* replace 8..<11 on abc(defgh)ijk with 01234, result
-			 * abc(defgh)01234
-			 */
-			(innerRW, 8..<11, "01234", .nodes(.text("abc"),
-			    .extent(under: rwc[1], .text("defgh")),
-			    .text("01234"))),
-			/* replace 8..<11 on (abc)defgh(ijk) with 01234, result
-			 * (abc)defgh(01234)
-			 */
-			(outerRW, 8..<11, "01234",
-			    .nodes(.extent(under: rwc[0], .text("abc")),
-			    .text("defgh"),
-			    .extent(under: rwc[2], .text("01234")))),
-			/* replace 10..<11 on abc(defgh)ijk with 01234, result
-			 * abc(defgh)ij01234
-			 */
-			(innerRW, 10..<11, "01234", .nodes(.text("abc"),
-			    .extent(under: rwc[1], .text("defgh")),
-			    .text("ij01234"))),
-			/* replace 10..<11 on (abc)defgh(ijk) with 01234, result
-			 * (abc)defgh(ij01234)
-			 */
-			(outerRW, 10..<11, "01234",
-			    .nodes(.extent(under: rwc[0], .text("abc")),
-			    .text("defgh"),
-			    .extent(under: rwc[2], .text("ij01234"))))
-			]
 		let changes = NSS.ChangeList()
 
-		for (before, range, replacement, expected) in combinations {
+		for (before, range, replacement, expected, _) in
+		    beforeAfterCombos{
 			let rope: RSS = Rope(with: before)
 			let ir = Range(Offset.unitRange(range), in: rope)
 			guard let labeled = try? rope.node.replacing(
@@ -2327,6 +2330,23 @@ class ExtentReplacementsBase : XCTestCase {
 				return
 			}
 			XCTAssert(expected ~ after, "\(expected) !~ \(after)")
+		}
+	}
+	func testReplacementChangeIndications() {
+		for (before, range, replacement, _, changeInLength) in
+		    beforeAfterCombos {
+			let rope: RSS = Rope(with: before)
+			var change: (range: Range<Offset>,
+			             changeInLength: Int) =
+			    (range: 0..<0, changeInLength: Int.min)
+			rope.delegate =
+			    AnyRopeOffsetDelegate(didChange: { (range, delta) in
+				change.range = range
+				change.changeInLength = delta
+				}, attributesDidChange: { _ in return })
+			rope[Offset.unitRange(range)] = replacement
+			XCTAssert(changeInLength == change.changeInLength,
+			    "\(changeInLength ) !~ \(change.changeInLength)")
 		}
 	}
 }
