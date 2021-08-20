@@ -1768,8 +1768,6 @@ public extension Rope.Node {
 	    delegate: Rope.TypeErasedOffsetDelegate) throws -> Self {
 		let result = try replacing(after: lowerBound,
 		    upTo: upperBound, with: new, recording: nil)
-		let oldOffsets: (lower: Offset, upper: Offset) = try
-		    (self.offset(of: lowerBound), self.offset(of: upperBound))
 		undoList.record { (node, undoList, delegate) in
 			return try node.performingReplacement(
 			    after: lowerBound, upTo: upperBound,
@@ -1777,15 +1775,6 @@ public extension Rope.Node {
 			    old: new,
 			    undoList: undoList, delegate: delegate)
 		}
-		let newOffsets: (lower: Offset, upper: Offset) = try
-		    (result.offset(of: lowerBound),
-		     result.offset(of: upperBound))
-		let length: (old: Int, new: Int) =
-		    ((newOffsets.upper - newOffsets.lower).unitOffset,
-		     (oldOffsets.upper - oldOffsets.lower).unitOffset)
-		delegate.ropeDidChange(on: oldOffsets.lower..<oldOffsets.upper,
-		    changeInLength: length.new - length.old)
-
 		return result
 	}
 	/* A naive version of `replacing(after:upTo:with:)` splits extents.
