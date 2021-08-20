@@ -429,13 +429,10 @@ public class Rope<C : Content> : Collection {
 		         newtop.offset(of: r.upperBound.label))
 		top = newtop
 		undoList.append(reversedChanges)
-		undoList.record { (node, undoList, delegate) in
-			delegate.indicateChanges(
-			    new: oldOffsets,
-			    old: newOffsets,
-			    undoList: undoList)
-			return node
-		}
+		delegate.indicateChanges(
+		    new: newOffsets,
+		    old: oldOffsets,
+		    undoList: undoList)
 	}
 	public subscript<I>(_ r: Range<Offset>) -> I where C.SubSequence == I {
 		set(newValue) {
@@ -781,7 +778,7 @@ extension RopeOffsetDelegate {
 			    undoList: undoList)
 			return node
 		}
-		let length: (old: Int, new: Int) =
+		let length: (new: Int, old: Int) =
 		    ((new.upper - new.lower).unitOffset,
 		     (old.upper - old.lower).unitOffset)
 		let range: Range<Rope<T>.Offset> = old.lower..<old.upper
