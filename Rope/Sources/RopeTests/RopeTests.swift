@@ -2324,8 +2324,7 @@ class ExtentReplacementsBase : XCTestCase {
 				return
 			}
 			guard let (after, _) =
-			    try? changes.play(withTarget: labeled,
-			                     delegate: rope.delegate) else {
+			    try? changes.play(withTarget: labeled) else {
 				XCTFail("playing replacement failed")
 				return
 			}

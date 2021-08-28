@@ -154,12 +154,12 @@ public class Rope<C : Content> : Collection {
 				return .extent(self, replaced)
 			}
 			let newLower = Label(), newUpper = Label()
-			changes.record { (node, undoList, delegate) in
+			changes.record { (node, undoList) in
 				return try node.performingReplacement(
 				    after: newLower, upTo: newUpper,
 				    new: .extent(self, replaced),
 				    old: .extent(self, content),
-				    undoList: undoList, delegate: delegate)
+				    undoList: undoList)
 			}
 			return .nodes(.index(label: newLower),
 			              .extent(self, content),
@@ -423,7 +423,7 @@ public class Rope<C : Content> : Collection {
 		    after: r.lowerBound, upTo: r.upperBound,
 		    with: replacement, recording: changes)
 		let (newtop, reversedChanges) =
-		    try changes.play(withTarget: labeled, delegate: delegate)
+		    try changes.play(withTarget: labeled)
 		let newOffsets: (lower: Offset, upper: Offset) =
 		    try (newtop.offset(of: r.lowerBound.label),
 		         newtop.offset(of: r.upperBound.label))
@@ -771,8 +771,8 @@ extension RopeOffsetDelegate {
 	    new: (lower: Rope<T>.Offset, upper: Rope<T>.Offset),
 	    old: (lower: Rope<T>.Offset, upper: Rope<T>.Offset),
 	    undoList: Rope<T>.Node.ChangeList) where Rope<T>.Offset == Offset {
-		undoList.record { (node, undoList, delegate) in
-			delegate.indicateChanges(
+		undoList.record { (node, undoList) in
+			self.indicateChanges(
 			    new: old,
 			    old: new,
 			    undoList: undoList)

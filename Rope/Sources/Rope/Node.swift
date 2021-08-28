@@ -725,8 +725,7 @@ public extension Rope.Node {
 public extension Rope.Node {
 	class ChangeList {
 		public typealias Change =
-		    (Rope.Node, ChangeList,
-		     Rope.TypeErasedOffsetDelegate) throws -> Rope.Node
+		    (Rope.Node, ChangeList) throws -> Rope.Node
 		private var items: [Change]
 		public required init() {
 			items = []
@@ -737,13 +736,12 @@ public extension Rope.Node {
 		public func append(_ changes: ChangeList) {
 			items = items + changes.items
 		}
-		public func play(withTarget targetIn: Rope.Node,
-		    delegate: Rope.TypeErasedOffsetDelegate) throws
+		public func play(withTarget targetIn: Rope.Node) throws
 		    -> (Rope.Node, ChangeList) {
 			let undoList = Self()
 			var target = targetIn
 			while let item = items.popLast() {
-				target = try item(target, undoList, delegate)
+				target = try item(target, undoList)
 			}
 			return (target, undoList)
 		}
@@ -770,11 +768,10 @@ public extension Rope.Node {
 				return try inserting(elt, on: .right,
 				                     of: target.lower)
 			}
-			changes.record { (node, undoList, delegate) in
+			changes.record { (node, undoList) in
 				try node.performingReplacement(
 				    after: target.lower, upTo: target.upper,
-				    new: elt, old: .empty, undoList: undoList,
-				    delegate: delegate)
+				    new: elt, old: .empty, undoList: undoList)
 			}
 			return self
 		} else if try index(target.upper, precedes: target.lower) {
@@ -782,11 +779,10 @@ public extension Rope.Node {
 				return try inserting(elt, on: .right,
 				                     of: target.upper)
 			}
-			changes.record { (node, undoList, delegate) in
+			changes.record { (node, undoList) in
 				try node.performingReplacement(
 				    after: target.upper, upTo: target.lower,
-				    new: elt, old: .empty, undoList: undoList,
-				    delegate: delegate)
+				    new: elt, old: .empty, undoList: undoList)
 			}
 			return self
 		} else {
@@ -796,12 +792,11 @@ public extension Rope.Node {
 			}
 			return elt.withFreshBoundaries {
 			    (lower, upper, bounded) in
-				changes.record { (node, undoList, delegate) in
+				changes.record { (node, undoList) in
 					try node.performingReplacement(
 					    after: lower, upTo: upper,
 					    new: elt, old: .empty,
-					    undoList: undoList,
-					    delegate: delegate)
+					    undoList: undoList)
 				}
 				return bounded
 			}
@@ -1764,16 +1759,15 @@ public extension Rope.Node {
 	}
 	func performingReplacement(after lowerBound: Label,
 	    upTo upperBound: Label, new: Self, old: Self,
-	    undoList: ChangeList,
-	    delegate: Rope.TypeErasedOffsetDelegate) throws -> Self {
+	    undoList: ChangeList) throws -> Self {
 		let result = try replacing(after: lowerBound,
 		    upTo: upperBound, with: new, recording: nil)
-		undoList.record { (node, undoList, delegate) in
+		undoList.record { (node, undoList) in
 			return try node.performingReplacement(
 			    after: lowerBound, upTo: upperBound,
 			    new: old,
 			    old: new,
-			    undoList: undoList, delegate: delegate)
+			    undoList: undoList)
 		}
 		return result
 	}
@@ -1851,12 +1845,12 @@ public extension Rope.Node {
 			case (_, _?, _):
 				throw NodeError.expectedExtent
 			}
-			changes.record { (node, undoList, delegate) in
+			changes.record { (node, undoList) in
 				try node.performingReplacement(
 				    after: lowerBound, upTo: upperBound,
 				    new: replacement,
 				    old: middle,
-				    undoList: undoList, delegate: delegate)
+				    undoList: undoList)
 			}
 			return self
 		case (let loExt?, let hiExt?) where loExt == hiExt:
@@ -1924,12 +1918,11 @@ public extension Rope.Node {
 		}
 		return self.withFreshBoundaries {
 		    (lower, upper, node) in
-			changes.record { (node, undoList, delegate) in
+			changes.record { (node, undoList) in
 				try node.performingReplacement(
 				    after: lower, upTo: upper,
 				    new: result, old: self,
-				    undoList: undoList,
-				    delegate: delegate)
+				    undoList: undoList)
 			}
 			return node
 		}
