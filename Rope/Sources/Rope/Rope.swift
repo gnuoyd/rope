@@ -14,7 +14,15 @@ extension Range {
 		    in: rope)
 		let upper = Rope.Index(abutting: r.upperBound, on: .left,
 		    in: rope)
-		self = lower..<upper
+		if r.lowerBound != r.upperBound {
+			self = lower..<upper
+		} else if try! rope.node.label(lower.label,
+		                               precedes: upper.label,
+					       by: .index) {
+			self = lower..<upper
+		} else {
+			self = upper..<lower
+		}
 	}
 	// TBD add (Bound, Bound) property `orderedAliasedBounds`
 }
