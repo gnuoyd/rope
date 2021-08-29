@@ -13,10 +13,15 @@ public extension Rope {
 
 public struct AnyRopeOffsetDelegate<O : Comparable> : RopeOffsetDelegate {
 	public typealias Offset = O
-	typealias DidChange = (Range<Offset>, Int) -> Void
-	typealias AttributesDidChange = (Range<Offset>) -> Void
+	public typealias DidChange = (Range<Offset>, Int) -> Void
+	public typealias AttributesDidChange = (Range<Offset>) -> Void
 	let didChange: DidChange
 	let attributesDidChange: AttributesDidChange
+	public init(didChange: @escaping DidChange,
+	            attributesDidChange: @escaping AttributesDidChange) {
+		self.didChange = didChange
+		self.attributesDidChange = attributesDidChange
+	}
 	public func ropeDidChange(on range: Range<Offset>, changeInLength: Int){
 		didChange(range, changeInLength)
 	}

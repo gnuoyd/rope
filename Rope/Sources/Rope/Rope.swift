@@ -204,7 +204,7 @@ public class Rope<C : Content> : Collection {
 	}
 
 	private var _delegate: TypeErasedOffsetDelegate? = nil
-	var delegate: TypeErasedOffsetDelegate {
+	public var delegate: TypeErasedOffsetDelegate {
 		set {
 			_delegate = newValue
 		}
