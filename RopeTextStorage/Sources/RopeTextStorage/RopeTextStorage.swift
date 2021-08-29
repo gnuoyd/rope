@@ -7,18 +7,24 @@ import Rope
 public class RopeTextStorage: NSTextStorage {
 	public typealias Content = ContiguousArray<UTF16.CodeUnit>
 	public typealias Backing = Rope<Content>
-	typealias Offset = Backing.Node.Offset
+	public typealias Offset = Backing.Node.Offset
 	let backing: Backing
 	let _string: RopeString
 	public init(with backing: Backing) {
 		self.backing = backing
 		_string = RopeString(with: backing)
 		super.init()
+		backing.delegate = AnyRopeOffsetDelegate(
+		    didChange: self.ropeDidChange,
+		    attributesDidChange: self.ropeAttributesDidChange)
 	}
 	public override init() {
 		self.backing = Rope()
 		_string = RopeString(with: backing)
 		super.init()
+		backing.delegate = AnyRopeOffsetDelegate(
+		    didChange: self.ropeDidChange,
+		    attributesDidChange: self.ropeAttributesDidChange)
 	}
 	required init?(coder: NSCoder) {
 		fatalError("init(coder:) has not been implemented")
@@ -67,12 +73,6 @@ public class RopeTextStorage: NSTextStorage {
 			} catch {
 				fatalError("invalid range")
 			}
-			let actions =
-			    NSTextStorageEditActions.editedCharacters.union(
-			    .editedAttributes)
-			edited(actions, range: range,
-			    changeInLength:
-			        (str as NSString).length - range.length)
 		}
 	}
 	override public func setAttributes(
@@ -84,7 +84,23 @@ public class RopeTextStorage: NSTextStorage {
 			} else {
 				backing.clearAttributes(on: range)
 			}
-			edited(.editedAttributes, range: r, changeInLength: 0)
+			// XXX TBD make the backing call ropeAttributesDidChange
 		}
+	}
+
+}
+
+extension RopeTextStorage : RopeOffsetDelegate {
+	public func ropeDidChange(on range: Range<Offset>, changeInLength: Int){
+		Swift.print("\(#function)(on: \(range), changeInLength: \(changeInLength))")
+		edited(NSTextStorageEditActions.editedCharacters.union(.editedAttributes), range: range.nsRange, changeInLength: changeInLength)
+
+		return
+	}
+	public func ropeAttributesDidChange(on range: Range<Offset>) {
+		Swift.print("\(#function)(on: \(range))")
+		edited(.editedAttributes, range: range.nsRange,
+		       changeInLength: 0)
+		return
 	}
 }
