@@ -614,17 +614,6 @@ public extension Rope.Node {
 				throw NodeError.expectedExtent
 			}
 		case (let loExt?, let hiExt?) where loExt == hiExt:
-			/* Deal with an empty range where the lowerBound
-			 * is right of the upperBound---it can happen---but
-			 * nevertheless the bounds are equal.
-			 */
-			if try label(lowerBound, aliases: upperBound) {
-				// TBD perform an alternate, "inserting"
-				// transformation if this routine is ever
-				// adapted to perform generic transformations.
-				// This is fine, for now.
-				return self
-			}
 			guard case (let l, .extent(let ctlr, let m), let r) =
 			    try segmenting(atExtent: loExt) else {
 				throw NodeError.expectedExtent
@@ -1854,17 +1843,6 @@ public extension Rope.Node {
 			}
 			return self
 		case (let loExt?, let hiExt?) where loExt == hiExt:
-			/* Deal with an empty range where the lowerBound
-			 * aliases the upperBound?
-			 *
-			 * TBD Forward to the controller for extent
-			 * loExt.
-			if try label(lowerBound, aliases: upperBound) {
-				return try inserting(replacement,
-				    between: (lowerBound, upperBound),
-				    recording: optChanges)
-			}
-			 */
 			guard case (let l, .extent(let ctlr, let m), let r) =
 			    try segmenting(atExtent: loExt) else {
 				throw NodeError.expectedExtent
