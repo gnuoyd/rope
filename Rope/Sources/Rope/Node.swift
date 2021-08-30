@@ -32,7 +32,7 @@ extension Rope {
 		    after lowerBound: Label, upTo upperBound: Label,
 		    in content: Rope.Node,
 		    with replacement: Rope.Node,
-		    recording: Rope.Node.ChangeList?) throws -> Rope.Node {
+		    recording: ChangeList<Rope.Node>?) throws -> Rope.Node {
 			throw Rope.Node.NodeError.readonlyExtent
 		}
 	}
@@ -722,31 +722,31 @@ public extension Rope.Node {
 	}
 }
 
-public extension Rope.Node {
-	class ChangeList {
-		public typealias Change =
-		    (Rope.Node, ChangeList) throws -> Rope.Node
-		private var items: [Change]
-		public required init() {
-			items = []
-		}
-		public func record(_ item: @escaping Change) {
-			items.append(item)
-		}
-		public func append(_ changes: ChangeList) {
-			items = items + changes.items
-		}
-		public func play(withTarget targetIn: Rope.Node) throws
-		    -> (Rope.Node, ChangeList) {
-			let undoList = Self()
-			var target = targetIn
-			while let item = items.popLast() {
-				target = try item(target, undoList)
-			}
-			return (target, undoList)
-		}
+public class ChangeList<Target> {
+	public typealias Change =
+	    (Target, ChangeList) throws -> Target
+	private var items: [Change]
+	public required init() {
+		items = []
 	}
+	public func record(_ item: @escaping Change) {
+		items.append(item)
+	}
+	public func append(_ changes: ChangeList) {
+		items = items + changes.items
+	}
+	public func play(withTarget targetIn: Target) throws
+	    -> (Target, ChangeList) {
+		let undoList = Self()
+		var target = targetIn
+		while let item = items.popLast() {
+			target = try item(target, undoList)
+		}
+		return (target, undoList)
+	}
+}
 
+public extension Rope.Node {
 	func inserting(_ elt: Self, on side: Side, of target: Rope.Index)
 	    throws -> Self {
 		return try inserting(elt, on: side, of: target.label)
@@ -762,7 +762,7 @@ public extension Rope.Node {
 	 */
 	func inserting(_ elt: Self,
 	    between target: (lower: Label, upper: Label),
-	    recording optChanges: ChangeList?) throws -> Self {
+	    recording optChanges: ChangeList<Self>?) throws -> Self {
 		if try index(target.lower, precedes: target.upper) {
 			guard let changes = optChanges else {
 				return try inserting(elt, on: .right,
@@ -1751,7 +1751,7 @@ public extension Rope.Node {
 	}
 	func replacing(after lowerBound: Rope.Index,
 	    upTo upperBound: Rope.Index, with replacement: Content,
-	    recording optChanges: ChangeList?) throws
+	    recording optChanges: ChangeList<Self>?) throws
 	    -> Self {
 		return try replacing(
 		    after: lowerBound.label, upTo: upperBound.label,
@@ -1759,7 +1759,7 @@ public extension Rope.Node {
 	}
 	func performingReplacement(after lowerBound: Label,
 	    upTo upperBound: Label, new: Self, old: Self,
-	    undoList: ChangeList) throws -> Self {
+	    undoList: ChangeList<Self>) throws -> Self {
 		let result = try replacing(after: lowerBound,
 		    upTo: upperBound, with: new, recording: nil)
 		undoList.record { (node, undoList) in
@@ -1776,7 +1776,7 @@ public extension Rope.Node {
 	 * extent, and performs replacement/deletion on each affected extent.
 	 */
 	func replacing(after lowerBound: Label, upTo upperBound: Label,
-	    with replacement: Self, recording optChanges: ChangeList?)
+	    with replacement: Self, recording optChanges: ChangeList<Self>?)
 	    throws -> Self {
 		let result: Self
 		switch (try extentsEnclosing(lowerBound).first,

@@ -153,7 +153,7 @@ public class Rope<C : Content> : Collection {
 		}
 		func replacing(after lowerBound: Label, upTo upperBound: Label,
 		    in content: Rope.Node, with replacement: Rope.Node,
-		    recording optChanges: Rope.Node.ChangeList?)
+		    recording optChanges: ChangeList<Rope.Node>?)
 		    throws -> Rope.Node {
 			let replaced = try content.replacing(
 			    after: lowerBound, upTo: upperBound,
@@ -395,7 +395,7 @@ public class Rope<C : Content> : Collection {
 	public subscript(_ r: Range<Offset>) -> Content {
 		set(replacement) {
 			do {
-				let undoList = Rope.Node.ChangeList()
+				let undoList = ChangeList<Rope>()
 				try replace(r, with: replacement,
 				            undoList: undoList)
 			} catch {
@@ -408,12 +408,13 @@ public class Rope<C : Content> : Collection {
 		}
 	}
 	public func replace(_ r: Range<Offset>, with replacement: Content,
-	    undoList: Rope.Node.ChangeList) throws {
+	    undoList: ChangeList<Rope>) throws {
 		let ir = Range(r, in: self)
 		try replace(ir, with: replacement, undoList: undoList)
 	}
+	typealias OffsetPair = (lower: Offset, upper: Offset)
 	public func replace(_ r: Range<Index>, with replacement: Content,
-	    undoList: Rope.Node.ChangeList) throws {
+	    undoList: ChangeList<Rope>) throws {
 		/* Create a ChangeList and record .replacing(...) changes on
 		 * it. .replacing(...) has labels each change location.
 		 *
@@ -423,24 +424,29 @@ public class Rope<C : Content> : Collection {
 		 * Finally, record an indication that a text range
 		 * was edited with its offsets and any change in length.
 		 */
-		let changes = Rope.Node.ChangeList()
-		let oldOffsets: (lower: Offset, upper: Offset) =
-		    try (top.offset(of: r.lowerBound.label),
-		         top.offset(of: r.upperBound.label))
-		let labeled = try top.replacing(
+		let changes = ChangeList<Rope.Node>()
+		top = try top.replacing(
 		    after: r.lowerBound, upTo: r.upperBound,
 		    with: replacement, recording: changes)
-		let (newtop, reversedChanges) =
-		    try changes.play(withTarget: labeled)
+		let oldOffsets: OffsetPair =
+		    try (top.offset(of: r.lowerBound.label),
+		         top.offset(of: r.upperBound.label))
+		try performReplacement(changes, undoList: undoList)
 		let newOffsets: (lower: Offset, upper: Offset) =
-		    try (newtop.offset(of: r.lowerBound.label),
-		         newtop.offset(of: r.upperBound.label))
-		top = newtop
-		undoList.append(reversedChanges)
-		delegate.indicateChanges(
-		    new: newOffsets,
-		    old: oldOffsets,
+		    try (top.offset(of: r.lowerBound.label),
+		         top.offset(of: r.upperBound.label))
+		delegate.indicateChanges(new: newOffsets, old: oldOffsets,
 		    undoList: undoList)
+	}
+	func performReplacement(_ changes: ChangeList<Rope.Node>,
+	     undoList: ChangeList<Rope>) throws {
+		let (newtop, reversals) = try changes.play(withTarget: top)
+		top = newtop
+		undoList.record { (rope, undoList) in
+			try self.performReplacement(reversals,
+			    undoList: undoList)
+			return rope
+		}
 	}
 	public subscript<I>(_ r: Range<Offset>) -> I where C.SubSequence == I {
 		set(newValue) {
@@ -778,13 +784,13 @@ extension RopeOffsetDelegate {
 	func indicateChanges<T>(
 	    new: (lower: Rope<T>.Offset, upper: Rope<T>.Offset),
 	    old: (lower: Rope<T>.Offset, upper: Rope<T>.Offset),
-	    undoList: Rope<T>.Node.ChangeList) where Rope<T>.Offset == Offset {
-		undoList.record { (node, undoList) in
+	    undoList: ChangeList<Rope<T>>) where Rope<T>.Offset == Offset {
+		undoList.record { (rope, undoList) in
 			self.indicateChanges(
 			    new: old,
 			    old: new,
 			    undoList: undoList)
-			return node
+			return rope
 		}
 		let length: (new: Int, old: Int) =
 		    ((new.upper - new.lower).unitOffset,

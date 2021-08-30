@@ -2263,7 +2263,7 @@ class ExtentReplacementsBase : XCTestCase {
 			let overlaps = range.overlaps(3...7)
 			let fails = ro && overlaps
 			let assert = Self.functionAssertingThrows(iff: fails)
-			let changes = NSS.ChangeList()
+			let changes = ChangeList<NSS>()
 			assert(try rope.node.replacing(
 			    after: ir.lowerBound.label,
 			    upTo: ir.upperBound.label, with: .text("x"),
@@ -2293,7 +2293,7 @@ class ExtentReplacementsBase : XCTestCase {
 			               range.overlaps(8...10)
 			let fails = ro && overlaps
 			let assert = Self.functionAssertingThrows(iff: fails)
-			let changes = NSS.ChangeList()
+			let changes = ChangeList<NSS>()
 			assert(try rope.node.replacing(
 			                        after: ir.lowerBound.label,
 						upTo: ir.upperBound.label,
@@ -2309,7 +2309,7 @@ class ExtentReplacementsBase : XCTestCase {
 		}
 	}
 	func testReplacementResults() {
-		let changes = NSS.ChangeList()
+		let changes = ChangeList<NSS>()
 
 		for (before, range, replacement, expected, _) in
 		    beforeAfterCombos{
