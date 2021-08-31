@@ -92,9 +92,12 @@ public class RopeTextStorage: NSTextStorage {
 
 extension RopeTextStorage : RopeOffsetDelegate {
 	public func ropeDidChange(on range: Range<Offset>, changeInLength: Int){
-		Swift.print("\(#function)(on: \(range), changeInLength: \(changeInLength))")
-		edited(NSTextStorageEditActions.editedCharacters.union(.editedAttributes), range: range.nsRange, changeInLength: changeInLength)
-
+		Swift.print("\(#function)(on: \(range), " +
+		    "changeInLength: \(changeInLength))")
+		let actions = NSTextStorageEditActions.editedCharacters.union(
+		    .editedAttributes)
+		edited(actions, range: range.nsRange,
+		    changeInLength: changeInLength)
 		return
 	}
 	public func ropeAttributesDidChange(on range: Range<Offset>) {
