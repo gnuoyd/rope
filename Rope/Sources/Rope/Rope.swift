@@ -466,6 +466,7 @@ public class Rope<C : Content> : Collection {
 			return
 		}
 		top = newtop
+		delegate.indicateAttributeChanges(on: r)
 	}
 	public func clearAttributes(on r: Range<Offset>) {
 		let ir = Range(r, in: self)
@@ -781,6 +782,16 @@ extension Rope : ExpressibleByStringLiteral,
 }
 */
 extension RopeOffsetDelegate {
+	func indicateAttributeChanges<T>(
+	    on range: Range<Rope<T>.Offset>,
+	    undoList: ChangeList<Rope<T>>? = nil) where Rope<T>.Offset == Offset {
+		undoList?.record { (rope, undoList) in
+			self.indicateAttributeChanges(
+			    on: range, undoList: undoList)
+			return rope
+		}
+		ropeAttributesDidChange(on: range)
+	}
 	func indicateChanges<T>(
 	    new: (lower: Rope<T>.Offset, upper: Rope<T>.Offset),
 	    old: (lower: Rope<T>.Offset, upper: Rope<T>.Offset),
