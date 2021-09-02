@@ -740,57 +740,6 @@ public extension Rope.Node {
 	    throws -> Self {
 		return try inserting(elt, on: side, of: target.label)
 	}
-	/* This routine deals with the empty range where `target.lower`
-	 * is right of `target.upper` in the rope---it can happen---but
-	 * nevertheless the bounds alias because there are no indexable
-	 * locations between: no extent boundaries, no non-empty leaves.
-	 *
-	 * When inserting(:between:undoList:) leaves `target.upper` on
-	 * the left side of `target.lower`, it carefully produces the
-	 * correct undo record for that order.
-	 */
-	func inserting(_ elt: Self,
-	    between target: (lower: Label, upper: Label),
-	    recording optChanges: ChangeList<Self>?) throws -> Self {
-		if try index(target.lower, precedes: target.upper) {
-			guard let changes = optChanges else {
-				return try inserting(elt, on: .right,
-				                     of: target.lower)
-			}
-			changes.record { (node, undoList) in
-				try node.performingReplacement(
-				    after: target.lower, upTo: target.upper,
-				    new: elt, old: .empty, undoList: undoList)
-			}
-			return self
-		} else if try index(target.upper, precedes: target.lower) {
-			guard let changes = optChanges else {
-				return try inserting(elt, on: .right,
-				                     of: target.upper)
-			}
-			changes.record { (node, undoList) in
-				try node.performingReplacement(
-				    after: target.upper, upTo: target.lower,
-				    new: elt, old: .empty, undoList: undoList)
-			}
-			return self
-		} else {
-			guard let changes = optChanges else {
-				return try inserting(elt, on: .right,
-						     of: target.lower)
-			}
-			return elt.withFreshBoundaries {
-			    (lower, upper, bounded) in
-				changes.record { (node, undoList) in
-					try node.performingReplacement(
-					    after: lower, upTo: upper,
-					    new: elt, old: .empty,
-					    undoList: undoList)
-				}
-				return bounded
-			}
-		}
-	}
 	func inserting(_ elt: Self, on side: Side, of target: Label)
 	    throws -> Self {
 		switch self {
@@ -1771,13 +1720,11 @@ public extension Rope.Node {
 		switch (try extentsEnclosing(lowerBound).first,
 			try extentsEnclosing(upperBound).first) {
 		case (nil, nil):
-			/* Deal with an empty range where the lowerBound
-			 * aliases the upperBound.
+			/* Catch a faulty range where the upperBound
+			 * precedes the lowerBound.
 			 */
-			if try label(lowerBound, aliases: upperBound) {
-				return try inserting(replacement,
-				    between: (lowerBound, upperBound),
-				    recording: optChanges)
+			if try index(upperBound, precedes: lowerBound) {
+				fatalError("bounds out of order")
 			}
 			/* Important: don't discard any embedded indices at
 			 * `range` boundaries!  Instead, use
