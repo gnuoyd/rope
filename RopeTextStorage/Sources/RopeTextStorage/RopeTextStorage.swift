@@ -84,7 +84,6 @@ public class RopeTextStorage: NSTextStorage {
 			} else {
 				backing.clearAttributes(on: range)
 			}
-			// XXX TBD make the backing call ropeAttributesDidChange
 		}
 	}
 

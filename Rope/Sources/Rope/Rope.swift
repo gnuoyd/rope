@@ -474,6 +474,7 @@ public class Rope<C : Content> : Collection {
 			return
 		}
 		top = newtop
+		delegate.indicateAttributeChanges(on: r)
 	}
 	public func offset(of index: Index) throws -> Offset {
 		guard case .interior(_, let label) = index else {
