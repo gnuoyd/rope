@@ -153,25 +153,10 @@ public class Rope<C : Content> : Collection {
 		}
 		func replacing(after lowerBound: Label, upTo upperBound: Label,
 		    in content: Rope.Node, with replacement: Rope.Node,
-		    recording optChanges: ChangeList<Rope.Node>?)
-		    throws -> Rope.Node {
-			let replaced = try content.replacing(
+		    undoList: ChangeList<Rope.Node>?) throws -> Rope.Node {
+			return try content.replacing(
 			    after: lowerBound, upTo: upperBound,
-			    with: replacement, recording: optChanges)
-			guard let changes = optChanges else {
-				return .extent(self, replaced)
-			}
-			let newLower = Label(), newUpper = Label()
-			changes.record { (node, undoList) in
-				return try node.performingReplacement(
-				    after: newLower, upTo: newUpper,
-				    new: .extent(self, replaced),
-				    old: .extent(self, content),
-				    undoList: undoList)
-			}
-			return .nodes(.index(label: newLower),
-			              .extent(self, content),
-				      .index(label: newUpper))
+			    with: replacement, undoList: undoList)
 		}
 		func transformingAttributes(after lowerBound: Label,
 		    upTo upperBound: Label, in content: Rope.Node,
@@ -425,26 +410,28 @@ public class Rope<C : Content> : Collection {
 		 * was edited with its offsets and any change in length.
 		 */
 		let changes = ChangeList<Rope.Node>()
-		top = try top.replacing(
-		    after: r.lowerBound, upTo: r.upperBound,
-		    with: replacement, recording: changes)
 		let oldOffsets: OffsetPair =
 		    try (top.offset(of: r.lowerBound.label),
 		         top.offset(of: r.upperBound.label))
-		try performReplacement(changes, undoList: undoList)
+		top = try top.replacing(
+		    after: r.lowerBound, upTo: r.upperBound,
+		    with: replacement, undoList: changes)
 		let newOffsets: (lower: Offset, upper: Offset) =
 		    try (top.offset(of: r.lowerBound.label),
 		         top.offset(of: r.upperBound.label))
+		undoList.record { (rope, undoList) in
+			try rope.applyChanges(changes, undoList: undoList)
+			return rope
+		}
 		delegate.indicateChanges(new: newOffsets, old: oldOffsets,
 		    undoList: undoList)
 	}
-	func performReplacement(_ changes: ChangeList<Rope.Node>,
+	func applyChanges(_ changes: ChangeList<Rope.Node>,
 	     undoList: ChangeList<Rope>) throws {
 		let (newtop, reversals) = try changes.play(withTarget: top)
 		top = newtop
 		undoList.record { (rope, undoList) in
-			try self.performReplacement(reversals,
-			    undoList: undoList)
+			try self.applyChanges(reversals, undoList: undoList)
 			return rope
 		}
 	}

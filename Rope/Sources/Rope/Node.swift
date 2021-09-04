@@ -32,7 +32,7 @@ extension Rope {
 		    after lowerBound: Label, upTo upperBound: Label,
 		    in content: Rope.Node,
 		    with replacement: Rope.Node,
-		    recording: ChangeList<Rope.Node>?) throws -> Rope.Node {
+		    undoList: ChangeList<Rope.Node>?) throws -> Rope.Node {
 			throw Rope.Node.NodeError.readonlyExtent
 		}
 	}
@@ -1689,34 +1689,18 @@ public extension Rope.Node {
 	}
 	func replacing(after lowerBound: Rope.Index,
 	    upTo upperBound: Rope.Index, with replacement: Content,
-	    recording optChanges: ChangeList<Self>?) throws
-	    -> Self {
+	    undoList: ChangeList<Self>?) throws -> Self {
 		return try replacing(
 		    after: lowerBound.label, upTo: upperBound.label,
-		    with: .text(replacement), recording: optChanges)
-	}
-	func performingReplacement(after lowerBound: Label,
-	    upTo upperBound: Label, new: Self, old: Self,
-	    undoList: ChangeList<Self>) throws -> Self {
-		let result = try replacing(after: lowerBound,
-		    upTo: upperBound, with: new, recording: nil)
-		undoList.record { (node, undoList) in
-			return try node.performingReplacement(
-			    after: lowerBound, upTo: upperBound,
-			    new: old,
-			    old: new,
-			    undoList: undoList)
-		}
-		return result
+		    with: .text(replacement), undoList: undoList)
 	}
 	/* A naive version of `replacing(after:upTo:with:)` splits extents.
 	 * This version finds affected extents, splits before and after each
 	 * extent, and performs replacement/deletion on each affected extent.
 	 */
 	func replacing(after lowerBound: Label, upTo upperBound: Label,
-	    with replacement: Self, recording optChanges: ChangeList<Self>?)
+	               with replacement: Self, undoList: ChangeList<Self>?)
 	    throws -> Self {
-		let result: Self
 		switch (try extentsEnclosing(lowerBound).first,
 			try extentsEnclosing(upperBound).first) {
 		case (nil, nil):
@@ -1734,10 +1718,6 @@ public extension Rope.Node {
 			let (head, rest) = try splitting(after: lowerBound)
 			let (middle, tail) =
 			    try rest.splitting(before: upperBound)
-			result = .nodes(head, replacement, tail)
-			guard let changes = optChanges else {
-				return result
-			}
 			/* Important: perform .replacing() on extents in the
 			 * range so that they get an opportunity to cancel if
 			 * they are read-only.
@@ -1763,7 +1743,7 @@ public extension Rope.Node {
 					try ctlr.replacing(
 					    after: lower, upTo: upper,
 					    in: node, with: .empty,
-					    recording: nil)
+					    undoList: nil)
 				}
 				/* We have to try to replace on `r` just
 				 * just in case it contains a read-only extent
@@ -1775,20 +1755,19 @@ public extension Rope.Node {
 					    try node.replacing(
 					        after: lower, upTo: upper,
 						with: .empty,
-						recording: nil)
+						undoList: nil)
 				}
 				break
 			case (_, _?, _):
 				throw NodeError.expectedExtent
 			}
-			changes.record { (node, undoList) in
-				try node.performingReplacement(
+			undoList?.record { (node, undoList) in
+				try node.replacing(
 				    after: lowerBound, upTo: upperBound,
-				    new: replacement,
-				    old: middle,
+				    with: middle,
 				    undoList: undoList)
 			}
-			return self
+			return .nodes(head, replacement, tail)
 		case (let loExt?, let hiExt?) where loExt == hiExt:
 			guard case (let l, .extent(let ctlr, let m), let r) =
 			    try segmenting(atExtent: loExt) else {
@@ -1796,60 +1775,69 @@ public extension Rope.Node {
 			}
 			let mReplaced = try ctlr.replacing(after: lowerBound,
 			    upTo: upperBound, in: m,
-			    with: replacement, recording: nil)
-			result = l.appending(mReplaced).appending(r)
-			break
+			    with: replacement, undoList: nil)
+			undoList?.record { (node, undoList) in
+			    try node.replacing(after: lowerBound,
+			        upTo: upperBound, with: .extent(ctlr, m),
+				undoList: undoList)
+			}
+			return l.appending(mReplaced).appending(r)
 		case (let loExt?, _):
 			guard case (let l, .extent(let ctlr, let m), let r) =
 			    try segmenting(atExtent: loExt) else {
 				throw NodeError.expectedExtent
 			}
-			let mReplaced = try m.withFreshRightBoundary {
+			let mReplaced: Rope.Node = try m.withFreshRightBoundary{
 			    (upper, node) in
-			        try ctlr.replacing(
+				undoList?.record { (node, undoList) in
+				    try node.replacing(after: lowerBound,
+				        upTo: upper, with: m,
+					undoList: undoList)
+				}
+			        return try ctlr.replacing(
 				    after: lowerBound, upTo: upper, in: node,
-				    with: replacement, recording: nil)
+				    with: replacement, undoList: nil)
 			}
-			let rTrimmed = try r.withFreshLeftBoundary {
+			let rTrimmed: Rope.Node = try r.withFreshLeftBoundary {
 			    (lower, node) in
-			        try node.replacing(
+				undoList?.record { (node, undoList) in
+				    try node.replacing(after: lower,
+				        upTo: upperBound, with: r,
+					undoList: undoList)
+				}
+			        return try node.replacing(
 				    after: lower, upTo: upperBound,
-				    with: .empty, recording: nil)
+				    with: .empty, undoList: nil)
 			}
-			result = l.appending(mReplaced).appending(rTrimmed)
-			break
+			return l.appending(mReplaced).appending(rTrimmed)
 		case (nil, let hiExt?):
 			guard case (let l, .extent(let ctlr, let m), let r) =
 			    try segmenting(atExtent: hiExt) else {
 				throw NodeError.expectedExtent
 			}
-			let lReplaced = try l.withFreshRightBoundary {
+			let lReplaced: Rope.Node = try l.withFreshRightBoundary{
 			    (upper, node) in
-			        try node.replacing(
+				undoList?.record { (node, undoList) in
+				    try node.replacing(after: lowerBound,
+				        upTo: upper, with: l,
+					undoList: undoList)
+				}
+			        return try node.replacing(
 				    after: lowerBound, upTo: upper,
-				    with: replacement, recording: nil)
+				    with: replacement, undoList: nil)
 			}
-			let mTrimmed = try m.withFreshLeftBoundary {
+			let mTrimmed: Rope.Node = try m.withFreshLeftBoundary {
 			    (lower, node) in
-			        try ctlr.replacing(
+				undoList?.record { (node, undoList) in
+				    try node.replacing(after: lower,
+				        upTo: upperBound,
+					with: m, undoList: undoList)
+				}
+			        return try ctlr.replacing(
 				    after: lower, upTo: upperBound,
-				    in: node, with: .empty, recording: nil)
+				    in: node, with: .empty, undoList: nil)
 			}
-			result = lReplaced.appending(mTrimmed).appending(r)
-			break
-		}
-		guard let changes = optChanges else {
-			return result
-		}
-		return self.withFreshBoundaries {
-		    (lower, upper, node) in
-			changes.record { (node, undoList) in
-				try node.performingReplacement(
-				    after: lower, upTo: upper,
-				    new: result, old: self,
-				    undoList: undoList)
-			}
-			return node
+			return lReplaced.appending(mTrimmed).appending(r)
 		}
 	}
 	func segmenting(atExtent target: Rope.ExtentController,

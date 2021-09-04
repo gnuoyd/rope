@@ -2267,13 +2267,13 @@ class ExtentReplacementsBase : XCTestCase {
 			assert(try rope.node.replacing(
 			    after: ir.lowerBound.label,
 			    upTo: ir.upperBound.label, with: .text("x"),
-			    recording: changes),
+			    undoList: changes),
 			    "replacing \(width) at \(range)")
 			assert(try rope.node.replacing(
 			        after: ir.lowerBound.label,
 			        upTo: ir.upperBound.label,
 			        with: .text(("x" * width)[...]),
-				recording: changes),
+				undoList: changes),
 			    "replacing \(width) at \(range)")
 		}
 	}
@@ -2298,13 +2298,13 @@ class ExtentReplacementsBase : XCTestCase {
 			                        after: ir.lowerBound.label,
 						upTo: ir.upperBound.label,
 						with: .text("x"),
-						recording: changes),
+						undoList: changes),
 			    "replacing \(width) at \(range)")
 			assert(try rope.node.replacing(
 			        after: ir.lowerBound.label,
 			        upTo: ir.upperBound.label,
 			        with: .text(("x" * width)[...]),
-				recording: changes),
+				undoList: changes),
 			    "replacing \(width) at \(range)")
 		}
 	}
@@ -2315,20 +2315,21 @@ class ExtentReplacementsBase : XCTestCase {
 		    beforeAfterCombos{
 			let rope: RSS = Rope(with: before)
 			let ir = Range(Offset.unitRange(range), in: rope)
-			guard let labeled = try? rope.node.replacing(
+			guard let after = try? rope.node.replacing(
 			    after: ir.lowerBound.label,
 			    upTo: ir.upperBound.label,
 			    with: .text(replacement),
-			    recording: changes) else {
+			    undoList: changes) else {
 				XCTFail("labeling for replacement failed")
 				return
 			}
-			guard let (after, _) =
-			    try? changes.play(withTarget: labeled) else {
+			guard let (before, _) =
+			    try? changes.play(withTarget: after) else {
 				XCTFail("playing replacement failed")
 				return
 			}
 			XCTAssert(expected ~ after, "\(expected) !~ \(after)")
+			XCTAssert(before ~ rope.node, "\(before) !~ \(rope.node)")
 		}
 	}
 	func testReplacementChangeIndications() {
