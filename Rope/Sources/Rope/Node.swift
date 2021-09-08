@@ -1775,12 +1775,7 @@ public extension Rope.Node {
 			}
 			let mReplaced = try ctlr.replacing(after: lowerBound,
 			    upTo: upperBound, in: m,
-			    with: replacement, undoList: nil)
-			undoList?.record { (node, undoList) in
-			    try node.replacing(after: lowerBound,
-			        upTo: upperBound, with: .extent(ctlr, m),
-				undoList: undoList)
-			}
+			    with: replacement, undoList: undoList)
 			return l.appending(mReplaced).appending(r)
 		case (let loExt?, _):
 			guard case (let l, .extent(let ctlr, let m), let r) =
@@ -1789,25 +1784,15 @@ public extension Rope.Node {
 			}
 			let mReplaced: Rope.Node = try m.withFreshRightBoundary{
 			    (upper, node) in
-				undoList?.record { (node, undoList) in
-				    try node.replacing(after: lowerBound,
-				        upTo: upper, with: m,
-					undoList: undoList)
-				}
 			        return try ctlr.replacing(
 				    after: lowerBound, upTo: upper, in: node,
-				    with: replacement, undoList: nil)
+				    with: replacement, undoList: undoList)
 			}
 			let rTrimmed: Rope.Node = try r.withFreshLeftBoundary {
 			    (lower, node) in
-				undoList?.record { (node, undoList) in
-				    try node.replacing(after: lower,
-				        upTo: upperBound, with: r,
-					undoList: undoList)
-				}
 			        return try node.replacing(
 				    after: lower, upTo: upperBound,
-				    with: .empty, undoList: nil)
+				    with: .empty, undoList: undoList)
 			}
 			return l.appending(mReplaced).appending(rTrimmed)
 		case (nil, let hiExt?):
@@ -1817,25 +1802,15 @@ public extension Rope.Node {
 			}
 			let lReplaced: Rope.Node = try l.withFreshRightBoundary{
 			    (upper, node) in
-				undoList?.record { (node, undoList) in
-				    try node.replacing(after: lowerBound,
-				        upTo: upper, with: l,
-					undoList: undoList)
-				}
 			        return try node.replacing(
 				    after: lowerBound, upTo: upper,
-				    with: replacement, undoList: nil)
+				    with: replacement, undoList: undoList)
 			}
 			let mTrimmed: Rope.Node = try m.withFreshLeftBoundary {
 			    (lower, node) in
-				undoList?.record { (node, undoList) in
-				    try node.replacing(after: lower,
-				        upTo: upperBound,
-					with: m, undoList: undoList)
-				}
 			        return try ctlr.replacing(
 				    after: lower, upTo: upperBound,
-				    in: node, with: .empty, undoList: nil)
+				    in: node, with: .empty, undoList: undoList)
 			}
 			return lReplaced.appending(mTrimmed).appending(r)
 		}
