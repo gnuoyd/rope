@@ -154,9 +154,9 @@ public class Rope<C : Content> : Collection {
 		func replacing(after lowerBound: Label, upTo upperBound: Label,
 		    in content: Rope.Node, with replacement: Rope.Node,
 		    undoList: ChangeList<Rope.Node>?) throws -> Rope.Node {
-			return try content.replacing(
+			return .extent(self, try content.replacing(
 			    after: lowerBound, upTo: upperBound,
-			    with: replacement, undoList: undoList)
+			    with: replacement, undoList: undoList))
 		}
 		func transformingAttributes(after lowerBound: Label,
 		    upTo upperBound: Label, in content: Rope.Node,
