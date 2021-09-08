@@ -2312,7 +2312,7 @@ class ExtentReplacementsBase : XCTestCase {
 		let changes = ChangeList<NSS>()
 
 		for (before, range, replacement, expected, _) in
-		    beforeAfterCombos{
+		    beforeAfterCombos {
 			let rope: RSS = Rope(with: before)
 			let ir = Range(Offset.unitRange(range), in: rope)
 			guard let after = try? rope.node.replacing(
@@ -2323,13 +2323,14 @@ class ExtentReplacementsBase : XCTestCase {
 				XCTFail("labeling for replacement failed")
 				return
 			}
-			guard let (before, _) =
+			guard let (undone, _) =
 			    try? changes.play(withTarget: after) else {
 				XCTFail("playing replacement failed")
 				return
 			}
 			XCTAssert(expected ~ after, "\(expected) !~ \(after)")
-			XCTAssert(before ~ rope.node, "\(before) !~ \(rope.node)")
+			XCTAssert(undone ~ rope.node,
+			    "\(undone) !~ \(rope.node)")
 		}
 	}
 	func testReplacementChangeIndications() {
