@@ -757,7 +757,8 @@ extension Rope : ExpressibleByStringLiteral,
 extension RopeOffsetDelegate {
 	func indicateAttributeChanges<T>(
 	    on range: Range<Rope<T>.Offset>,
-	    undoList: ChangeList<Rope<T>>? = nil) where Rope<T>.Offset == Offset {
+	    undoList: ChangeList<Rope<T>>? = nil)
+	  where Rope<T>.Offset == Offset {
 		undoList?.record { (rope, undoList) in
 			self.indicateAttributeChanges(
 			    on: range, undoList: undoList)
