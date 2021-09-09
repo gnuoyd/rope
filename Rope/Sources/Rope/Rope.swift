@@ -361,21 +361,6 @@ public class Rope<C : Content> : Collection {
 		}
 		return node
 	}
-/*
-	public func insert(_ elt: Element, at i: Index) -> Bool {
-		guard self === i.owner else {
-			return false
-		}
-		if case .empty = elt {
-			return false
-		}
-		guard let newtop = top.inserting(elt, at: i.label) else {
-			return false
-		}
-		top = newtop
-		return true
-	}
-*/
 	/* TBD tests */
 	public subscript(_ r: Range<Offset>) -> Content {
 		set(replacement) {

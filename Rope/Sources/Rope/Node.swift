@@ -1897,14 +1897,6 @@ public extension Rope.Node {
 		return subrope(from: 0, upTo: i).appending(
 		    cursor).appending(subrope(from: i, upTo: endIndex))
 	}
-	/* TBD Remove? Risky subrope use... */
-	func inserting(content node: Self, at i: Offset) -> Self {
-		if case .empty = node {
-			return self
-		}
-		return subrope(from: 0, upTo: i).appending(
-		    node).appending(subrope(from: i, upTo: endIndex))
-	}
 	func transformingExtent(withLabel target: Label,
 	    with f: (_: Rope.ExtentController, _: Self) -> Self) -> Self? {
 		switch self {
