@@ -972,11 +972,8 @@ class EmptyishRopeIndices : XCTestCase {
 	    .nodes(.extent(under: RWEC(), .empty),
 		   .extent(under: RWEC(), .empty)))
 	let empty: RSS = Rope()
-	func testStartIndexEmpty() {
-		// XCTAssert(empty.startIndex == .end(of: empty))
-	}
-	func testEndIndexEmpty() {
-		// XCTAssert(empty.endIndex == .end(of: empty))
+	func testStartIndexEqualsEndIndex() {
+		XCTAssert(empty.startIndex == empty.endIndex)
 	}
 	func testStartIndexOneEmptyExtent() {
 		XCTAssert(one.startIndex != one.endIndex)
