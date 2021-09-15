@@ -736,42 +736,6 @@ public class ChangeList<Target> {
 }
 
 public extension Rope.Node {
-	func inserting(_ elt: Self, on side: Side, of target: Rope.Index)
-	    throws -> Self {
-		return try inserting(elt, on: side, of: target.label)
-	}
-	func inserting(_ elt: Self, on side: Side, of target: Label)
-	    throws -> Self {
-		switch self {
-		case .index(let w) where w.get() == target:
-			switch side {
-			case .left:
-				return .nodes(elt, self)
-			case .right:
-				return .nodes(self, elt)
-			}
-		case .extent(let ctlr, let r):
-			return try ctlr.node(r, inserting: elt, on: side,
-			    of: target)
-		case .concat(let l, _, _, _, let r, _):
-			if l.contains(target) {
-				let newl =
-				    try l.inserting(elt, on: side, of: target)
-				return Self(left: newl, right: r)
-			} else if r.contains(target) {
-				let newr =
-				    try r.inserting(elt, on: side, of: target)
-				return Self(left: l, right: newr)
-			} else {
-				throw NodeError.indexNotFound
-			}
-		case .cursor(_, _), .empty, .index(_), .leaf(_, _):
-			throw NodeError.indexNotFound
-		}
-	}
-}
-
-public extension Rope.Node {
 	enum LabelKind {
 	case index
 	case step
