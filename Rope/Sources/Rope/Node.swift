@@ -1680,6 +1680,22 @@ public extension Rope.Node {
 			 * preserve embedded indices for reuse.
 			 */
 			let (head, rest) = try splitting(after: lowerBound)
+
+			/* Empty ranges where the same label is used
+			 * for the lower and upper bound require special
+			 * treatment:
+			 */
+			if (lowerBound == upperBound) {
+				return try rest.withFreshLeftBoundary {
+				    (upper, node) in
+				        return try Self.nodes(head,
+					    node).replacing(
+					        after: lowerBound,
+						upTo: upper,
+						with: replacement,
+						undoList: undoList)
+				}
+			}
 			let (middle, tail) =
 			    try rest.splitting(before: upperBound)
 			/* Important: perform .replacing() on extents in the
