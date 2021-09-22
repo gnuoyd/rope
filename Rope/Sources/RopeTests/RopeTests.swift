@@ -2091,6 +2091,71 @@ class CompareDisparateIndicesComplicatedRopes: NestedExtentBase {
 	}
 }
 
+class UndoRedo : XCTestCase {
+	func testMultipleEditsAndCompleteUndo() throws {
+		var contentHistory: [NSS.Content] = []
+		let sentence = "All work and no play makes Jack a dull boy."
+		let nl = "\n"
+		let node: NSS = .text(sentence[...])
+		let rope: RSS = Rope(with: node)
+		var changesHistory: [ChangeList<RSS>] = []
+
+		contentHistory.append(rope.node.content)
+		var changes = ChangeList<RSS>()
+		try rope.replace(rope.endIndex..<rope.endIndex, with: nl[...],
+		    undoList: changes)
+		changesHistory.append(changes)
+
+		let line = sentence + nl
+
+		contentHistory.append(rope.node.content)
+		changes = ChangeList<RSS>()
+		try rope.replace(rope.endIndex..<rope.endIndex, with: line[...],
+		    undoList: changes)
+		changesHistory.append(changes)
+
+		contentHistory.append(rope.node.content)
+		changes = ChangeList<RSS>()
+		try rope.replace(rope.endIndex..<rope.endIndex, with: nl[...],
+		    undoList: changes)
+		changesHistory.append(changes)
+
+		let paragraph = line + line + nl
+
+		for _ in 0..<20 {
+			contentHistory.append(rope.node.content)
+			changes = ChangeList<RSS>()
+			try rope.replace(rope.endIndex..<rope.endIndex,
+			    with: paragraph[...], undoList: changes)
+			changesHistory.append(changes)
+		}
+
+		let paragraphLength = (line + line + nl).units.count
+		let offset = 4 * paragraphLength
+
+		// nibble away at the 5th paragraph unit by unit starting
+		// at the front
+		for _ in 0..<paragraphLength {
+			let ir = Range(
+			    Offset.unitRange(offset..<offset+1),
+			    in: rope)
+
+			contentHistory.append(rope.node.content)
+			changes = ChangeList<RSS>()
+			try rope.replace(ir, with: "", undoList: changes)
+			changesHistory.append(changes)
+		}
+
+		while case (let content?, let changes?) =
+		    (contentHistory.popLast(), changesHistory.popLast()) {
+			let (_, _) = try changes.play(withTarget: rope)
+			XCTAssert(content == rope.node.content,
+			    "expected \(content) found \(rope.node.content)")
+		}
+		XCTAssert(contentHistory.isEmpty == changesHistory.isEmpty)
+	}
+}
+
 class ExtentReplacementsBase : XCTestCase {
 	typealias BeforeAfterCombo = (before: NSS, range: Range<Int>,
 			    replacement: NSS.Content, expected: NSS,
