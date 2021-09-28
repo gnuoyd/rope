@@ -587,24 +587,17 @@ public func commonPrefix<S>(_ s1: S, _ s2: S)
 
 extension Rope {
 	public func tightenedSelection(_ selection: Range<Index>)
-	    -> (range: Range<Index>,
-	        leftControllers: [ExtentController],
-	        rightControllers: [ExtentController])? {
+	    throws -> (range: Range<Index>,
+	               leftControllers: [ExtentController],
+	               rightControllers: [ExtentController]) {
 		var (l, r) = (selection.lowerBound, selection.upperBound)
-		var lo, ro: [ExtentController]
 		/* TBD move extentsEnclosing() calls out of loop, use
 		 * index(after/before: ..., climbing: .in, bottom: ...) to
 		 * get the next deeper extent at each step
 		 */
 		while true {
-			switch (try? extentsEnclosing(l),
-                                try? extentsEnclosing(r)) {
-			case (let _lo?, let _ro?):
-				lo = _lo
-				ro = _ro
-			default:
-				return nil
-			}
+			let (lo, ro) = (try extentsEnclosing(l),
+			                try extentsEnclosing(r))
 			if l == r {
 				assert(lo == ro)
 				return (l..<r, lo, lo)
@@ -666,12 +659,10 @@ extension Rope {
 		return l..<r
 	}
 	public func directedSelection(_ s: Range<Index>)
-	    -> (range: Range<Index>,
-	        narrow: ExtentController?,
-	        wide: ExtentController?)? {
-		guard let (tight, lo, ro) = tightenedSelection(s) else {
-			return nil
-		}
+	    throws -> (range: Range<Index>,
+	               narrow: ExtentController?,
+	               wide: ExtentController?) {
+		let (tight, lo, ro) = try tightenedSelection(s)
 		/* Loosen `tight` inside the innermost controller and
 		 * return the loosened range.
 		 */
