@@ -1,3 +1,6 @@
+//
+// Copyright (c) 2019, 2020, 2021 David Young.  All rights reserved.
+//
 public func *(_ s: String, _ times: Int) -> String {
 	if times < 0 {
 		return String(s.reversed()) * -times

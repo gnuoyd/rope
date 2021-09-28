@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019, 2020 David Young.  All rights reserved.
+// Copyright (c) 2019, 2020, 2021 David Young.  All rights reserved.
 //
 public protocol UnitOffsetable {
 	init<S>(unitOffset offset: Int, in s: S)

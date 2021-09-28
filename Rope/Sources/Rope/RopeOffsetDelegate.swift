@@ -1,3 +1,7 @@
+//
+// Copyright (c) 2019, 2020, 2021 David Young.  All rights reserved.
+//
+
 /* Protocol for recipients of messages that tell which Offset Ranges were
  * replaced and by how many Offset units they changed in length.
  */
