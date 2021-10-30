@@ -35,6 +35,12 @@ extension Rope {
 		    undoList: ChangeList<Rope.Node>?) throws -> Rope.Node {
 			throw Rope.Node.NodeError.readonlyExtent
 		}
+		override func setController(_ ctlr: ExtentController,
+		    after lowerBound: Label, upTo upperBound: Label,
+		    in content: Rope.Node,
+		    undoList: ChangeList<Rope.Node>?) throws -> Rope.Node {
+			throw Rope.Node.NodeError.readonlyExtent
+		}
 	}
 }
 
@@ -516,6 +522,7 @@ public extension Rope.Node {
 	case invalidExtentContent
 	case indexNotFound
 	case extentNotFound
+	case indicesCrossExtents
 	}
 	func attributes(at i: Offset, base: Offset)
 	    -> (Attributes, Range<Offset>) {
@@ -1657,6 +1664,71 @@ public extension Rope.Node {
 		return try replacing(
 		    after: lowerBound.label, upTo: upperBound.label,
 		    with: .text(replacement), undoList: undoList)
+	}
+	/* A naive version of `setController(_:after:upTo:)` tries
+	 * to establish an extent that crosses extents.  This
+	 * implementation makes sure that the boundaries of the new
+	 * extent are both located in the same existing extent, in
+	 * which case it forwards to that existing extent, or else that
+	 * neither boundary is inside an extent.
+	 */
+	func setController(_ ctlr: Rope.ExtentController,
+	    after lowerBound: Label, upTo upperBound: Label,
+	    undoList: ChangeList<Self>?) throws -> Self {
+		switch (try extentsEnclosing(lowerBound).first,
+			try extentsEnclosing(upperBound).first) {
+		case (nil, nil):
+			/* Catch a faulty range where the upperBound
+			 * precedes the lowerBound.
+			 */
+			if try index(upperBound, precedes: lowerBound) {
+				fatalError("bounds out of order")
+			}
+			/* Important: don't discard any embedded indices at
+			 * `range` boundaries!  Instead, use
+			 * splitting(after:) and splitting(before:) to
+			 * preserve embedded indices for reuse.
+			 */
+			let (head, rest) = try splitting(after: lowerBound)
+			/* Empty ranges where the same label is used
+			 * for the lower and upper bound require special
+			 * treatment:
+			 */
+			if (lowerBound == upperBound) {
+				return try rest.withFreshLeftBoundary {
+				    (upper, node) in
+				        return try Self.nodes(head,
+					    node).setController(ctlr,
+					        after: lowerBound,
+						upTo: upper,
+						undoList: undoList)
+				}
+			}
+			let (middle, tail) =
+			    try rest.splitting(before: upperBound)
+			/* Important: extents in the range do not get an
+			 * opportunity to cancel.  They will move to the
+			 * interior of the extent, always.
+			 */
+			undoList?.record { (node, undoList) in
+				try node.replacing(
+				    after: lowerBound, upTo: upperBound,
+				    with: middle,
+				    undoList: undoList)
+			}
+			return .nodes(head, .extent(ctlr, middle), tail)
+		case (let loExt?, let hiExt?) where loExt == hiExt:
+			guard case (let l, .extent(let ctlr, let m), let r) =
+			    try segmenting(atExtent: loExt) else {
+				throw NodeError.expectedExtent
+			}
+			let mControlled = try ctlr.setController(ctlr,
+			    after: lowerBound, upTo: upperBound, in: m,
+			    undoList: undoList)
+			return l.appending(mControlled).appending(r)
+		default:
+			throw NodeError.indicesCrossExtents
+		}
 	}
 	/* A naive version of `replacing(after:upTo:with:)` splits extents.
 	 * This version finds affected extents, splits before and after each

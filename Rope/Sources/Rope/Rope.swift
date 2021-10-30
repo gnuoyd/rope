@@ -144,6 +144,14 @@ public class Rope<C : Content> : Collection {
 			}
 			return .extent(self, subcontent)
 		}
+		func setController(_ ctlr: ExtentController,
+		    after lowerBound: Label, upTo upperBound: Label,
+		    in content: Rope.Node,
+		    undoList: ChangeList<Rope.Node>?) throws -> Rope.Node {
+			return .extent(self, try content.setController(ctlr,
+			    after: lowerBound, upTo: upperBound,
+			    undoList: undoList))
+		}
 		func replacing(after lowerBound: Label, upTo upperBound: Label,
 		    in content: Rope.Node, with replacement: Rope.Node,
 		    undoList: ChangeList<Rope.Node>?) throws -> Rope.Node {
@@ -402,6 +410,22 @@ public class Rope<C : Content> : Collection {
 			return rope
 		}
 		delegate.indicateChanges(new: newOffsets, old: oldOffsets,
+		    undoList: undoList)
+	}
+	public func setController(_ ctlr: ExtentController,
+	    on r: Range<Index>, undoList: ChangeList<Rope>) throws {
+		let changes = ChangeList<Rope.Node>()
+		let offsets: OffsetPair =
+		    try (top.offset(of: r.lowerBound.label),
+		         top.offset(of: r.upperBound.label))
+		top = try top.setController(ctlr,
+		    after: r.lowerBound.label, upTo: r.upperBound.label,
+		    undoList: changes)
+		undoList.record { (rope, undoList) in
+			try rope.applyChanges(changes, undoList: undoList)
+			return rope
+		}
+		delegate.indicateChanges(new: offsets, old: offsets,
 		    undoList: undoList)
 	}
 	func applyChanges(_ changes: ChangeList<Rope.Node>,

@@ -242,6 +242,104 @@ class IndexedExtentBase : XCTestCase {
 	}
 }
 
+extension Range where Bound : Comparable {
+	func contains(_ other: Range<Bound>) -> Bool {
+		return self.lowerBound <= other.lowerBound &&
+		       other.upperBound <= self.upperBound
+	}
+	func intersects(_ other: Range<Bound>) -> Bool {
+		/* self |-----|
+		 * other      |-----|
+		 *
+		 * self        |-----|
+		 * other |-----|
+		 */
+		return !(other.upperBound <= self.lowerBound ||
+		         self.upperBound <= other.lowerBound)
+	}
+}
+
+extension Range where Bound : Comparable {
+	func strictlyOverlaps(_ other: Range<Bound>) -> Bool {
+		return other.clamped(to: self) == other ||
+		       self.clamped(to: other) == self
+	}
+}
+
+class ConstructEmbeddedSelections : XCTestCase {
+	let c = [RWEC(), RWEC(), RWEC(), RWEC()]
+	let text: Substring = "pqrstu"
+	// let idx = RSS.Index(unitOffset: ofs, in: r)
+	func testInitialSelection() {
+		var nonEmptyRanges: [(Int, Int)] = []
+		let length = text.count
+
+		nonEmptyRanges = (0..<length).flatMap { first in
+			((first + 1)..<length).map { last in (first, last) }
+		}
+		for ((first, last), (innerFirst, innerLast)) in nonEmptyRanges ⨯ nonEmptyRanges {
+			let changes = ChangeList<RSS>()
+			let pqrstu: RSS = Rope(with: .text(text))
+			let outerParts = (head: text.prefix(first),
+			             middle: text.prefix(last).dropFirst(first),
+			             tail: text.dropFirst(last))
+			let innerParts = (head: text.prefix(innerFirst),
+			    middle:
+			        text.prefix(innerLast).dropFirst(innerFirst),
+			    tail: text.dropFirst(innerLast))
+
+			let outer = Offset.unitRange(
+			    text.unitRange(for: outerParts.middle))
+
+			let inner = Offset.unitRange(
+			        text.unitRange(for: innerParts.middle))
+
+			let outerRange = Range(outer, in: pqrstu)
+			let innerRange = Range(inner, in: pqrstu)
+			let after: NSS =
+			    .nodes(.text(outerParts.head),
+				   .extent(c[0], .text(outerParts.middle)),
+				   .text(outerParts.tail))
+			// pqr*stu*
+			guard let (range, narrow, wide) =
+			    try? pqrstu.directedSelection(outerRange) else {
+				XCTAssert(false, "\(outer) not found")
+				return
+			}
+			XCTAssert(range == outerRange)
+			XCTAssert(narrow == nil)
+			XCTAssert(wide == nil)
+			XCTAssertNoThrow(try pqrstu.setController(c[0],
+			    on: range, undoList: changes),
+			    "could not set controller")
+			XCTAssert(pqrstu.node ~ after,
+			    "expected \(pqrstu.node) ~ \(after)")
+
+			if outer.contains(inner) {
+				guard let (range2, narrow2, wide2) =
+				    try? pqrstu.directedSelection(innerRange)
+				    else {
+					XCTAssert(false,
+					    "\(inner) not found")
+					return
+				}
+				XCTAssert(narrow2 == c[0])
+				XCTAssert(wide2 == c[0])
+				XCTAssertNoThrow(try pqrstu.setController(c[1],
+				    on: range2, undoList: changes),
+				    "could not set controller")
+			} else if outer.intersects(inner) &&
+			          !inner.contains(outer) {
+				XCTAssertThrowsError(
+				    try pqrstu.setController(c[1],
+				        on: innerRange, undoList: changes),
+				    "could not set controller, " +
+				    "outer range \(outer), inner \(inner)")
+			}
+		}
+	}
+}
+
 class DirectSelection : XCTestCase {
 	let c = [RWEC(), RWEC(), RWEC(), RWEC()]
 	// (a)b(c)
