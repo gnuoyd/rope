@@ -496,6 +496,10 @@ extension Rope {
 	}
 }
 
+// For index(_: Index, offsetBy: Int) -> Index
+extension Rope : BidirectionalCollection {
+}
+
 extension Rope {
 	public func extractContent(_ range: Range<Offset>) -> C.SubSequence {
 		return top.extractContent(from: range.lowerBound,
