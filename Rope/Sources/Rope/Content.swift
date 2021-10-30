@@ -27,8 +27,16 @@ public protocol UnitViewable {
 	    where Self.UnitView.Element == Self.Unit,
 	          Self.UnitView.Index == Self.Index
 	var units: Self.UnitView { get }
+	var startIndex: Self.Index { get }
+	var endIndex: Self.Index { get }
 	func unitOffset(of: Self.Index) -> Int
 	func index(unitOffset: Int) -> Self.Index
+}
+
+public extension UnitViewable {
+	func unitRange(for view: Self) -> Range<Int> {
+		return unitOffset(of: view.startIndex)..<unitOffset(of: view.endIndex)
+	}
 }
 
 public protocol Content : RangeReplaceableCollection, UnitViewable,
