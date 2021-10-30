@@ -619,13 +619,11 @@ extension Rope {
 		}
 	}
 	public func rightLoosenedSelection(_ s: Range<Index>,
-	    limit: ExtentController?) -> Range<Index>? {
+	    limit: ExtentController?) throws -> Range<Index> {
 		let l = s.lowerBound
 		var r = s.upperBound
 		var bottom: ExtentController?
-		guard let extents = try? extentsEnclosing(r) else {
-			return nil
-		}
+		let extents = try extentsEnclosing(r)
 		if extents.last == limit {
 			return l..<r
 		}
@@ -639,13 +637,11 @@ extension Rope {
 		return l..<r
 	}
 	public func leftLoosenedSelection(_ s: Range<Index>,
-	    limit: ExtentController?) -> Range<Index>? {
+	    limit: ExtentController?) throws -> Range<Index> {
 		var l = s.lowerBound
 		let r = s.upperBound
 		var bottom: ExtentController?
-		guard let extents = try? extentsEnclosing(l) else {
-			return nil
-		}
+		let extents = try extentsEnclosing(l)
 		if extents.last == limit {
 			return l..<r
 		}
@@ -667,9 +663,10 @@ extension Rope {
 		 * return the loosened range.
 		 */
 		let common = commonPrefix(lo, ro)
-		let looser = leftLoosenedSelection(tight, limit: common.last)!
-		let loosest = rightLoosenedSelection(looser,
-		    limit: common.last)!
+		let looser =
+		    try leftLoosenedSelection(tight, limit: common.last)
+		let loosest =
+		    try rightLoosenedSelection(looser, limit: common.last)
 		return (range: loosest, narrow: common.last, wide: common.first)
 	}
 }
