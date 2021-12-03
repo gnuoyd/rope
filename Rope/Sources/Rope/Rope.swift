@@ -83,21 +83,21 @@ extension Rope.Node.Offset {
  *
  * Get/set/add/remove attributes on a cursor.
  *
- * Enclose a range in an extent.  The range must be
- * well-formed: must begin and end inside the same extent.
+ * Enclose a range in a zone.  The range must be
+ * well-formed: must begin and end inside the same zone.
  *
- * Insert a cursor between characters or nested between extents.
+ * Insert a cursor between characters or nested between zones.
  *
  * Remove a cursor.
  *
  * "Step" a cursor left or right by a character.
  *
- * "Scoot" a cursor left or right by an extent boundary.
+ * "Scoot" a cursor left or right by a zone boundary.
  *
  * "Scoot" a cursor left or right by a cursor?
  *
- * Replace a cursor by an extent; apply the cursor's attributes to
- * the extent's content.
+ * Replace a cursor by a zone; apply the cursor's attributes to
+ * the zone's content.
  *
  * Insert some text left of a cursor; apply the cursor's attributes
  * to the text.
@@ -170,7 +170,7 @@ public class Rope<C : Content> : Collection {
 
 	/* A Node directly encodes the presence of cursors because it is
 	 * possible for a cursor to move up and down the hierarchy of text
-	 * extents without changing between-character positions.  A cursor
+	 * zones without changing between-character positions.  A cursor
 	 * can appear at the position left of the first character or right of
 	 * the last character in a Node.  A cursor can also appear in a
 	 * Node that contains no characters.
@@ -621,7 +621,7 @@ extension Rope {
 		var (l, r) = (selection.lowerBound, selection.upperBound)
 		/* TBD move extentsEnclosing() calls out of loop, use
 		 * index(after/before: ..., climbing: .in, bottom: ...) to
-		 * get the next deeper extent at each step
+		 * get the next deeper zone at each step
 		 */
 		while true {
 			let (lo, ro) = (try extentsEnclosing(l),

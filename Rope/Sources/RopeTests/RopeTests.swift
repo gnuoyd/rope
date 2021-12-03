@@ -686,7 +686,7 @@ class SegmentingAtZone : XCTestCase {
 	func testSegmentingZone() {
 		guard let (l, m, r) =
 		    try? extentInZone.segmenting(atZone: c[0]) else {
-			XCTFail("no such extent controller")
+			XCTFail("no such zone controller")
 			return
 		}
 		XCTAssert(l == .empty)
@@ -696,7 +696,7 @@ class SegmentingAtZone : XCTestCase {
 	func testSegmentingZoneOnLeft() {
 		guard let (l, m, r) =
 		    try? extentOnLeft.segmenting(atZone: c[1]) else {
-			XCTFail("no such extent controller")
+			XCTFail("no such zone controller")
 			return
 		}
 		XCTAssert(l == .empty)
@@ -707,7 +707,7 @@ class SegmentingAtZone : XCTestCase {
 		guard let (l, m, r) =
 		    try? extentOnRight.segmenting(atZone: c[1])
 		else {
-			XCTFail("no such extent controller")
+			XCTFail("no such zone controller")
 			return
 		}
 		XCTAssert(l == .text("abc"))
@@ -718,7 +718,7 @@ class SegmentingAtZone : XCTestCase {
 		guard let (l, m, r) =
 		    try? extentInCenter.segmenting(atZone: c[1])
 		else {
-			XCTFail("no such extent controller")
+			XCTFail("no such zone controller")
 			return
 		}
 		XCTAssert(l == .text("abc"))
@@ -729,7 +729,7 @@ class SegmentingAtZone : XCTestCase {
 		guard let (l, m, r) =
 		    try? multipleZonesInCenter.segmenting(atZone: c[1])
 		else {
-			XCTFail("no such extent controller")
+			XCTFail("no such zone controller")
 			return
 		}
 		XCTAssert(l == .text("abc"))
@@ -740,7 +740,7 @@ class SegmentingAtZone : XCTestCase {
 		guard let (l, m, r) =
 		    try? multipleZonesInCenter.segmenting(atZone: c[3])
 		else {
-			XCTFail("no such extent controller")
+			XCTFail("no such zone controller")
 			return
 		}
 		XCTAssert(l == .nodes(.text("abc"), innerZone))
@@ -2263,22 +2263,22 @@ class ZoneReplacementsBase : XCTestCase {
 
 	let rwc = [RWZC(), RWZC(), RWZC()]
 	let roc = [ROZC(), ROZC(), ROZC()]
-	// read-only inner extent, abc(defgh)ijk
+	// read-only inner zone, abc(defgh)ijk
 	lazy var innerRO: NSS = .nodes(
 	    .text("abc"),
 	    .extent(under: roc[1], .text("defgh")),
 	    .text("ijk"))
-	// read-write inner extent, abc(defgh)ijk
+	// read-write inner zone, abc(defgh)ijk
 	lazy var innerRW: NSS = .nodes(
 	    .text("abc"),
 	    .extent(under: rwc[1], .text("defgh")),
 	    .text("ijk"))
-	// read-only outer extents, (abc)defgh(ijk) 
+	// read-only outer zones, (abc)defgh(ijk) 
 	lazy var outerRO: NSS = .nodes(
 	    .extent(under: roc[0], .text("abc")),
 	    .text("defgh"),
 	    .extent(under: roc[2], .text("ijk")))
-	// read-write outer extents, (abc)defgh(ijk) 
+	// read-write outer zones, (abc)defgh(ijk) 
 	lazy var outerRW: NSS = .nodes(
 	    .extent(under: rwc[0], .text("abc")),
 	    .text("defgh"),

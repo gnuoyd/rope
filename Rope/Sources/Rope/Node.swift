@@ -47,7 +47,7 @@ extension Rope {
 extension Rope.Node {
 	/*
 	 * Result of taking a step in a Node.  A full step moves up or down
-	 * the extent hierarchy or across a UTF-16 element.
+	 * the zone hierarchy or across a UTF-16 element.
 	 */
 	public enum Step {
 	case absent		/* The location to step from could not be
@@ -64,7 +64,7 @@ extension Rope.Node {
 				 * parent.
 				 */
 	case stepOut		/* A full upward step occurred: stepping over
-				 * the boundary of extent `n`, or stepping over
+				 * the boundary of zone `n`, or stepping over
 				 * the last UTF-16 element of a leaf, `n`.
 				 *
 				 * The full step lands on `n`'s parent.
@@ -225,7 +225,7 @@ public extension Rope.Node {
 		 */
 		case (.cursor(_, _), _), (.empty, _), (.index(_), _):
 			return .inchOut
-		/* A step into an extent is a full step. */
+		/* A step into a zone is a full step. */
 		case (.extent(let ctlr, let n), .rightStep):
 			// *(...) -> (*...)
 			return .step(.extent(under: ctlr, .index(label: j),
@@ -555,8 +555,8 @@ public extension Rope.Node {
 	}
 */
 	/* A naive version of `transformingAttributes(after:upTo:with:)` splits
-	 * extents.  This version finds affected extents, splits before
-	 * and after each extent, and performs `fn` on each affected extent.
+	 * zones.  This version finds affected zones, splits before
+	 * and after each zone, and performs `fn` on each affected zone.
 	 */
 	func transformingAttributes(after lowerBound: Label,
 	    upTo upperBound: Label,
@@ -585,7 +585,7 @@ public extension Rope.Node {
 			let (middle, tail) =
 			    try rest.splitting(before: upperBound)
 			/* Important: perform .transformingAttributes() on
-			 * extents in the range so that they get an
+			 * zones in the range so that they get an
 			 * opportunity to cancel if they are read-only.
 			 */
 			switch middle.segmentingAtAnyZone() {
@@ -594,7 +594,7 @@ public extension Rope.Node {
 				    try middle.transformingAttributes(
 				        with: fn)).appending(tail)
 			case (let l, .extent(let ctlr, let m), let r):
-				Swift.print("\(#function): segmented at extent")
+				Swift.print("\(#function): segmented at zone")
 				let newl = try l.withFreshBoundaries {
 				    (left, right, node) in
 				        try node.transformingAttributes(
@@ -614,7 +614,7 @@ public extension Rope.Node {
 				return head.appending(newl).appending(
 				    newm).appending(newr).appending(tail)
 			case (_, _?, _):
-				// m wasn't an extent for some reason
+				// m wasn't a zone for some reason
 				// TBD change return type of
 				// segmentingAtAnyZone to avoid this
 				// impossible error case
@@ -1238,7 +1238,7 @@ public extension Rope.Node {
 				    in: controllers)
 			} catch NodeError.indexNotFound {
 				/* If there are characters left of `r`, or any
-				 * extents open left of `r`, then the
+				 * zones open left of `r`, then the
 				 * controllers we have seen on our way down,
 				 * `controllers`, do not open at `label`.
 				 * Rather, they open at an index on the left.
@@ -1294,7 +1294,7 @@ public extension Rope.Node {
 				    in: controllers)
 			} catch NodeError.indexNotFound {
 				/* If there are characters right of `l`, or any
-				 * extents open right of `l`, then the
+				 * zones open right of `l`, then the
 				 * controllers we have seen on our way down,
 				 * `controllers`, do not close at `label`.
 				 * Rather, they close at an index on the right.
@@ -1666,11 +1666,11 @@ public extension Rope.Node {
 		    with: .text(replacement), undoList: undoList)
 	}
 	/* A naive version of `setController(_:after:upTo:)` tries
-	 * to establish an extent that crosses extents.  This
+	 * to establish a zone that crosses zones.  This
 	 * implementation makes sure that the boundaries of the new
-	 * extent are both located in the same existing extent, in
-	 * which case it forwards to that existing extent, or else that
-	 * neither boundary is inside an extent.
+	 * zone are both located in the same existing zone, in
+	 * which case it forwards to that existing zone, or else that
+	 * neither boundary is inside a zone.
 	 */
 	func setController(_ ctlr: Rope.ZoneController,
 	    after lowerBound: Label, upTo upperBound: Label,
@@ -1706,9 +1706,9 @@ public extension Rope.Node {
 			}
 			let (middle, tail) =
 			    try rest.splitting(before: upperBound)
-			/* Important: extents in the range do not get an
+			/* Important: zones in the range do not get an
 			 * opportunity to cancel.  They will move to the
-			 * interior of the extent, always.
+			 * interior of the zone, always.
 			 */
 			undoList?.record { (node, undoList) in
 				try node.replacing(
@@ -1730,9 +1730,9 @@ public extension Rope.Node {
 			throw NodeError.indicesCrossZones
 		}
 	}
-	/* A naive version of `replacing(after:upTo:with:)` splits extents.
-	 * This version finds affected extents, splits before and after each
-	 * extent, and performs replacement/deletion on each affected extent.
+	/* A naive version of `replacing(after:upTo:with:)` splits zones.
+	 * This version finds affected zones, splits before and after each
+	 * zone, and performs replacement/deletion on each affected zone.
 	 */
 	func replacing(after lowerBound: Label, upTo upperBound: Label,
 	               with replacement: Self, undoList: ChangeList<Self>?)
@@ -1770,7 +1770,7 @@ public extension Rope.Node {
 			}
 			let (middle, tail) =
 			    try rest.splitting(before: upperBound)
-			/* Important: perform .replacing() on extents in the
+			/* Important: perform .replacing() on zones in the
 			 * range so that they get an opportunity to cancel if
 			 * they are read-only.
 			 */
@@ -1778,15 +1778,15 @@ public extension Rope.Node {
 			case (_, nil, _):
 				break
 			/* By our contract with `segmentingAtAnyZone`, the
-			 * `middle` subrope left of the .extent is
-			 * .extent-free, so we do not need to test for
-			 * a read-only .extent's "veto."  We bind `l` only
+			 * `middle` subrope left of the .zone is
+			 * .zone-free, so we do not need to test for
+			 * a read-only .zone's "veto."  We bind `l` only
 			 * so that we can record an undo record that
 			 * re-inserts it.
 			 */
 			case (_, .extent(let ctlr, let m), let r):
 				/* We have to try to replace using the
-				 * controller so that a read-only extent can
+				 * controller so that a read-only zone can
 				 * "veto" the replacement with .empty by
 				 * throwing.
 				 */
@@ -1798,7 +1798,7 @@ public extension Rope.Node {
 					    undoList: nil)
 				}
 				/* We have to try to replace on `r` just
-				 * just in case it contains a read-only extent
+				 * just in case it contains a read-only zone
 				 * that "vetoes" the replacement with .empty by
 				 * throwing.
 				 */
@@ -1923,11 +1923,11 @@ public extension Rope.Node {
 	}
 	func indexingFirstZone(after index: Rope.Index,
 	    label: Label) throws -> Self? {
-		/* If extents enclose `index`, then we are about to split
-		 * an extent.  That mustn't happen.  Instead, the operation
+		/* If zones enclose `index`, then we are about to split
+		 * a zone.  That mustn't happen.  Instead, the operation
 		 * that the caller would like to perform
 		 * (delete, insert, replace, ...) should be forwarded to the
-		 * first enclosing extent.  Return nil to prevent a split
+		 * first enclosing zone.  Return nil to prevent a split
 		 * from occurring.
 		 */
 		guard try extentsEnclosing(index).isEmpty else {

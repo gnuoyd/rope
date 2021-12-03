@@ -30,7 +30,7 @@ extension Label.Id : CustomDebugStringConvertible {
 		case .cursor(let n):
 			return ".cursor(\(n))"
 		case .extent(let n):
-			return ".extent(\(n))"
+			return ".zone(\(n))"
 		case .index(let n):
 			return ".index(\(n))"
 		}
