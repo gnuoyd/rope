@@ -6,8 +6,8 @@ import XCTest
 
 typealias RSS = Rope<Substring>
 typealias NSS = RSS.Node
-typealias RWEC = RSS.ExtentController
-typealias ROEC = RSS.ReadonlyExtentController
+typealias RWZC = RSS.ZoneController
+typealias ROZC = RSS.ReadonlyZoneController
 typealias Offset = NSS.Offset
 
 infix operator ⨯: MultiplicationPrecedence
@@ -109,7 +109,7 @@ class IndexOrderByStep: XCTestCase {
 }
 
 class NestedExtentBase : XCTestCase {
-	let c = [RWEC(), RWEC(), RWEC()]
+	let c = [RWZC(), RWZC(), RWZC()]
 	// (abc(def(ghi)))
 	// 000000000000000
 	//     1111111111
@@ -124,7 +124,7 @@ class NestedExtentBase : XCTestCase {
 }
 
 class BoundaryIndexComparisons : XCTestCase {
-	let c = [RWEC(), RWEC(), RWEC()]
+	let c = [RWZC(), RWZC(), RWZC()]
 	let l = Array<Label>((0..<3).map { _ in Label() })
 	lazy var empty: RSS = Rope(with: .empty)
 	lazy var allIndices: RSS = Rope(with:
@@ -161,7 +161,7 @@ class BoundaryIndexComparisons : XCTestCase {
 	}
 }
 class HasSingleIndex : XCTestCase {
-	let c = [RWEC(), RWEC(), RWEC()]
+	let c = [RWZC(), RWZC(), RWZC()]
 	let l = Array<Label>((0..<3).map { _ in Label() })
 	lazy var empty: RSS = Rope(with: .empty)
 	lazy var allIndices: RSS = Rope(with:
@@ -183,7 +183,7 @@ class HasSingleIndex : XCTestCase {
 }
 
 class IndexedExtentBase : XCTestCase {
-	let c = [RWEC(), RWEC(), RWEC()]
+	let c = [RWZC(), RWZC(), RWZC()]
 	static let indices: ClosedRange<Int> = 0...9
 	let l = Array<Label>(indices.map { _ in Label() })
 	// (abc(def(ghi)))
@@ -209,19 +209,19 @@ class IndexedExtentBase : XCTestCase {
 		           .index(label: l[8])),
 		   .index(label: l[9])))
 	func testInsertingFirstIndex() {
-		XCTAssert(rope.firstIndex(inExtent: c[0]) ==
+		XCTAssert(rope.firstIndex(inZone: c[0]) ==
 		          .interior(of: rope, label: l[1]))
-		XCTAssert(rope.firstIndex(inExtent: c[1]) ==
+		XCTAssert(rope.firstIndex(inZone: c[1]) ==
 		          .interior(of: rope, label: l[3]))
-		XCTAssert(rope.firstIndex(inExtent: c[2]) ==
+		XCTAssert(rope.firstIndex(inZone: c[2]) ==
 		          .interior(of: rope, label: l[5]))
 	}
 	func testInsertingLastIndex() {
-		XCTAssert(rope.lastIndex(inExtent: c[0]) ==
+		XCTAssert(rope.lastIndex(inZone: c[0]) ==
 		          .interior(of: rope, label: l[8]))
-		XCTAssert(rope.lastIndex(inExtent: c[1]) ==
+		XCTAssert(rope.lastIndex(inZone: c[1]) ==
 		          .interior(of: rope, label: l[7]))
-		XCTAssert(rope.lastIndex(inExtent: c[2]) ==
+		XCTAssert(rope.lastIndex(inZone: c[2]) ==
 		          .interior(of: rope, label: l[6]))
 	}
 	func testInsertingIndexAfter() {
@@ -267,7 +267,7 @@ extension Range where Bound : Comparable {
 }
 
 class ConstructEmbeddedSelections : XCTestCase {
-	let c = [RWEC(), RWEC(), RWEC(), RWEC()]
+	let c = [RWZC(), RWZC(), RWZC(), RWZC()]
 	let text: Substring = "pqrstu"
 	// let idx = RSS.Index(unitOffset: ofs, in: r)
 	func testInitialSelection() {
@@ -341,7 +341,7 @@ class ConstructEmbeddedSelections : XCTestCase {
 }
 
 class DirectSelection : XCTestCase {
-	let c = [RWEC(), RWEC(), RWEC(), RWEC()]
+	let c = [RWZC(), RWZC(), RWZC(), RWZC()]
 	// (a)b(c)
 	lazy var abc: RSS = Rope(with:
 	    .nodes(.extent(under: c[0], .text("a")), .text("b"),
@@ -623,7 +623,7 @@ class DirectSelection : XCTestCase {
 }
 
 class IndexOffsetBy : XCTestCase {
-	let c = [RWEC(), RWEC(), RWEC(), RWEC()]
+	let c = [RWZC(), RWZC(), RWZC(), RWZC()]
 	// (()(a)b(cd)ef)
 	lazy var abcdef: RSS = Rope(with:
 		    .extent(under: c[0],
@@ -658,7 +658,7 @@ class IndexOffsetBy : XCTestCase {
 }
 
 class SegmentingAtExtent : XCTestCase {
-	let c: [RWEC] = [RWEC(), RWEC(), RWEC(), RWEC()]
+	let c: [RWZC] = [RWZC(), RWZC(), RWZC(), RWZC()]
 	var _extentInExtent: NSS? = nil
 	var _extentInCenter: NSS? = nil
 	var _multipleExtentsInCenter: NSS? = nil
@@ -879,7 +879,7 @@ class RopeIndexedControllerPaths: NestedExtentBase {
 }
 
 class UTF16IndexedControllerPaths: XCTestCase {
-	let c = [RWEC(), RWEC(), RWEC()]
+	let c = [RWZC(), RWZC(), RWZC()]
 	lazy var tree: NSS = .extent(under: c[0],
 		                     .nodes(.text("abc"),
 				     .extent(under: c[1],
@@ -907,7 +907,7 @@ class UTF16IndexedControllerPaths: XCTestCase {
 }
 
 class WholeRangeUsingRopeIndices: XCTestCase {
-	let ctlr = RWEC()
+	let ctlr = RWZC()
 	lazy var r: RSS = Rope(with: 
 	    .nodes(.extent(under: ctlr, .text("abc")),
 		   .text("def")))
@@ -917,19 +917,19 @@ class WholeRangeUsingRopeIndices: XCTestCase {
 }
 
 class ExtentsOpeningClosing : XCTestCase {
-	let simpleCtlr = RWEC()
+	let simpleCtlr = RWZC()
 	let empty: RSS = Rope()
 	lazy var simple: RSS = Rope(with: .extent(under: simpleCtlr, .empty))
-	let c = [RWEC(),	// 0
-	         RWEC(),	// 1
-	         RWEC(),	// 2
-	         RWEC(),	// 3
-	         RWEC(),	// 4
-	         RWEC(),	// 5
-	         RWEC(),	// 6
-	         RWEC(),	// 7
-	         RWEC(),	// 8
-	         RWEC()]	// 9
+	let c = [RWZC(),	// 0
+	         RWZC(),	// 1
+	         RWZC(),	// 2
+	         RWZC(),	// 3
+	         RWZC(),	// 4
+	         RWZC(),	// 5
+	         RWZC(),	// 6
+	         RWZC(),	// 7
+	         RWZC(),	// 8
+	         RWZC()]	// 9
 	// ()(a(b)c())(((def)))(((g)h)i)
 	// 00111111111444444444777777777
 	//     222 33  5555555  888888
@@ -1065,10 +1065,10 @@ class ExtentsOpeningClosing : XCTestCase {
 }
 
 class EmptyishRopeIndices : XCTestCase {
-	let one: RSS = Rope(with: .extent(under: RWEC(), .empty))
+	let one: RSS = Rope(with: .extent(under: RWZC(), .empty))
 	let two: RSS = Rope(with:
-	    .nodes(.extent(under: RWEC(), .empty),
-		   .extent(under: RWEC(), .empty)))
+	    .nodes(.extent(under: RWZC(), .empty),
+		   .extent(under: RWZC(), .empty)))
 	let empty: RSS = Rope()
 	func testStartIndexEqualsEndIndex() {
 		XCTAssert(empty.startIndex == empty.endIndex)
@@ -1106,7 +1106,7 @@ class EmptyishRopeIndices : XCTestCase {
 }
 
 class ThreeUnitRangesUsingRopeIndices: XCTestCase {
-	let ctlr = RWEC()
+	let ctlr = RWZC()
 	lazy var expectations: [NSS] = [
 	    .extent(under: ctlr, .text("ab")),
 	    .extent(under: ctlr, .text("abc")),
@@ -1141,7 +1141,7 @@ class ThreeUnitRangesUsingRopeIndices: XCTestCase {
 }
 
 class TwoUnitRangesUsingRopeIndices: XCTestCase {
-	let ctlr = RWEC()
+	let ctlr = RWZC()
 	lazy var expectations: [NSS] = [
 	    .extent(under: ctlr, .text("a")),
 	    .extent(under: ctlr, .text("ab")),
@@ -1176,7 +1176,7 @@ class TwoUnitRangesUsingRopeIndices: XCTestCase {
 }
 
 class UnitRangesUsingRopeIndices: XCTestCase {
-	let ctlr = RWEC()
+	let ctlr = RWZC()
 	lazy var expectations: [NSS] = [
 	    .empty,
 	    .extent(under: ctlr, .empty),
@@ -1211,7 +1211,7 @@ class UnitRangesUsingRopeIndices: XCTestCase {
 }
 
 class ConvertIndicesToUTF16Offsets : XCTestCase {
-	let ctlr = [RWEC(), RWEC()]
+	let ctlr = [RWZC(), RWZC()]
 	lazy var r: RSS  = Rope(with:
 	    .extent(under: ctlr[0], .text("abc")),
 		                    .text("def"),
@@ -1245,7 +1245,7 @@ class ConvertIndicesToUTF16Offsets : XCTestCase {
 }
 
 class LookupUsingRopeIndicesDerivedFromUTF16Offsets: XCTestCase {
-	let ctlr = RWEC()
+	let ctlr = RWZC()
 	lazy var expectations: [NSS] = [
 	    .extent(under: ctlr, .text("a")),
 	    .extent(under: ctlr, .text("b")),
@@ -1273,7 +1273,7 @@ class LookupUsingRopeIndicesDerivedFromUTF16Offsets: XCTestCase {
 }
 
 class ExtentElementLookupUsingRopeIndices: XCTestCase {
-	let ctlr = RWEC()
+	let ctlr = RWZC()
 	lazy var expectations: [NSS] = [
 	    .empty,
 	    .extent(under: ctlr, .text("a")),
@@ -1637,7 +1637,7 @@ class NodeAttributes : XCTestCase {
 	//         22222
 	let n: NSS = .nodes(abc, defgh, ijkl)
 	lazy var rope: RSS = Rope(with: n)
-	let ctlr = RWEC()
+	let ctlr = RWZC()
 	lazy var contained: RSS = Rope(with: .extent(under: ctlr, n))
 	func testFrontAttributes() {
 		let (attrs, range) = n.attributes(at: 0)
@@ -2261,8 +2261,8 @@ class ExtentReplacementsBase : XCTestCase {
 	typealias CustomAssert = (_ expression: @autoclosure () throws -> NSS,
 		                  _ message: @autoclosure () -> String) -> ()
 
-	let rwc = [RWEC(), RWEC(), RWEC()]
-	let roc = [ROEC(), ROEC(), ROEC()]
+	let rwc = [RWZC(), RWZC(), RWZC()]
+	let roc = [ROZC(), ROZC(), ROZC()]
 	// read-only inner extent, abc(defgh)ijk
 	lazy var innerRO: NSS = .nodes(
 	    .text("abc"),

@@ -21,7 +21,7 @@ extension Dictionary where Key == NSAttributedString.Key, Value == Any {
 }
 
 extension Rope {
-	class ReadonlyExtentController : ExtentController {
+	class ReadonlyZoneController : ZoneController {
 		override func transformingAttributes(
 		    after lowerBound: Label, upTo upperBound: Label,
 		    in content: Rope.Node,
@@ -35,7 +35,7 @@ extension Rope {
 		    undoList: ChangeList<Rope.Node>?) throws -> Rope.Node {
 			throw Rope.Node.NodeError.readonlyExtent
 		}
-		override func setController(_ ctlr: ExtentController,
+		override func setController(_ ctlr: ZoneController,
 		    after lowerBound: Label, upTo upperBound: Label,
 		    in content: Rope.Node,
 		    undoList: ChangeList<Rope.Node>?) throws -> Rope.Node {
@@ -902,7 +902,7 @@ public extension Rope.Node {
 }
 
 public extension Rope.Node {
-	init(controller ctlr: Rope.ExtentController, node n: Self) {
+	init(controller ctlr: Rope.ZoneController, node n: Self) {
 		self = .extent(ctlr, n)
 	}
 	init(label: Label) {
@@ -1005,11 +1005,11 @@ extension Rope.Node : CustomDebugStringConvertible {
 }
 
 public extension Rope.Node {
-	static func extent(under controller: Rope.ExtentController,
+	static func extent(under controller: Rope.ZoneController,
 	    _ content: Self...) -> Self {
 		return Self(controller: controller, node: tree(from: content))
 	}
-	static func extent(under controller: Rope.ExtentController,
+	static func extent(under controller: Rope.ZoneController,
 	    with content: [Self]) -> Self {
 		return Self(controller: controller, node: tree(from: content))
 	}
@@ -1169,8 +1169,8 @@ public extension Rope.Node {
 		}
 		return transforming(at: i, with: unit)
 	}
-	func extentsEnclosing(_ i0: Offset) -> [Rope.ExtentController] {
-		var path: [Rope.ExtentController] = []
+	func extentsEnclosing(_ i0: Offset) -> [Rope.ZoneController] {
+		var path: [Rope.ZoneController] = []
 		var i = i0
 		var next = self
 		while true {
@@ -1191,13 +1191,13 @@ public extension Rope.Node {
 		}
 	}
 	func extentsEnclosing(_ i: Rope.Index,
-	                      under controllers: [Rope.ExtentController] = [])
-	    throws -> [Rope.ExtentController] {
+	                      under controllers: [Rope.ZoneController] = [])
+	    throws -> [Rope.ZoneController] {
 		return try extentsEnclosing(i.label, under: controllers)
 	}
 	func extentsEnclosing(_ label: Label,
-	                      under controllers: [Rope.ExtentController] = [])
-	    throws -> [Rope.ExtentController] {
+	                      under controllers: [Rope.ZoneController] = [])
+	    throws -> [Rope.ZoneController] {
 		switch self {
 		case .index(let w) where w.get() == label:
 			return controllers
@@ -1218,13 +1218,13 @@ public extension Rope.Node {
 		}
 	}
 	func extentsOpening(at i: Rope.Index,
-	                    in controllers: [Rope.ExtentController] = [])
-	    throws -> [Rope.ExtentController] {
+	                    in controllers: [Rope.ZoneController] = [])
+	    throws -> [Rope.ZoneController] {
 		return try extentsOpening(at: i.label, in: controllers)
 	}
 	func extentsOpening(at label: Label,
-	                    in controllers: [Rope.ExtentController] = [])
-	    throws -> [Rope.ExtentController] {
+	                    in controllers: [Rope.ZoneController] = [])
+	    throws -> [Rope.ZoneController] {
 		switch self {
 		case .extent(let ctlr, let content):
 			return try content.extentsOpening(at: label,
@@ -1256,8 +1256,8 @@ public extension Rope.Node {
 		}
 	}
 	func extentsClosing(at i: Rope.Index,
-	                    in controllers: [Rope.ExtentController] = [])
-	    throws -> [Rope.ExtentController] {
+	                    in controllers: [Rope.ZoneController] = [])
+	    throws -> [Rope.ZoneController] {
 		return try extentsClosing(at: i.label, in: controllers)
 	}
 	func offset(of label: Label,
@@ -1279,8 +1279,8 @@ public extension Rope.Node {
 		}
 	}
 	func extentsClosing(at label: Label,
-	                    in controllers: [Rope.ExtentController] = [])
-	    throws -> [Rope.ExtentController] {
+	                    in controllers: [Rope.ZoneController] = [])
+	    throws -> [Rope.ZoneController] {
 		switch self {
 		case .extent(let ctlr, let content):
 			return try content.extentsClosing(at: label,
@@ -1672,7 +1672,7 @@ public extension Rope.Node {
 	 * which case it forwards to that existing extent, or else that
 	 * neither boundary is inside an extent.
 	 */
-	func setController(_ ctlr: Rope.ExtentController,
+	func setController(_ ctlr: Rope.ZoneController,
 	    after lowerBound: Label, upTo upperBound: Label,
 	    undoList: ChangeList<Self>?) throws -> Self {
 		switch (try extentsEnclosing(lowerBound).first,
@@ -1867,7 +1867,7 @@ public extension Rope.Node {
 			return lReplaced.appending(mTrimmed).appending(r)
 		}
 	}
-	func segmenting(atExtent target: Rope.ExtentController,
+	func segmenting(atExtent target: Rope.ZoneController,
 	    leftSibling: Self = .empty) throws -> (Self, Self, Self) {
 		switch self {
 		case .extent(target, _):
@@ -1950,7 +1950,7 @@ public extension Rope.Node {
 		    cursor).appending(subrope(from: i, upTo: endIndex))
 	}
 	func transformingExtent(withLabel target: Label,
-	    with f: (_: Rope.ExtentController, _: Self) -> Self) -> Self? {
+	    with f: (_: Rope.ZoneController, _: Self) -> Self) -> Self? {
 		switch self {
 		case .cursor(_, _), .empty, .index(_), .leaf(_, _):
 			return nil
@@ -1977,14 +1977,14 @@ public extension Rope.Node {
 			}
 		}
 	}
-	func insertingFirstIndex(_ label: Label, inExtent target: Label)
+	func insertingFirstIndex(_ label: Label, inZone target: Label)
 	    -> Self? {
 		return transformingExtent(withLabel: target) {
 		    (ctlr, content) in
 		        .extent(under: ctlr, .index(label: label), content)
 		}
 	}
-	func insertingLastIndex(_ label: Label, inExtent target: Label)
+	func insertingLastIndex(_ label: Label, inZone target: Label)
 	    -> Self? {
 		return transformingExtent(withLabel: target) {
 		    (ctlr, content) in

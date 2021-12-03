@@ -113,7 +113,7 @@ public class Rope<C : Content> : Collection {
 	public enum Index : Comparable {
 	case interior(of: Rope, label: Label)
 	}
-	public class ExtentController : Label {
+	public class ZoneController : Label {
 		public override var id: Id { return .extent(_id) }
 		func subrope(of content: Rope.Node, from: Rope.Node.Offset,
 		    tightly: Bool, depth: Int = 0) -> Rope.Node {
@@ -144,7 +144,7 @@ public class Rope<C : Content> : Collection {
 			}
 			return .extent(self, subcontent)
 		}
-		func setController(_ ctlr: ExtentController,
+		func setController(_ ctlr: ZoneController,
 		    after lowerBound: Label, upTo upperBound: Label,
 		    in content: Rope.Node,
 		    undoList: ChangeList<Rope.Node>?) throws -> Rope.Node {
@@ -183,7 +183,7 @@ public class Rope<C : Content> : Collection {
 	}
 	case cursor(Label, Attributes)
 	case index(Weak<Label>)
-	case extent(ExtentController, Node)
+	case extent(ZoneController, Node)
 	case concat(Node, Offset, UInt, LabelSet, Node, Dimensions)
 	case leaf(Attributes, C)
 	case empty
@@ -412,7 +412,7 @@ public class Rope<C : Content> : Collection {
 		delegate.indicateChanges(new: newOffsets, old: oldOffsets,
 		    undoList: undoList)
 	}
-	public func setController(_ ctlr: ExtentController,
+	public func setController(_ ctlr: ZoneController,
 	    on r: Range<Index>, undoList: ChangeList<Rope>) throws {
 		let changes = ChangeList<Rope.Node>()
 		let offsets: OffsetPair =
@@ -542,20 +542,20 @@ extension Rope {
 }
 
 extension Rope {
-	func extentsEnclosing(_ i: Index) throws -> [ExtentController] {
+	func extentsEnclosing(_ i: Index) throws -> [ZoneController] {
 		return try top.extentsEnclosing(i)
 	}
-	public func extentsClosing(at i: Index) throws -> [ExtentController] {
+	public func extentsClosing(at i: Index) throws -> [ZoneController] {
 		return try top.extentsClosing(at: i)
 	}
-	public func extentsOpening(at i: Index) throws -> [ExtentController] {
+	public func extentsOpening(at i: Index) throws -> [ZoneController] {
 		return try top.extentsOpening(at: i)
 	}
 }
 
 extension Rope {
 	public func index(after i: Index, climbing dir: Climb,
-	    bottom: inout ExtentController?) -> Index? {
+	    bottom: inout ZoneController?) -> Index? {
 		do {
 			if try !top.indices(follow: i.label) {
 				return nil
@@ -576,7 +576,7 @@ extension Rope {
 		}
 	}
 	public func index(before i: Index, climbing dir: Climb,
-	    bottom: inout ExtentController?) -> Index? {
+	    bottom: inout ZoneController?) -> Index? {
 		do {
 			if try !top.indices(precede: i.label) {
 				return nil
@@ -599,11 +599,11 @@ extension Rope {
 		}
 	}
 	public func index(after i: Index, climbing dir: Climb) -> Index? {
-		var discard: ExtentController?
+		var discard: ZoneController?
 		return index(after: i, climbing: dir, bottom: &discard)
 	}
 	public func index(before i: Index, climbing dir: Climb) -> Index? {
-		var discard: ExtentController?
+		var discard: ZoneController?
 		return index(before: i, climbing: dir, bottom: &discard)
 	}
 }
@@ -616,8 +616,8 @@ public func commonPrefix<S>(_ s1: S, _ s2: S)
 extension Rope {
 	public func tightenedSelection(_ selection: Range<Index>)
 	    throws -> (range: Range<Index>,
-	               leftControllers: [ExtentController],
-	               rightControllers: [ExtentController]) {
+	               leftControllers: [ZoneController],
+	               rightControllers: [ZoneController]) {
 		var (l, r) = (selection.lowerBound, selection.upperBound)
 		/* TBD move extentsEnclosing() calls out of loop, use
 		 * index(after/before: ..., climbing: .in, bottom: ...) to
@@ -647,10 +647,10 @@ extension Rope {
 		}
 	}
 	public func rightLoosenedSelection(_ s: Range<Index>,
-	    limit: ExtentController?) throws -> Range<Index> {
+	    limit: ZoneController?) throws -> Range<Index> {
 		let l = s.lowerBound
 		var r = s.upperBound
-		var bottom: ExtentController?
+		var bottom: ZoneController?
 		let extents = try extentsEnclosing(r)
 		if extents.last == limit {
 			return l..<r
@@ -665,10 +665,10 @@ extension Rope {
 		return l..<r
 	}
 	public func leftLoosenedSelection(_ s: Range<Index>,
-	    limit: ExtentController?) throws -> Range<Index> {
+	    limit: ZoneController?) throws -> Range<Index> {
 		var l = s.lowerBound
 		let r = s.upperBound
-		var bottom: ExtentController?
+		var bottom: ZoneController?
 		let extents = try extentsEnclosing(l)
 		if extents.last == limit {
 			return l..<r
@@ -684,8 +684,8 @@ extension Rope {
 	}
 	public func directedSelection(_ s: Range<Index>)
 	    throws -> (range: Range<Index>,
-	               narrow: ExtentController?,
-	               wide: ExtentController?) {
+	               narrow: ZoneController?,
+	               wide: ZoneController?) {
 		let (tight, lo, ro) = try tightenedSelection(s)
 		/* Loosen `tight` inside the innermost controller and
 		 * return the loosened range.
@@ -700,19 +700,19 @@ extension Rope {
 }
 
 extension Rope {
-	public func firstIndex(inExtent target: Label) -> Index? {
+	public func firstIndex(inZone target: Label) -> Index? {
 		let label = Label()
 		guard let newtop = top.insertingFirstIndex(label,
-		    inExtent: target) else {
+		    inZone: target) else {
 			return nil
 		}
 		top = newtop
 		return .interior(of: self, label: label)
 	}
-	public func lastIndex(inExtent target: Label) -> Index? {
+	public func lastIndex(inZone target: Label) -> Index? {
 		let label = Label()
 		guard let newtop = top.insertingLastIndex(label,
-		    inExtent: target) else {
+		    inZone: target) else {
 			return nil
 		}
 		top = newtop
