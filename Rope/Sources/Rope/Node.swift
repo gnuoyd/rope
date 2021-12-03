@@ -799,7 +799,7 @@ public extension Rope.Node {
 		case .concat(let l, let midx, _, _, let r, let w):
 			do {
 				return try l.labels(of: kind, follow: target) ||
-				    r.labelSet.extentCount > 0 ||
+				    r.labelSet.zoneCount > 0 ||
 				    midx != w.unitOffset ||
 				    (kind == .index &&
 				     r.rightmostIndexLabel() != nil)
@@ -852,7 +852,7 @@ public extension Rope.Node {
 			do {
 				return
 				    try r.labels(of: kind, precede: target) ||
-				    l.labelSet.extentCount > 0 ||
+				    l.labelSet.zoneCount > 0 ||
 				    0 != midx ||
 				    (kind == .index &&
 				     l.leftmostIndexLabel() != nil)
@@ -1244,7 +1244,7 @@ public extension Rope.Node {
 				 * Rather, they open at an index on the left.
 				 * So leave them out of the list.
 				 */
-				guard 0 == midx && l.labelSet.extentCount == 0
+				guard 0 == midx && l.labelSet.zoneCount == 0
 				    else {
 					return try r.extentsOpening(at: label)
 				}
@@ -1301,7 +1301,7 @@ public extension Rope.Node {
 				 * So leave them out of the list.
 				 */
 				guard midx == w.unitOffset &&
-				      r.labelSet.extentCount == 0 else {
+				      r.labelSet.zoneCount == 0 else {
 					return try l.extentsClosing(at: label)
 				}
 				return try l.extentsClosing(at: label,

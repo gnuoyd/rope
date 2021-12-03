@@ -1780,14 +1780,14 @@ class LabelSets : XCTestCase {
 	func testInit() {
 		let set = LabelSet()
 		XCTAssert(set.cursorCount == 0)
-		XCTAssert(set.extentCount == 0)
+		XCTAssert(set.zoneCount == 0)
 		XCTAssert(set.indexCount == 0)
 	}
 	func testSeqInit() {
 		let ids: [Label.Id] = [.cursor(0), .zone(1), .index(2)]
 		let set = LabelSet(ids)
 		XCTAssert(set.cursorCount == 1)
-		XCTAssert(set.extentCount == 1)
+		XCTAssert(set.zoneCount == 1)
 		XCTAssert(set.indexCount == 1)
 	}
 	func testLiteralInit() {
@@ -1799,16 +1799,16 @@ class LabelSets : XCTestCase {
 		                         [.cursor(0), .zone(0), .zone(1),
 					  .index(0)]]
 		XCTAssert(set[0].cursorCount == 1)
-		XCTAssert(set[0].extentCount == 1)
+		XCTAssert(set[0].zoneCount == 1)
 		XCTAssert(set[0].indexCount == 1)
 		XCTAssert(set[1].cursorCount == 1)
-		XCTAssert(set[1].extentCount == 1)
+		XCTAssert(set[1].zoneCount == 1)
 		XCTAssert(set[1].indexCount == 2)
 		XCTAssert(set[2].cursorCount == 2)
-		XCTAssert(set[2].extentCount == 1)
+		XCTAssert(set[2].zoneCount == 1)
 		XCTAssert(set[2].indexCount == 1)
 		XCTAssert(set[3].cursorCount == 1)
-		XCTAssert(set[3].extentCount == 2)
+		XCTAssert(set[3].zoneCount == 2)
 		XCTAssert(set[3].indexCount == 1)
 	}
 	func testUnion() {
@@ -1820,18 +1820,18 @@ class LabelSets : XCTestCase {
 		                         [.cursor(0), .zone(0), .zone(1),
 					  .index(0)]]
 		XCTAssert(set[0].union(set[1]).cursorCount == 1)
-		XCTAssert(set[0].union(set[1]).extentCount == 1)
+		XCTAssert(set[0].union(set[1]).zoneCount == 1)
 		XCTAssert(set[0].union(set[1]).indexCount == 2)
 		XCTAssert(set[1].union(set[2]).cursorCount == 2)
-		XCTAssert(set[1].union(set[2]).extentCount == 1)
+		XCTAssert(set[1].union(set[2]).zoneCount == 1)
 		XCTAssert(set[1].union(set[2]).indexCount == 2)
 		XCTAssert(set[2].union(set[3]).cursorCount == 2)
-		XCTAssert(set[2].union(set[3]).extentCount == 2)
+		XCTAssert(set[2].union(set[3]).zoneCount == 2)
 		XCTAssert(set[2].union(set[3]).indexCount == 1)
 		var p = set[0], q = set[1]
 		p.formUnion(q)
 		XCTAssert(p.cursorCount == 1)
-		XCTAssert(p.extentCount == 1)
+		XCTAssert(p.zoneCount == 1)
 		XCTAssert(p.indexCount == 2)
 	}
 	func testIntersection() {
@@ -1844,13 +1844,13 @@ class LabelSets : XCTestCase {
 					  .index(0)]]
 
 		XCTAssert(overlap[0].intersection(overlap[1]).cursorCount == 1)
-		XCTAssert(overlap[0].intersection(overlap[1]).extentCount == 1)
+		XCTAssert(overlap[0].intersection(overlap[1]).zoneCount == 1)
 		XCTAssert(overlap[0].intersection(overlap[1]).indexCount == 1)
 		XCTAssert(overlap[1].intersection(overlap[2]).cursorCount == 1)
-		XCTAssert(overlap[1].intersection(overlap[2]).extentCount == 1)
+		XCTAssert(overlap[1].intersection(overlap[2]).zoneCount == 1)
 		XCTAssert(overlap[1].intersection(overlap[2]).indexCount == 1)
 		XCTAssert(overlap[2].intersection(overlap[3]).cursorCount == 1)
-		XCTAssert(overlap[2].intersection(overlap[3]).extentCount == 1)
+		XCTAssert(overlap[2].intersection(overlap[3]).zoneCount == 1)
 		XCTAssert(overlap[2].intersection(overlap[3]).indexCount == 1)
 
 		let disj: [LabelSet] = [[.cursor(0), .zone(0), .index(0)],
@@ -1862,13 +1862,13 @@ class LabelSets : XCTestCase {
 					  .index(16)]]
 
 		XCTAssert(disj[0].intersection(disj[1]).cursorCount == 0)
-		XCTAssert(disj[0].intersection(disj[1]).extentCount == 0)
+		XCTAssert(disj[0].intersection(disj[1]).zoneCount == 0)
 		XCTAssert(disj[0].intersection(disj[1]).indexCount == 0)
 		XCTAssert(disj[1].intersection(disj[2]).cursorCount == 0)
-		XCTAssert(disj[1].intersection(disj[2]).extentCount == 0)
+		XCTAssert(disj[1].intersection(disj[2]).zoneCount == 0)
 		XCTAssert(disj[1].intersection(disj[2]).indexCount == 0)
 		XCTAssert(disj[2].intersection(disj[3]).cursorCount == 0)
-		XCTAssert(disj[2].intersection(disj[3]).extentCount == 0)
+		XCTAssert(disj[2].intersection(disj[3]).zoneCount == 0)
 		XCTAssert(disj[2].intersection(disj[3]).indexCount == 0)
 	}
 	func testSymmetricDifference() {
@@ -1880,17 +1880,17 @@ class LabelSets : XCTestCase {
 
 		let diff0 = overlap[0].symmetricDifference(overlap[1])
 		XCTAssert(diff0.cursorCount == 0)
-		XCTAssert(diff0.extentCount == 0)
+		XCTAssert(diff0.zoneCount == 0)
 		XCTAssert(diff0.indexCount == 1)
 
 		let diff1 = overlap[1].symmetricDifference(overlap[2])
 		XCTAssert(diff1.cursorCount == 1)
-		XCTAssert(diff1.extentCount == 0)
+		XCTAssert(diff1.zoneCount == 0)
 		XCTAssert(diff1.indexCount == 1)
 
 		let diff2 = overlap[2].symmetricDifference(overlap[3])
 		XCTAssert(diff2.cursorCount == 1)
-		XCTAssert(diff2.extentCount == 1)
+		XCTAssert(diff2.zoneCount == 1)
 		XCTAssert(diff2.indexCount == 0)
 
 		let disj: [LabelSet] = [
@@ -1902,19 +1902,19 @@ class LabelSets : XCTestCase {
 		let diff3 = disj[0].symmetricDifference(disj[1])
 
 		XCTAssert(diff3.cursorCount == 2)
-		XCTAssert(diff3.extentCount == 2)
+		XCTAssert(diff3.zoneCount == 2)
 		XCTAssert(diff3.indexCount == 3)
 
 		let diff4 = disj[1].symmetricDifference(disj[2])
 
 		XCTAssert(diff4.cursorCount == 3)
-		XCTAssert(diff4.extentCount == 2)
+		XCTAssert(diff4.zoneCount == 2)
 		XCTAssert(diff4.indexCount == 3)
 
 		let diff5 = disj[2].symmetricDifference(disj[3])
 
 		XCTAssert(diff5.cursorCount == 3)
-		XCTAssert(diff5.extentCount == 3)
+		XCTAssert(diff5.zoneCount == 3)
 		XCTAssert(diff5.indexCount == 2)
 	}
 	func testInsert() {
@@ -1925,7 +1925,7 @@ class LabelSets : XCTestCase {
 		XCTAssert(set.cursorCount == 1)
 		XCTAssert(set.insert(.cursor(1)) == (true, .cursor(1)))
 		XCTAssert(set.cursorCount == 2)
-		XCTAssert(set.extentCount == 0)
+		XCTAssert(set.zoneCount == 0)
 		XCTAssert(set.indexCount == 0)
 	}
 	func testRemove() {
@@ -1936,7 +1936,7 @@ class LabelSets : XCTestCase {
 		XCTAssert(set.cursorCount == 1)
 		XCTAssert(set.remove(.cursor(0)) == .cursor(0))
 		XCTAssert(set.cursorCount == 0)
-		XCTAssert(set.extentCount == 0)
+		XCTAssert(set.zoneCount == 0)
 		XCTAssert(set.indexCount == 0)
 	}
 	func testUpdate() {
@@ -1947,7 +1947,7 @@ class LabelSets : XCTestCase {
 		XCTAssert(set.cursorCount == 1)
 		XCTAssert(set.update(with: .cursor(1)) == nil)
 		XCTAssert(set.cursorCount == 2)
-		XCTAssert(set.extentCount == 0)
+		XCTAssert(set.zoneCount == 0)
 		XCTAssert(set.indexCount == 0)
 	}
 }

@@ -496,7 +496,7 @@ extension Rope {
 
 extension Rope.Node {
 	var hasSingleIndex: Bool {
-		return labelSet.extentCount == 0 && length == 0
+		return labelSet.zoneCount == 0 && length == 0
 	}
 }
 
