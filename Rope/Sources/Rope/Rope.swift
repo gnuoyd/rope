@@ -542,14 +542,14 @@ extension Rope {
 }
 
 extension Rope {
-	func extentsEnclosing(_ i: Index) throws -> [ZoneController] {
-		return try top.extentsEnclosing(i)
+	func zonesEnclosing(_ i: Index) throws -> [ZoneController] {
+		return try top.zonesEnclosing(i)
 	}
-	public func extentsClosing(at i: Index) throws -> [ZoneController] {
-		return try top.extentsClosing(at: i)
+	public func zonesClosing(at i: Index) throws -> [ZoneController] {
+		return try top.zonesClosing(at: i)
 	}
-	public func extentsOpening(at i: Index) throws -> [ZoneController] {
-		return try top.extentsOpening(at: i)
+	public func zonesOpening(at i: Index) throws -> [ZoneController] {
+		return try top.zonesOpening(at: i)
 	}
 }
 
@@ -564,9 +564,9 @@ extension Rope {
 			return nil
 		}
 		let j = index(after: i)
-		switch ((try? extentsEnclosing(i))?.count,
+		switch ((try? zonesEnclosing(i))?.count,
 			dir,
-		        (try? extentsEnclosing(j))?.count) {
+		        (try? zonesEnclosing(j))?.count) {
 		case (let ni?, .in, let nj?) where ni < nj:
 			return j
 		case (let ni?, .out, let nj?) where ni > nj:
@@ -585,9 +585,9 @@ extension Rope {
 			return nil
 		}
 		let j = index(before: i)
-		switch (try? extentsEnclosing(i),
+		switch (try? zonesEnclosing(i),
 			dir,
-		        try? extentsEnclosing(j)) {
+		        try? zonesEnclosing(j)) {
 		case (let ei?, .in, let ej?) where ei.count < ej.count:
 			bottom = ej.last
 			return j
@@ -619,13 +619,13 @@ extension Rope {
 	               leftControllers: [ZoneController],
 	               rightControllers: [ZoneController]) {
 		var (l, r) = (selection.lowerBound, selection.upperBound)
-		/* TBD move extentsEnclosing() calls out of loop, use
+		/* TBD move zonesEnclosing() calls out of loop, use
 		 * index(after/before: ..., climbing: .in, bottom: ...) to
 		 * get the next deeper zone at each step
 		 */
 		while true {
-			let (lo, ro) = (try extentsEnclosing(l),
-			                try extentsEnclosing(r))
+			let (lo, ro) = (try zonesEnclosing(l),
+			                try zonesEnclosing(r))
 			if l == r {
 				assert(lo == ro)
 				return (l..<r, lo, lo)
@@ -651,7 +651,7 @@ extension Rope {
 		let l = s.lowerBound
 		var r = s.upperBound
 		var bottom: ZoneController?
-		let extents = try extentsEnclosing(r)
+		let extents = try zonesEnclosing(r)
 		if extents.last == limit {
 			return l..<r
 		}
@@ -669,7 +669,7 @@ extension Rope {
 		var l = s.lowerBound
 		let r = s.upperBound
 		var bottom: ZoneController?
-		let extents = try extentsEnclosing(l)
+		let extents = try zonesEnclosing(l)
 		if extents.last == limit {
 			return l..<r
 		}

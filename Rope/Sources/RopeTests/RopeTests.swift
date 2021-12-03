@@ -781,7 +781,7 @@ class RopeIndexedControllerPaths: NestedZoneBase {
 	}
 	func testControllerPaths() {
 		for (i, expected) in zip(rope.indices, expectations) {
-			XCTAssert(try rope.extentsEnclosing(i) == expected)
+			XCTAssert(try rope.zonesEnclosing(i) == expected)
 		}
 	}
 	func testForwardClimbIn() {
@@ -901,7 +901,7 @@ class UTF16IndexedControllerPaths: XCTestCase {
 	}
 	func testControllerPaths() {
 		for (i, expected) in zip(indices, expectations) {
-			XCTAssert(tree.extentsEnclosing(i) == expected)
+			XCTAssert(tree.zonesEnclosing(i) == expected)
 		}
 	}
 }
@@ -951,26 +951,26 @@ class ZonesOpeningClosing : XCTestCase {
 			   .text("h")),
 		       .text("i"))))
 	func testClosingEmpty() {
-		XCTAssert(try empty.extentsClosing(at: empty.startIndex) == [])
-		XCTAssert(try empty.extentsClosing(at: empty.endIndex) == [])
+		XCTAssert(try empty.zonesClosing(at: empty.startIndex) == [])
+		XCTAssert(try empty.zonesClosing(at: empty.endIndex) == [])
 	}
 	func testOpeningEmpty() {
-		XCTAssert(try empty.extentsOpening(at: empty.startIndex) == [])
-		XCTAssert(try empty.extentsOpening(at: empty.endIndex) == [])
+		XCTAssert(try empty.zonesOpening(at: empty.startIndex) == [])
+		XCTAssert(try empty.zonesOpening(at: empty.endIndex) == [])
 	}
 	func testClosingSimple() {
 		let middle = simple.index(after: simple.startIndex)
-		XCTAssert(try simple.extentsClosing(at: simple.startIndex) ==
+		XCTAssert(try simple.zonesClosing(at: simple.startIndex) ==
 		    [])
-		XCTAssert(try simple.extentsClosing(at: middle) == [simpleCtlr])
-		XCTAssert(try simple.extentsClosing(at: simple.endIndex) == [])
+		XCTAssert(try simple.zonesClosing(at: middle) == [simpleCtlr])
+		XCTAssert(try simple.zonesClosing(at: simple.endIndex) == [])
 	}
 	func testOpeningSimple() {
 		let middle = simple.index(after: simple.startIndex)
-		XCTAssert(try simple.extentsOpening(at: simple.startIndex) ==
+		XCTAssert(try simple.zonesOpening(at: simple.startIndex) ==
 		    [])
-		XCTAssert(try simple.extentsOpening(at: middle) == [simpleCtlr])
-		XCTAssert(try simple.extentsClosing(at: simple.endIndex) == [])
+		XCTAssert(try simple.zonesOpening(at: middle) == [simpleCtlr])
+		XCTAssert(try simple.zonesClosing(at: simple.endIndex) == [])
 	}
 	func testClosingComplex() {
 		let expectations = [
@@ -1006,7 +1006,7 @@ class ZonesOpeningClosing : XCTestCase {
 		    []]		// ()(a(b)c())(((def)))(((g)h)i)*
 
 		for (idx, expected) in zip(cplx.indices, expectations) {
-			guard let found = try? cplx.extentsClosing(at: idx)
+			guard let found = try? cplx.zonesClosing(at: idx)
 			    else {
 				XCTFail("no such index")
 				continue
@@ -1053,7 +1053,7 @@ class ZonesOpeningClosing : XCTestCase {
 		    []]		// ()(a(b)c())(((def)))(((g)h)i)*
 
 		for (idx, expected) in zip(cplx.indices, expectations) {
-			guard let found = try? cplx.extentsOpening(at: idx)
+			guard let found = try? cplx.zonesOpening(at: idx)
 			    else {
 				XCTFail("no such index")
 				continue

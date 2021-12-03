@@ -561,8 +561,8 @@ public extension Rope.Node {
 	func transformingAttributes(after lowerBound: Label,
 	    upTo upperBound: Label,
 	    with fn: (Attributes) -> Attributes) throws -> Self {
-		switch (try extentsEnclosing(lowerBound).first,
-			try extentsEnclosing(upperBound).first) {
+		switch (try zonesEnclosing(lowerBound).first,
+			try zonesEnclosing(upperBound).first) {
 		case (nil, nil):
 			/* Deal with an empty range where the lowerBound
 			 * is right of the upperBound---it can happen---but
@@ -1169,7 +1169,7 @@ public extension Rope.Node {
 		}
 		return transforming(at: i, with: unit)
 	}
-	func extentsEnclosing(_ i0: Offset) -> [Rope.ZoneController] {
+	func zonesEnclosing(_ i0: Offset) -> [Rope.ZoneController] {
 		var path: [Rope.ZoneController] = []
 		var i = i0
 		var next = self
@@ -1190,12 +1190,12 @@ public extension Rope.Node {
 			}
 		}
 	}
-	func extentsEnclosing(_ i: Rope.Index,
+	func zonesEnclosing(_ i: Rope.Index,
 	                      under controllers: [Rope.ZoneController] = [])
 	    throws -> [Rope.ZoneController] {
-		return try extentsEnclosing(i.label, under: controllers)
+		return try zonesEnclosing(i.label, under: controllers)
 	}
-	func extentsEnclosing(_ label: Label,
+	func zonesEnclosing(_ label: Label,
 	                      under controllers: [Rope.ZoneController] = [])
 	    throws -> [Rope.ZoneController] {
 		switch self {
@@ -1204,37 +1204,37 @@ public extension Rope.Node {
 		case .concat(let l, _, _, _, let r, _)
 		    where self.contains(label):
 		    	do {
-				return try l.extentsEnclosing(label,
+				return try l.zonesEnclosing(label,
 				    under: controllers)
 			} catch NodeError.indexNotFound {
-			       return try r.extentsEnclosing(label,
+			       return try r.zonesEnclosing(label,
 			           under: controllers)
 			}
 		case .zone(let ctlr, let content):
-			return try content.extentsEnclosing(label,
+			return try content.zonesEnclosing(label,
 			    under: controllers + [ctlr])
 		default:
 			throw NodeError.indexNotFound
 		}
 	}
-	func extentsOpening(at i: Rope.Index,
+	func zonesOpening(at i: Rope.Index,
 	                    in controllers: [Rope.ZoneController] = [])
 	    throws -> [Rope.ZoneController] {
-		return try extentsOpening(at: i.label, in: controllers)
+		return try zonesOpening(at: i.label, in: controllers)
 	}
-	func extentsOpening(at label: Label,
+	func zonesOpening(at label: Label,
 	                    in controllers: [Rope.ZoneController] = [])
 	    throws -> [Rope.ZoneController] {
 		switch self {
 		case .zone(let ctlr, let content):
-			return try content.extentsOpening(at: label,
+			return try content.zonesOpening(at: label,
 			                              in: controllers + [ctlr])
 		case .index(let w) where w.get() == label:
 			return controllers
 		case .concat(let l, let midx, _, let set, let r, _)
 		    where set.contains(label.id):
 			do {
-				return try l.extentsOpening(at: label,
+				return try l.zonesOpening(at: label,
 				    in: controllers)
 			} catch NodeError.indexNotFound {
 				/* If there are characters left of `r`, or any
@@ -1246,19 +1246,19 @@ public extension Rope.Node {
 				 */
 				guard 0 == midx && l.labelSet.zoneCount == 0
 				    else {
-					return try r.extentsOpening(at: label)
+					return try r.zonesOpening(at: label)
 				}
-				return try r.extentsOpening(at: label,
+				return try r.zonesOpening(at: label,
 				    in: controllers)
 			}
 		default:
 			throw NodeError.indexNotFound
 		}
 	}
-	func extentsClosing(at i: Rope.Index,
+	func zonesClosing(at i: Rope.Index,
 	                    in controllers: [Rope.ZoneController] = [])
 	    throws -> [Rope.ZoneController] {
-		return try extentsClosing(at: i.label, in: controllers)
+		return try zonesClosing(at: i.label, in: controllers)
 	}
 	func offset(of label: Label,
 	            origin: Offset = Offset.offset(0)) throws -> Offset {
@@ -1278,19 +1278,19 @@ public extension Rope.Node {
 			throw NodeError.indexNotFound
 		}
 	}
-	func extentsClosing(at label: Label,
+	func zonesClosing(at label: Label,
 	                    in controllers: [Rope.ZoneController] = [])
 	    throws -> [Rope.ZoneController] {
 		switch self {
 		case .zone(let ctlr, let content):
-			return try content.extentsClosing(at: label,
+			return try content.zonesClosing(at: label,
 			                              in: controllers + [ctlr])
 		case .index(let w) where w.get() == label:
 			return controllers
 		case .concat(let l, let midx, _, let set, let r, let w)
 		    where set.contains(label.id):
 			do {
-				return try r.extentsClosing(at: label,
+				return try r.zonesClosing(at: label,
 				    in: controllers)
 			} catch NodeError.indexNotFound {
 				/* If there are characters right of `l`, or any
@@ -1302,9 +1302,9 @@ public extension Rope.Node {
 				 */
 				guard midx == w.unitOffset &&
 				      r.labelSet.zoneCount == 0 else {
-					return try l.extentsClosing(at: label)
+					return try l.zonesClosing(at: label)
 				}
-				return try l.extentsClosing(at: label,
+				return try l.zonesClosing(at: label,
 				    in: controllers)
 			}
 		default:
@@ -1675,8 +1675,8 @@ public extension Rope.Node {
 	func setController(_ ctlr: Rope.ZoneController,
 	    after lowerBound: Label, upTo upperBound: Label,
 	    undoList: ChangeList<Self>?) throws -> Self {
-		switch (try extentsEnclosing(lowerBound).first,
-			try extentsEnclosing(upperBound).first) {
+		switch (try zonesEnclosing(lowerBound).first,
+			try zonesEnclosing(upperBound).first) {
 		case (nil, nil):
 			/* Catch a faulty range where the upperBound
 			 * precedes the lowerBound.
@@ -1737,8 +1737,8 @@ public extension Rope.Node {
 	func replacing(after lowerBound: Label, upTo upperBound: Label,
 	               with replacement: Self, undoList: ChangeList<Self>?)
 	    throws -> Self {
-		switch (try extentsEnclosing(lowerBound).first,
-			try extentsEnclosing(upperBound).first) {
+		switch (try zonesEnclosing(lowerBound).first,
+			try zonesEnclosing(upperBound).first) {
 		case (nil, nil):
 			/* Catch a faulty range where the upperBound
 			 * precedes the lowerBound.
@@ -1930,7 +1930,7 @@ public extension Rope.Node {
 		 * first enclosing zone.  Return nil to prevent a split
 		 * from occurring.
 		 */
-		guard try extentsEnclosing(index).isEmpty else {
+		guard try zonesEnclosing(index).isEmpty else {
 			return nil
 		}
 		guard let l = subrope(upTo: index),
