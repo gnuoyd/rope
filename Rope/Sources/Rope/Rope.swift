@@ -651,8 +651,8 @@ extension Rope {
 		let l = s.lowerBound
 		var r = s.upperBound
 		var bottom: ZoneController?
-		let extents = try zonesEnclosing(r)
-		if extents.last == limit {
+		let zones = try zonesEnclosing(r)
+		if zones.last == limit {
 			return l..<r
 		}
 		while let next = index(after: r, climbing: .out,
@@ -669,8 +669,8 @@ extension Rope {
 		var l = s.lowerBound
 		let r = s.upperBound
 		var bottom: ZoneController?
-		let extents = try zonesEnclosing(l)
-		if extents.last == limit {
+		let zones = try zonesEnclosing(l)
+		if zones.last == limit {
 			return l..<r
 		}
 		while let next = index(before: l, climbing: .out,
