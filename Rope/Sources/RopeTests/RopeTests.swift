@@ -108,7 +108,7 @@ class IndexOrderByStep: XCTestCase {
 	}
 }
 
-class NestedExtentBase : XCTestCase {
+class NestedZoneBase : XCTestCase {
 	let c = [RWZC(), RWZC(), RWZC()]
 	// (abc(def(ghi)))
 	// 000000000000000
@@ -182,7 +182,7 @@ class HasSingleIndex : XCTestCase {
 	}
 }
 
-class IndexedExtentBase : XCTestCase {
+class IndexedZoneBase : XCTestCase {
 	let c = [RWZC(), RWZC(), RWZC()]
 	static let indices: ClosedRange<Int> = 0...9
 	let l = Array<Label>(indices.map { _ in Label() })
@@ -661,7 +661,7 @@ class SegmentingAtZone : XCTestCase {
 	let c: [RWZC] = [RWZC(), RWZC(), RWZC(), RWZC()]
 	var _extentInZone: NSS? = nil
 	var _extentInCenter: NSS? = nil
-	var _multipleExtentsInCenter: NSS? = nil
+	var _multipleZonesInCenter: NSS? = nil
 	var _extentOnLeft: NSS? = nil
 	var _extentOnRight: NSS? = nil
 	var _innermostZone: NSS? = nil
@@ -675,11 +675,11 @@ class SegmentingAtZone : XCTestCase {
 	    .extent(under: c[0], .text("abc"), innerZone)
 	lazy var extentOnRight: NSS = .nodes(.text("abc"), innerZone)
 	lazy var extentOnLeft: NSS = .nodes(innerZone, .text("jkl"))
-	lazy var multipleExtentsInCenter: NSS =
+	lazy var multipleZonesInCenter: NSS =
 	    .nodes(.text("abc"), innerZone, otherZone, .text("jkl"))
 	lazy var extentInCenter: NSS =
 	    .nodes(.text("abc"), innerZone, .text("jkl"))
-	func testSegmentingEmbeddedExtents() {
+	func testSegmentingEmbeddedZones() {
 		XCTAssertThrowsError(try extentInZone.segmenting(atZone: c[1]))
 		XCTAssertThrowsError(try extentInZone.segmenting(atZone: c[2]))
 	}
@@ -693,7 +693,7 @@ class SegmentingAtZone : XCTestCase {
 		XCTAssert(m == extentInZone)
 		XCTAssert(r == .empty)
 	}
-	func testSegmentingExtentOnLeft() {
+	func testSegmentingZoneOnLeft() {
 		guard let (l, m, r) =
 		    try? extentOnLeft.segmenting(atZone: c[1]) else {
 			XCTFail("no such extent controller")
@@ -703,7 +703,7 @@ class SegmentingAtZone : XCTestCase {
 		XCTAssert(m == innerZone)
 		XCTAssert(r == .text("jkl"))
 	}
-	func testSegmentingExtentOnRight() {
+	func testSegmentingZoneOnRight() {
 		guard let (l, m, r) =
 		    try? extentOnRight.segmenting(atZone: c[1])
 		else {
@@ -714,7 +714,7 @@ class SegmentingAtZone : XCTestCase {
 		XCTAssert(m == innerZone)
 		XCTAssert(r == .empty)
 	}
-	func testSegmentingExtentInCenter() {
+	func testSegmentingZoneInCenter() {
 		guard let (l, m, r) =
 		    try? extentInCenter.segmenting(atZone: c[1])
 		else {
@@ -725,9 +725,9 @@ class SegmentingAtZone : XCTestCase {
 		XCTAssert(m == innerZone)
 		XCTAssert(r == .text("jkl"))
 	}
-	func testSegmentingMultipleExtentsInCenter1() {
+	func testSegmentingMultipleZonesInCenter1() {
 		guard let (l, m, r) =
-		    try? multipleExtentsInCenter.segmenting(atZone: c[1])
+		    try? multipleZonesInCenter.segmenting(atZone: c[1])
 		else {
 			XCTFail("no such extent controller")
 			return
@@ -736,9 +736,9 @@ class SegmentingAtZone : XCTestCase {
 		XCTAssert(m == innerZone)
 		XCTAssert(r == .nodes(otherZone, .text("jkl")))
 	}
-	func testSegmentingMultipleExtentsInCenter2() {
+	func testSegmentingMultipleZonesInCenter2() {
 		guard let (l, m, r) =
-		    try? multipleExtentsInCenter.segmenting(atZone: c[3])
+		    try? multipleZonesInCenter.segmenting(atZone: c[3])
 		else {
 			XCTFail("no such extent controller")
 			return
@@ -749,7 +749,7 @@ class SegmentingAtZone : XCTestCase {
 	}
 }
 
-class RopeIndexedControllerPaths: NestedExtentBase {
+class RopeIndexedControllerPaths: NestedZoneBase {
 	var _expectations: [[Label]]? = nil
 	var expectations: [[Label]] {
 		if let olde = _expectations {
@@ -916,7 +916,7 @@ class WholeRangeUsingRopeIndices: XCTestCase {
 	}
 }
 
-class ExtentsOpeningClosing : XCTestCase {
+class ZonesOpeningClosing : XCTestCase {
 	let simpleCtlr = RWZC()
 	let empty: RSS = Rope()
 	lazy var simple: RSS = Rope(with: .extent(under: simpleCtlr, .empty))
@@ -1084,7 +1084,7 @@ class EmptyishRopeIndices : XCTestCase {
 		XCTAssert(one.index(one.endIndex, offsetBy: -2) ==
 		    one.startIndex)
 	}
-	func testStartIndexTwoEmptyExtents() {
+	func testStartIndexTwoEmptyZones() {
 		XCTAssert(two.startIndex != two.endIndex)
 		XCTAssert(two.index(after: two.startIndex) != two.endIndex)
 		XCTAssert(two.index(two.startIndex, offsetBy: 2) !=
@@ -1094,7 +1094,7 @@ class EmptyishRopeIndices : XCTestCase {
 		XCTAssert(two.index(two.startIndex, offsetBy: 4) ==
 		    two.endIndex)
 	}
-	func testEndIndexTwoEmptyExtents() {
+	func testEndIndexTwoEmptyZones() {
 		XCTAssert(two.index(before: two.endIndex) != two.startIndex)
 		XCTAssert(two.index(two.endIndex, offsetBy: -2) !=
 		    two.startIndex)
@@ -1272,7 +1272,7 @@ class LookupUsingRopeIndicesDerivedFromUTF16Offsets: XCTestCase {
 	}
 }
 
-class ExtentElementLookupUsingRopeIndices: XCTestCase {
+class ZoneElementLookupUsingRopeIndices: XCTestCase {
 	let ctlr = RWZC()
 	lazy var expectations: [NSS] = [
 	    .empty,
@@ -1952,7 +1952,7 @@ class LabelSets : XCTestCase {
 	}
 }
 
-class TightenSelection: NestedExtentBase {
+class TightenSelection: NestedZoneBase {
 	public func testBothTighten1() {
 		// *(abc(def(ghi)))*
 		let start = rope.startIndex
@@ -2079,7 +2079,7 @@ class TightenSelection: NestedExtentBase {
 	}
 }
 
-class CompareIndicesAndEndComplicatedRopes: NestedExtentBase {
+class CompareIndicesAndEndComplicatedRopes: NestedZoneBase {
 	func testEquals() {
 		XCTAssert(
 		    rope.index(after: rope.index(before: rope.endIndex)) ==
@@ -2104,7 +2104,7 @@ class CompareIndicesAndEndComplicatedRopes: NestedExtentBase {
 	}
 }
 
-class CompareIndicesAndStartComplicatedRopes: NestedExtentBase {
+class CompareIndicesAndStartComplicatedRopes: NestedZoneBase {
 	func testEquals() {
 		XCTAssert(
 		    rope.index(before: rope.index(after: rope.startIndex)) ==
@@ -2129,7 +2129,7 @@ class CompareIndicesAndStartComplicatedRopes: NestedExtentBase {
 	}
 }
 
-class CompareDisparateIndicesComplicatedRopes: NestedExtentBase {
+class CompareDisparateIndicesComplicatedRopes: NestedZoneBase {
 	/* All cursor positions:
 	 *   *(abc(def(ghi)))
 	 *   (*abc(def(ghi)))
@@ -2254,7 +2254,7 @@ class UndoRedo : XCTestCase {
 	}
 }
 
-class ExtentReplacementsBase : XCTestCase {
+class ZoneReplacementsBase : XCTestCase {
 	typealias BeforeAfterCombo = (before: NSS, range: Range<Int>,
 			    replacement: NSS.Content, expected: NSS,
 			    changeInLength: Int)
