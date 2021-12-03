@@ -659,11 +659,11 @@ class IndexOffsetBy : XCTestCase {
 
 class SegmentingAtZone : XCTestCase {
 	let c: [RWZC] = [RWZC(), RWZC(), RWZC(), RWZC()]
-	var _extentInZone: NSS? = nil
-	var _extentInCenter: NSS? = nil
+	var _zoneInZone: NSS? = nil
+	var _zoneInCenter: NSS? = nil
 	var _multipleZonesInCenter: NSS? = nil
-	var _extentOnLeft: NSS? = nil
-	var _extentOnRight: NSS? = nil
+	var _zoneOnLeft: NSS? = nil
+	var _zoneOnRight: NSS? = nil
 	var _innermostZone: NSS? = nil
 	var _innerZone: NSS? = nil
 	var _otherZone: NSS? = nil
@@ -671,31 +671,31 @@ class SegmentingAtZone : XCTestCase {
 	lazy var innerZone: NSS =
 	    .zone(under: c[1], .text("def"), innermostZone)
 	lazy var otherZone: NSS = .zone(under: c[3], .text("012"))
-	lazy var extentInZone: NSS =
+	lazy var zoneInZone: NSS =
 	    .zone(under: c[0], .text("abc"), innerZone)
-	lazy var extentOnRight: NSS = .nodes(.text("abc"), innerZone)
-	lazy var extentOnLeft: NSS = .nodes(innerZone, .text("jkl"))
+	lazy var zoneOnRight: NSS = .nodes(.text("abc"), innerZone)
+	lazy var zoneOnLeft: NSS = .nodes(innerZone, .text("jkl"))
 	lazy var multipleZonesInCenter: NSS =
 	    .nodes(.text("abc"), innerZone, otherZone, .text("jkl"))
-	lazy var extentInCenter: NSS =
+	lazy var zoneInCenter: NSS =
 	    .nodes(.text("abc"), innerZone, .text("jkl"))
 	func testSegmentingEmbeddedZones() {
-		XCTAssertThrowsError(try extentInZone.segmenting(atZone: c[1]))
-		XCTAssertThrowsError(try extentInZone.segmenting(atZone: c[2]))
+		XCTAssertThrowsError(try zoneInZone.segmenting(atZone: c[1]))
+		XCTAssertThrowsError(try zoneInZone.segmenting(atZone: c[2]))
 	}
 	func testSegmentingZone() {
 		guard let (l, m, r) =
-		    try? extentInZone.segmenting(atZone: c[0]) else {
+		    try? zoneInZone.segmenting(atZone: c[0]) else {
 			XCTFail("no such zone controller")
 			return
 		}
 		XCTAssert(l == .empty)
-		XCTAssert(m == extentInZone)
+		XCTAssert(m == zoneInZone)
 		XCTAssert(r == .empty)
 	}
 	func testSegmentingZoneOnLeft() {
 		guard let (l, m, r) =
-		    try? extentOnLeft.segmenting(atZone: c[1]) else {
+		    try? zoneOnLeft.segmenting(atZone: c[1]) else {
 			XCTFail("no such zone controller")
 			return
 		}
@@ -705,7 +705,7 @@ class SegmentingAtZone : XCTestCase {
 	}
 	func testSegmentingZoneOnRight() {
 		guard let (l, m, r) =
-		    try? extentOnRight.segmenting(atZone: c[1])
+		    try? zoneOnRight.segmenting(atZone: c[1])
 		else {
 			XCTFail("no such zone controller")
 			return
@@ -716,7 +716,7 @@ class SegmentingAtZone : XCTestCase {
 	}
 	func testSegmentingZoneInCenter() {
 		guard let (l, m, r) =
-		    try? extentInCenter.segmenting(atZone: c[1])
+		    try? zoneInCenter.segmenting(atZone: c[1])
 		else {
 			XCTFail("no such zone controller")
 			return

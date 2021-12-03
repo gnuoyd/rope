@@ -521,7 +521,7 @@ public extension Rope.Node {
 	case readonlyZone
 	case invalidZoneContent
 	case indexNotFound
-	case extentNotFound
+	case zoneNotFound
 	case indicesCrossZones
 	}
 	func attributes(at i: Offset, base: Offset)
@@ -1445,9 +1445,9 @@ public extension Rope.Node {
 			return tightly ? rightSibling
 			               : self.appending(rightSibling)
 		case .zone(let ctlr, let rope):
-			let subextent = ctlr.subrope(of: rope, from: from,
+			let subzone = ctlr.subrope(of: rope, from: from,
 			    tightly: tightly, depth: depth + 1)
-			return subextent.appending(rightSibling)
+			return subzone.appending(rightSibling)
 		case .concat(let l, let idx, _, _, let r, _):
 			if idx < from || tightly && idx == from {
 				return r.subrope(
@@ -1488,9 +1488,9 @@ public extension Rope.Node {
 			return tightly ? leftSibling
 			               : leftSibling.appending(self)
 		case .zone(let ctlr, let rope):
-			let subextent = ctlr.subrope(of: rope, upTo: boundary,
+			let subzone = ctlr.subrope(of: rope, upTo: boundary,
 			    tightly: tightly, depth: depth + 1)
-			return leftSibling.appending(subextent)
+			return leftSibling.appending(subzone)
 		case .concat(let l, let idx, _, _, let r, _):
 			if boundary < idx || tightly && boundary == idx {
 				return l.subrope(leftSibling: leftSibling,
@@ -1518,12 +1518,12 @@ public extension Rope.Node {
 	    depth: Int = 0) -> Self? {
 		switch self {
 		case .zone(let ctlr, let content):
-			guard let subextent = ctlr.subrope(of: content,
+			guard let subzone = ctlr.subrope(of: content,
 			    after: boundary, depth: depth) else {
 				return rightSibling.subrope(after: boundary,
 				    depth: depth)
 			}
-			return subextent.appending(rightSibling)
+			return subzone.appending(rightSibling)
 		case .index(let w) where w.get() == boundary.label:
 			return rightSibling
 		case .concat(let l, _, _, _, let r, _)
@@ -1602,12 +1602,12 @@ public extension Rope.Node {
 		*/
 		switch self {
 		case .zone(let ctlr, let content):
-			guard let subextent = ctlr.subrope(of: content,
+			guard let subzone = ctlr.subrope(of: content,
 			    upTo: boundary, depth: depth + 1) else {
 				return leftSibling.subrope(upTo: boundary,
 				                           depth: depth + 1)
 			}
-			return leftSibling.appending(subextent)
+			return leftSibling.appending(subzone)
 		case .index(let w) where w.get() == boundary.label:
 			return leftSibling
 		case .concat(let l, _, _, _, let r, _)
@@ -1873,17 +1873,17 @@ public extension Rope.Node {
 		case .zone(target, _):
 			return (leftSibling, self, .empty)
 		case .concat(let l, _, _, _, let r, _):
-			if case let (head, extent, tail)? =
+			if case let (head, zone, tail)? =
 			    try? l.segmenting(atZone: target) {
 				return (leftSibling.appending(head),
-					extent, tail.appending(r))
+					zone, tail.appending(r))
 			} else {
 				return try r.segmenting(atZone: target,
 				    leftSibling: leftSibling.appending(l))
 			}
 		case .cursor(_, _), .empty, .zone(_, _), .index(_),
 		     .leaf(_, _):
-			throw NodeError.extentNotFound
+			throw NodeError.zoneNotFound
 		}
 	}
 	func segmentingAtAnyZone(leftSibling: Self = .empty)
@@ -1894,10 +1894,10 @@ public extension Rope.Node {
 		case .zone(_, _):
 			return (leftSibling, self, .empty)
 		case .concat(let l, _, _, _, let r, _):
-			if case let (head, extent?, tail) =
+			if case let (head, zone?, tail) =
 			    l.segmentingAtAnyZone() {
 				return (leftSibling.appending(head),
-					extent, tail.appending(r))
+					zone, tail.appending(r))
 			} else {
 				return r.segmentingAtAnyZone(
 				    leftSibling: leftSibling.appending(l))
