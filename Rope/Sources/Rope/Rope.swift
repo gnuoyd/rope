@@ -114,19 +114,19 @@ public class Rope<C : Content> : Collection {
 	case interior(of: Rope, label: Label)
 	}
 	public class ZoneController : Label {
-		public override var id: Id { return .extent(_id) }
+		public override var id: Id { return .zone(_id) }
 		func subrope(of content: Rope.Node, from: Rope.Node.Offset,
 		    tightly: Bool, depth: Int = 0) -> Rope.Node {
 			let subcontent = content.subrope(from: from,
 			    depth: depth)
-			return .extent(self, subcontent)
+			return .zone(self, subcontent)
 		}
 		func subrope(of content: Rope.Node,
 		    upTo boundary: Rope.Node.Offset, tightly: Bool,
 		    depth: Int = 0) -> Rope.Node {
 			let subcontent = content.subrope(upTo: boundary,
 			    depth: depth)
-			return .extent(self, subcontent)
+			return .zone(self, subcontent)
 		}
 		func subrope(of content: Rope.Node, after boundary: Rope.Index,
 		    depth: Int = 0) -> Rope.Node? {
@@ -134,7 +134,7 @@ public class Rope<C : Content> : Collection {
 			    depth: depth) else {
 				return nil
 			}
-			return .extent(self, subcontent)
+			return .zone(self, subcontent)
 		}
 		func subrope(of content: Rope.Node, upTo boundary: Rope.Index,
 		    depth: Int = 0) -> Rope.Node? {
@@ -142,20 +142,20 @@ public class Rope<C : Content> : Collection {
 			    depth: depth) else {
 				return nil
 			}
-			return .extent(self, subcontent)
+			return .zone(self, subcontent)
 		}
 		func setController(_ ctlr: ZoneController,
 		    after lowerBound: Label, upTo upperBound: Label,
 		    in content: Rope.Node,
 		    undoList: ChangeList<Rope.Node>?) throws -> Rope.Node {
-			return .extent(self, try content.setController(ctlr,
+			return .zone(self, try content.setController(ctlr,
 			    after: lowerBound, upTo: upperBound,
 			    undoList: undoList))
 		}
 		func replacing(after lowerBound: Label, upTo upperBound: Label,
 		    in content: Rope.Node, with replacement: Rope.Node,
 		    undoList: ChangeList<Rope.Node>?) throws -> Rope.Node {
-			return .extent(self, try content.replacing(
+			return .zone(self, try content.replacing(
 			    after: lowerBound, upTo: upperBound,
 			    with: replacement, undoList: undoList))
 		}
@@ -164,7 +164,7 @@ public class Rope<C : Content> : Collection {
 		    with fn: (Attributes) -> Attributes) throws -> Rope.Node {
 			let xformed = try content.transformingAttributes(
 			    after: lowerBound, upTo: upperBound, with: fn)
-			return .extent(self, xformed)
+			return .zone(self, xformed)
 		}
 	}
 
@@ -183,7 +183,7 @@ public class Rope<C : Content> : Collection {
 	}
 	case cursor(Label, Attributes)
 	case index(Weak<Label>)
-	case extent(ZoneController, Node)
+	case zone(ZoneController, Node)
 	case concat(Node, Offset, UInt, LabelSet, Node, Dimensions)
 	case leaf(Attributes, C)
 	case empty

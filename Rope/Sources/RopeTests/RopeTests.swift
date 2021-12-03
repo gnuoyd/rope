@@ -115,11 +115,11 @@ class NestedZoneBase : XCTestCase {
 	//     1111111111
 	//         22222
 	lazy var rope: RSS = Rope(with:
-		    .extent(under: c[0],
+		    .zone(under: c[0],
 		            .text("abc"),
-			    .extent(under: c[1],
+			    .zone(under: c[1],
 			            .text("def"),
-				    .extent(under: c[2],
+				    .zone(under: c[2],
 				            .text("ghi")))))
 }
 
@@ -129,9 +129,9 @@ class BoundaryIndexComparisons : XCTestCase {
 	lazy var empty: RSS = Rope(with: .empty)
 	lazy var allIndices: RSS = Rope(with:
 	    .index(label: l[0]), .index(label: l[1]), .index(label: l[2]))
-	lazy var emptyZone: RSS = Rope(with: .extent(under: c[0], .empty))
+	lazy var emptyZone: RSS = Rope(with: .zone(under: c[0], .empty))
 	lazy var indexInEmptyZone: RSS = Rope(with:
-	    .extent(under: c[0], .index(label: l[0])))
+	    .zone(under: c[0], .index(label: l[0])))
 	lazy var text: RSS = Rope(with: .text("a"))
 	func testEmptyZone() {
 		XCTAssert(emptyZone.startIndex < emptyZone.endIndex)
@@ -166,7 +166,7 @@ class HasSingleIndex : XCTestCase {
 	lazy var empty: RSS = Rope(with: .empty)
 	lazy var allIndices: RSS = Rope(with:
 	    .index(label: l[0]), .index(label: l[1]), .index(label: l[2]))
-	lazy var emptyZone: RSS = Rope(with: .extent(under: c[0], .empty))
+	lazy var emptyZone: RSS = Rope(with: .zone(under: c[0], .empty))
 	lazy var text: RSS = Rope(with: .text("a"))
 	func testEmptyZone() {
 		XCTAssert(!emptyZone.hasSingleIndex)
@@ -193,15 +193,15 @@ class IndexedZoneBase : XCTestCase {
 	// *(*abc*(*def*(*ghi*)*)*)*
 	lazy var rope: RSS = Rope(with:
 	    .nodes(.index(label: l[0]),
-		   .extent(under: c[0],
+		   .zone(under: c[0],
 		       .index(label: l[1]),
 		       .text("abc"),
 		       .index(label: l[2]),
-		       .extent(under: c[1],
+		       .zone(under: c[1],
 		           .index(label: l[3]),
 		           .text("def"),
 		           .index(label: l[4]),
-		           .extent(under: c[2],
+		           .zone(under: c[2],
 		               .index(label: l[5]),
 		               .text("ghi"),
 		               .index(label: l[6])),
@@ -298,7 +298,7 @@ class ConstructEmbeddedSelections : XCTestCase {
 			let innerRange = Range(inner, in: pqrstu)
 			let after: NSS =
 			    .nodes(.text(outerParts.head),
-				   .extent(c[0], .text(outerParts.middle)),
+				   .zone(c[0], .text(outerParts.middle)),
 				   .text(outerParts.tail))
 			// pqr*stu*
 			guard let (range, narrow, wide) =
@@ -344,30 +344,30 @@ class DirectSelection : XCTestCase {
 	let c = [RWZC(), RWZC(), RWZC(), RWZC()]
 	// (a)b(c)
 	lazy var abc: RSS = Rope(with:
-	    .nodes(.extent(under: c[0], .text("a")), .text("b"),
-	           .extent(under: c[1], .text("c"))))
+	    .nodes(.zone(under: c[0], .text("a")), .text("b"),
+	           .zone(under: c[1], .text("c"))))
 	// w(x(y(z)))
 	lazy var wxyz: RSS = Rope(with:
 	    .nodes(.text("w"),
-		   .extent(under: c[0],
+		   .zone(under: c[0],
 		       .text("x"),
-		       .extent(under: c[1],
+		       .zone(under: c[1],
 		           .text("y"),
-			   .extent(under: c[2], .text("z"))))))
+			   .zone(under: c[2], .text("z"))))))
 	// (()(a)b(cd)ef)
 	lazy var abcdef: RSS = Rope(with:
-	    .extent(under: c[0],
-	        .extent(under: c[1], .empty),
-	        .extent(under: c[2], .text("a")),
+	    .zone(under: c[0],
+	        .zone(under: c[1], .empty),
+	        .zone(under: c[2], .text("a")),
 	        .text("b"),
-	        .extent(under: c[3], .text("cd")),
+	        .zone(under: c[3], .text("cd")),
 	        .text("ef")))
 	// (p(q)r)(s)
 	lazy var pqrs: RSS = Rope(with:
-	    .nodes(.extent(under: c[0], .text("p"),
-	           .extent(under: c[1], .text("q")),
+	    .nodes(.zone(under: c[0], .text("p"),
+	           .zone(under: c[1], .text("q")),
 		   .text("r")),
-		   .extent(under: c[2], .text("s"))))
+		   .zone(under: c[2], .text("s"))))
 	func testDirectedWxyz0() {
 		let start = wxyz.startIndex
 		let end = wxyz.index(before: wxyz.endIndex)
@@ -626,11 +626,11 @@ class IndexOffsetBy : XCTestCase {
 	let c = [RWZC(), RWZC(), RWZC(), RWZC()]
 	// (()(a)b(cd)ef)
 	lazy var abcdef: RSS = Rope(with:
-		    .extent(under: c[0],
-		        .extent(under: c[1], .empty),
-		        .extent(under: c[2], .text("a")),
+		    .zone(under: c[0],
+		        .zone(under: c[1], .empty),
+		        .zone(under: c[2], .text("a")),
 			.text("b"),
-		        .extent(under: c[3], .text("cd")),
+		        .zone(under: c[3], .text("cd")),
 			.text("ef")))
 	func testStart() {
 		XCTAssert(abcdef.index(abcdef.startIndex, offsetBy: 0) ==
@@ -667,12 +667,12 @@ class SegmentingAtZone : XCTestCase {
 	var _innermostZone: NSS? = nil
 	var _innerZone: NSS? = nil
 	var _otherZone: NSS? = nil
-	lazy var innermostZone: NSS = .extent(under: c[2], .text("ghi"))
+	lazy var innermostZone: NSS = .zone(under: c[2], .text("ghi"))
 	lazy var innerZone: NSS =
-	    .extent(under: c[1], .text("def"), innermostZone)
-	lazy var otherZone: NSS = .extent(under: c[3], .text("012"))
+	    .zone(under: c[1], .text("def"), innermostZone)
+	lazy var otherZone: NSS = .zone(under: c[3], .text("012"))
 	lazy var extentInZone: NSS =
-	    .extent(under: c[0], .text("abc"), innerZone)
+	    .zone(under: c[0], .text("abc"), innerZone)
 	lazy var extentOnRight: NSS = .nodes(.text("abc"), innerZone)
 	lazy var extentOnLeft: NSS = .nodes(innerZone, .text("jkl"))
 	lazy var multipleZonesInCenter: NSS =
@@ -880,11 +880,11 @@ class RopeIndexedControllerPaths: NestedZoneBase {
 
 class UTF16IndexedControllerPaths: XCTestCase {
 	let c = [RWZC(), RWZC(), RWZC()]
-	lazy var tree: NSS = .extent(under: c[0],
+	lazy var tree: NSS = .zone(under: c[0],
 		                     .nodes(.text("abc"),
-				     .extent(under: c[1],
+				     .zone(under: c[1],
 				         .text("def"),
-					 .extent(under: c[2], .text("ghi")))))
+					 .zone(under: c[2], .text("ghi")))))
 	lazy var expectations: [[Label]] =
 	    [[c[0]],
 	     [c[0]],
@@ -909,7 +909,7 @@ class UTF16IndexedControllerPaths: XCTestCase {
 class WholeRangeUsingRopeIndices: XCTestCase {
 	let ctlr = RWZC()
 	lazy var r: RSS = Rope(with: 
-	    .nodes(.extent(under: ctlr, .text("abc")),
+	    .nodes(.zone(under: ctlr, .text("abc")),
 		   .text("def")))
 	func testLookupByRange() {
 		XCTAssert(r[r.startIndex..<r.endIndex] ~ r.node)
@@ -919,7 +919,7 @@ class WholeRangeUsingRopeIndices: XCTestCase {
 class ZonesOpeningClosing : XCTestCase {
 	let simpleCtlr = RWZC()
 	let empty: RSS = Rope()
-	lazy var simple: RSS = Rope(with: .extent(under: simpleCtlr, .empty))
+	lazy var simple: RSS = Rope(with: .zone(under: simpleCtlr, .empty))
 	let c = [RWZC(),	// 0
 	         RWZC(),	// 1
 	         RWZC(),	// 2
@@ -935,19 +935,19 @@ class ZonesOpeningClosing : XCTestCase {
 	//     222 33  5555555  888888
 	//              66666    999
 	lazy var cplx: RSS = Rope(with:
-	    .nodes(.extent(under: c[0], .empty),
-		   .extent(under: c[1],
+	    .nodes(.zone(under: c[0], .empty),
+		   .zone(under: c[1],
 		       .text("a"),
-		       .extent(under: c[2], .text("b")),
+		       .zone(under: c[2], .text("b")),
 		       .text("c"),
-		       .extent(under: c[3], .empty)),
-		   .extent(under: c[4],
-		       .extent(under: c[5],
-			   .extent(under: c[6],
+		       .zone(under: c[3], .empty)),
+		   .zone(under: c[4],
+		       .zone(under: c[5],
+			   .zone(under: c[6],
 			       .text("def")))),
-		   .extent(under: c[7],
-		       .extent(under: c[8],
-			   .extent(under: c[9], .text("g")),
+		   .zone(under: c[7],
+		       .zone(under: c[8],
+			   .zone(under: c[9], .text("g")),
 			   .text("h")),
 		       .text("i"))))
 	func testClosingEmpty() {
@@ -1065,10 +1065,10 @@ class ZonesOpeningClosing : XCTestCase {
 }
 
 class EmptyishRopeIndices : XCTestCase {
-	let one: RSS = Rope(with: .extent(under: RWZC(), .empty))
+	let one: RSS = Rope(with: .zone(under: RWZC(), .empty))
 	let two: RSS = Rope(with:
-	    .nodes(.extent(under: RWZC(), .empty),
-		   .extent(under: RWZC(), .empty)))
+	    .nodes(.zone(under: RWZC(), .empty),
+		   .zone(under: RWZC(), .empty)))
 	let empty: RSS = Rope()
 	func testStartIndexEqualsEndIndex() {
 		XCTAssert(empty.startIndex == empty.endIndex)
@@ -1108,15 +1108,15 @@ class EmptyishRopeIndices : XCTestCase {
 class ThreeUnitRangesUsingRopeIndices: XCTestCase {
 	let ctlr = RWZC()
 	lazy var expectations: [NSS] = [
-	    .extent(under: ctlr, .text("ab")),
-	    .extent(under: ctlr, .text("abc")),
-	    .extent(under: ctlr, .text("bc")),
-	    .nodes(.extent(under: ctlr, .text("c")),
+	    .zone(under: ctlr, .text("ab")),
+	    .zone(under: ctlr, .text("abc")),
+	    .zone(under: ctlr, .text("bc")),
+	    .nodes(.zone(under: ctlr, .text("c")),
 		 .text("d")),
-	    .nodes(.extent(under: ctlr, .empty), .text("de")),
+	    .nodes(.zone(under: ctlr, .empty), .text("de")),
 	    .text("def")]
 	lazy var r: RSS = Rope(with:
-	    .nodes(.extent(under: ctlr, .text("abc")),
+	    .nodes(.zone(under: ctlr, .text("abc")),
 		   .text("def")))
 	func testLookupByRangesForward() {
 		var prev = r.startIndex
@@ -1143,16 +1143,16 @@ class ThreeUnitRangesUsingRopeIndices: XCTestCase {
 class TwoUnitRangesUsingRopeIndices: XCTestCase {
 	let ctlr = RWZC()
 	lazy var expectations: [NSS] = [
-	    .extent(under: ctlr, .text("a")),
-	    .extent(under: ctlr, .text("ab")),
-	    .extent(under: ctlr, .text("bc")),
-	    .extent(under: ctlr, .text("c")),
-	    .nodes(.extent(under: ctlr, .empty),
+	    .zone(under: ctlr, .text("a")),
+	    .zone(under: ctlr, .text("ab")),
+	    .zone(under: ctlr, .text("bc")),
+	    .zone(under: ctlr, .text("c")),
+	    .nodes(.zone(under: ctlr, .empty),
 		   .text("d")),
 	    .text("de"),
 	    .text("ef")]
 	lazy var r: RSS = Rope(with:
-	    .nodes(.extent(under: ctlr, .text("abc")), .text("def")))
+	    .nodes(.zone(under: ctlr, .text("abc")), .text("def")))
 	func testLookupByRangesForward() {
 		var prev = r.startIndex
 		for (idx, expected) in zip(r.indices.dropFirst(2),
@@ -1179,16 +1179,16 @@ class UnitRangesUsingRopeIndices: XCTestCase {
 	let ctlr = RWZC()
 	lazy var expectations: [NSS] = [
 	    .empty,
-	    .extent(under: ctlr, .empty),
-	    .extent(under: ctlr, .text("a")),
-	    .extent(under: ctlr, .text("b")),
-	    .extent(under: ctlr, .text("c")),
-	    .extent(under: ctlr, .empty),
+	    .zone(under: ctlr, .empty),
+	    .zone(under: ctlr, .text("a")),
+	    .zone(under: ctlr, .text("b")),
+	    .zone(under: ctlr, .text("c")),
+	    .zone(under: ctlr, .empty),
 	    .text("d"),
 	    .text("e"),
 	    .text("f")]
 	lazy var r: RSS = Rope(with:
-	    .nodes(.extent(under: ctlr, .text("abc")), .text("def")))
+	    .nodes(.zone(under: ctlr, .text("abc")), .text("def")))
 	func testLookupByRangesForward() {
 		var prev = r.startIndex
 		for (idx, expected) in zip(r.indices, expectations) {
@@ -1213,9 +1213,9 @@ class UnitRangesUsingRopeIndices: XCTestCase {
 class ConvertIndicesToUTF16Offsets : XCTestCase {
 	let ctlr = [RWZC(), RWZC()]
 	lazy var r: RSS  = Rope(with:
-	    .extent(under: ctlr[0], .text("abc")),
+	    .zone(under: ctlr[0], .text("abc")),
 		                    .text("def"),
-	    .extent(under: ctlr[1], .text("ghi")))
+	    .zone(under: ctlr[1], .text("ghi")))
 	let expectations: [Int] = [
 		0, // .(abc)def(ghi)
 		0, // (.abc)def(ghi)
@@ -1247,14 +1247,14 @@ class ConvertIndicesToUTF16Offsets : XCTestCase {
 class LookupUsingRopeIndicesDerivedFromUTF16Offsets: XCTestCase {
 	let ctlr = RWZC()
 	lazy var expectations: [NSS] = [
-	    .extent(under: ctlr, .text("a")),
-	    .extent(under: ctlr, .text("b")),
-	    .extent(under: ctlr, .text("c")),
+	    .zone(under: ctlr, .text("a")),
+	    .zone(under: ctlr, .text("b")),
+	    .zone(under: ctlr, .text("c")),
 	    .text("d"),
 	    .text("e"),
 	    .text("f")]
 	lazy var r: RSS  = Rope(with:
-	    .extent(under: ctlr, .text("abc")),
+	    .zone(under: ctlr, .text("abc")),
 		   .text("def"))
 	func testIterateElements() {
 		for (i, expected) in expectations.enumerated() {
@@ -1276,15 +1276,15 @@ class ZoneElementLookupUsingRopeIndices: XCTestCase {
 	let ctlr = RWZC()
 	lazy var expectations: [NSS] = [
 	    .empty,
-	    .extent(under: ctlr, .text("a")),
-	    .extent(under: ctlr, .text("b")),
-	    .extent(under: ctlr, .text("c")),
-	    .extent(under: ctlr, .empty),
+	    .zone(under: ctlr, .text("a")),
+	    .zone(under: ctlr, .text("b")),
+	    .zone(under: ctlr, .text("c")),
+	    .zone(under: ctlr, .empty),
 	    .text("d"),
 	    .text("e"),
 	    .text("f")]
 	lazy var r: RSS = Rope(with:
-	    .nodes(.extent(under: ctlr, .text("abc")),
+	    .nodes(.zone(under: ctlr, .text("abc")),
 		   .text("def")))
 	func testElementsCount() {
 		XCTAssert(r.count == expectations.count)
@@ -1638,7 +1638,7 @@ class NodeAttributes : XCTestCase {
 	let n: NSS = .nodes(abc, defgh, ijkl)
 	lazy var rope: RSS = Rope(with: n)
 	let ctlr = RWZC()
-	lazy var contained: RSS = Rope(with: .extent(under: ctlr, n))
+	lazy var contained: RSS = Rope(with: .zone(under: ctlr, n))
 	func testFrontAttributes() {
 		let (attrs, range) = n.attributes(at: 0)
 		XCTAssert(Self.frontAttrs ~ attrs)
@@ -1784,19 +1784,19 @@ class LabelSets : XCTestCase {
 		XCTAssert(set.indexCount == 0)
 	}
 	func testSeqInit() {
-		let ids: [Label.Id] = [.cursor(0), .extent(1), .index(2)]
+		let ids: [Label.Id] = [.cursor(0), .zone(1), .index(2)]
 		let set = LabelSet(ids)
 		XCTAssert(set.cursorCount == 1)
 		XCTAssert(set.extentCount == 1)
 		XCTAssert(set.indexCount == 1)
 	}
 	func testLiteralInit() {
-		let set: [LabelSet] = [[.cursor(0), .extent(0), .index(0)],
-		                         [.cursor(0), .extent(0), .index(0),
+		let set: [LabelSet] = [[.cursor(0), .zone(0), .index(0)],
+		                         [.cursor(0), .zone(0), .index(0),
 					  .index(1)],
-		                         [.cursor(0), .cursor(1), .extent(0),
+		                         [.cursor(0), .cursor(1), .zone(0),
 					  .index(0)],
-		                         [.cursor(0), .extent(0), .extent(1),
+		                         [.cursor(0), .zone(0), .zone(1),
 					  .index(0)]]
 		XCTAssert(set[0].cursorCount == 1)
 		XCTAssert(set[0].extentCount == 1)
@@ -1812,12 +1812,12 @@ class LabelSets : XCTestCase {
 		XCTAssert(set[3].indexCount == 1)
 	}
 	func testUnion() {
-		let set: [LabelSet] = [[.cursor(0), .extent(0), .index(0)],
-		                         [.cursor(0), .extent(0), .index(0),
+		let set: [LabelSet] = [[.cursor(0), .zone(0), .index(0)],
+		                         [.cursor(0), .zone(0), .index(0),
 					  .index(1)],
-		                         [.cursor(0), .cursor(1), .extent(0),
+		                         [.cursor(0), .cursor(1), .zone(0),
 					  .index(0)],
-		                         [.cursor(0), .extent(0), .extent(1),
+		                         [.cursor(0), .zone(0), .zone(1),
 					  .index(0)]]
 		XCTAssert(set[0].union(set[1]).cursorCount == 1)
 		XCTAssert(set[0].union(set[1]).extentCount == 1)
@@ -1835,12 +1835,12 @@ class LabelSets : XCTestCase {
 		XCTAssert(p.indexCount == 2)
 	}
 	func testIntersection() {
-		let overlap: [LabelSet] = [[.cursor(0), .extent(0), .index(0)],
-		                         [.cursor(0), .extent(0), .index(0),
+		let overlap: [LabelSet] = [[.cursor(0), .zone(0), .index(0)],
+		                         [.cursor(0), .zone(0), .index(0),
 					  .index(1)],
-		                         [.cursor(0), .cursor(1), .extent(0),
+		                         [.cursor(0), .cursor(1), .zone(0),
 					  .index(0)],
-		                         [.cursor(0), .extent(0), .extent(1),
+		                         [.cursor(0), .zone(0), .zone(1),
 					  .index(0)]]
 
 		XCTAssert(overlap[0].intersection(overlap[1]).cursorCount == 1)
@@ -1853,12 +1853,12 @@ class LabelSets : XCTestCase {
 		XCTAssert(overlap[2].intersection(overlap[3]).extentCount == 1)
 		XCTAssert(overlap[2].intersection(overlap[3]).indexCount == 1)
 
-		let disj: [LabelSet] = [[.cursor(0), .extent(0), .index(0)],
-		                         [.cursor(4), .extent(4), .index(4),
+		let disj: [LabelSet] = [[.cursor(0), .zone(0), .index(0)],
+		                         [.cursor(4), .zone(4), .index(4),
 					  .index(8)],
-		                         [.cursor(8), .cursor(12), .extent(8),
+		                         [.cursor(8), .cursor(12), .zone(8),
 					  .index(12)],
-		                         [.cursor(16), .extent(12), .extent(16),
+		                         [.cursor(16), .zone(12), .zone(16),
 					  .index(16)]]
 
 		XCTAssert(disj[0].intersection(disj[1]).cursorCount == 0)
@@ -1873,10 +1873,10 @@ class LabelSets : XCTestCase {
 	}
 	func testSymmetricDifference() {
 		let overlap: [LabelSet] = [
-		    [.cursor(0), .extent(0), .index(0)],		// 0
-		    [.cursor(0), .extent(0), .index(0), .index(1)],	// 1
-		    [.cursor(0), .cursor(1), .extent(0), .index(0)],	// 2
-		    [.cursor(0), .extent(0), .extent(1), .index(0)]]	// 3
+		    [.cursor(0), .zone(0), .index(0)],		// 0
+		    [.cursor(0), .zone(0), .index(0), .index(1)],	// 1
+		    [.cursor(0), .cursor(1), .zone(0), .index(0)],	// 2
+		    [.cursor(0), .zone(0), .zone(1), .index(0)]]	// 3
 
 		let diff0 = overlap[0].symmetricDifference(overlap[1])
 		XCTAssert(diff0.cursorCount == 0)
@@ -1894,10 +1894,10 @@ class LabelSets : XCTestCase {
 		XCTAssert(diff2.indexCount == 0)
 
 		let disj: [LabelSet] = [
-		    [.cursor(0), .extent(0), .index(0)],		// 0
-		    [.cursor(4), .extent(4), .index(4), .index(8)],	// 1
-		    [.cursor(8), .cursor(12), .extent(8), .index(12)],	// 2
-		    [.cursor(16), .extent(12), .extent(16), .index(16)]]// 3
+		    [.cursor(0), .zone(0), .index(0)],		// 0
+		    [.cursor(4), .zone(4), .index(4), .index(8)],	// 1
+		    [.cursor(8), .cursor(12), .zone(8), .index(12)],	// 2
+		    [.cursor(16), .zone(12), .zone(16), .index(16)]]// 3
 
 		let diff3 = disj[0].symmetricDifference(disj[1])
 
@@ -2266,128 +2266,128 @@ class ZoneReplacementsBase : XCTestCase {
 	// read-only inner zone, abc(defgh)ijk
 	lazy var innerRO: NSS = .nodes(
 	    .text("abc"),
-	    .extent(under: roc[1], .text("defgh")),
+	    .zone(under: roc[1], .text("defgh")),
 	    .text("ijk"))
 	// read-write inner zone, abc(defgh)ijk
 	lazy var innerRW: NSS = .nodes(
 	    .text("abc"),
-	    .extent(under: rwc[1], .text("defgh")),
+	    .zone(under: rwc[1], .text("defgh")),
 	    .text("ijk"))
 	// read-only outer zones, (abc)defgh(ijk) 
 	lazy var outerRO: NSS = .nodes(
-	    .extent(under: roc[0], .text("abc")),
+	    .zone(under: roc[0], .text("abc")),
 	    .text("defgh"),
-	    .extent(under: roc[2], .text("ijk")))
+	    .zone(under: roc[2], .text("ijk")))
 	// read-write outer zones, (abc)defgh(ijk) 
 	lazy var outerRW: NSS = .nodes(
-	    .extent(under: rwc[0], .text("abc")),
+	    .zone(under: rwc[0], .text("abc")),
 	    .text("defgh"),
-	    .extent(under: rwc[2], .text("ijk")))
+	    .zone(under: rwc[2], .text("ijk")))
 	lazy var beforeAfterCombos: [BeforeAfterCombo] = [
 		/* replace 0..<5 on abc(defgh)ijk with 01234, result
 		 * 01234(fgh)ijk
 		 */
 		(innerRW, 0..<5, "01234", .nodes(
 			    .text("01234"),
-			    .extent(under: rwc[1], .text("fgh")),
+			    .zone(under: rwc[1], .text("fgh")),
 			    .text("ijk")), 0),
 		/* replace 0..<5 on (abc)defgh(ijk) with 01234, result
 		 * (01234)fgh(ijk)
 		 */
 		(outerRW, 0..<5, "01234", .nodes(
-			    .extent(under: rwc[0], .text("01234")),
+			    .zone(under: rwc[0], .text("01234")),
 			    .text("fgh"),
-			    .extent(under: rwc[2], .text("ijk"))), 0),
+			    .zone(under: rwc[2], .text("ijk"))), 0),
 		/* replace 2..<5 on abc(defgh)ijk with 01234, result
 		 * ab01234(fgh)ijk
 		 */
 		(innerRW, 2..<5, "01234", .nodes(
 			    .text("ab01234"),
-			    .extent(under: rwc[1], .text("fgh")),
+			    .zone(under: rwc[1], .text("fgh")),
 			    .text("ijk")), 2),
 		/* replace 2..<5 on (abc)defgh(ijk) with 01234, result
 		 * (ab01234)fgh(ijk)
 		 */
 		(outerRW, 2..<5, "01234", .nodes(
-			    .extent(under: rwc[0], .text("ab01234")),
+			    .zone(under: rwc[0], .text("ab01234")),
 			    .text("fgh"),
-			    .extent(under: rwc[2], .text("ijk"))), 2),
+			    .zone(under: rwc[2], .text("ijk"))), 2),
 		/* replace 3..<8 on abc(defgh)ijk with 01234, result
 		 * abc(01234)ijk
 		 */
 		(innerRW, 3..<8, "01234", .nodes(.text("abc"),
-		    .extent(under: rwc[1], .text("01234")),
+		    .zone(under: rwc[1], .text("01234")),
 		    .text("ijk")), 0),
 		/* replace 3..<8 on (abc)defgh(ijk) with 01234, result
 		 * (abc)01234(ijk)
 		 */
-		(outerRW, 3..<8, "01234", .nodes(.extent(under: rwc[0], .text("abc")),
+		(outerRW, 3..<8, "01234", .nodes(.zone(under: rwc[0], .text("abc")),
 		    .text("01234"),
-		    .extent(under: rwc[2], .text("ijk"))), 0),
+		    .zone(under: rwc[2], .text("ijk"))), 0),
 		/* replace 7..<8 on abc(defgh)ijk with 01234, result
 		 * abc(defg01234)ijk
 		 */
 		(innerRW, 7..<8, "01234", .nodes(.text("abc"),
-		    .extent(under: rwc[1], .text("defg01234")),
+		    .zone(under: rwc[1], .text("defg01234")),
 		    .text("ijk")), 4),
 		/* replace 7..<8 on (abc)defgh(ijk) with 01234, result
 		 * (abc)defg01234(ijk)
 		 */
-		(outerRW, 7..<8, "01234", .nodes(.extent(under: rwc[0], .text("abc")),
+		(outerRW, 7..<8, "01234", .nodes(.zone(under: rwc[0], .text("abc")),
 		    .text("defg01234"),
-		    .extent(under: rwc[2], .text("ijk"))), 4),
+		    .zone(under: rwc[2], .text("ijk"))), 4),
 		/* replace 8..<9 on abc(defgh)ijk with 01234, result
 		 * abc(defgh)01234jk
 		 */
 		(innerRW, 8..<9, "01234", .nodes(.text("abc"),
-		    .extent(under: rwc[1], .text("defgh")),
+		    .zone(under: rwc[1], .text("defgh")),
 		    .text("01234jk")), 4),
 		/* replace 8..<9 on (abc)defgh(ijk) with 01234, result
 		 * (abc)defgh(01234jk)
 		 */
 		(outerRW, 8..<9, "01234",
-		    .nodes(.extent(under: rwc[0], .text("abc")),
+		    .nodes(.zone(under: rwc[0], .text("abc")),
 		    .text("defgh"),
-		    .extent(under: rwc[2], .text("01234jk"))), 4),
+		    .zone(under: rwc[2], .text("01234jk"))), 4),
 		/* replace 5..<9 on abc(defgh)ijk with 01234, result
 		 * abc(de01234)jk
 		 */
 		(innerRW, 5..<9, "01234", .nodes(.text("abc"),
-		    .extent(under: rwc[1], .text("de01234")),
+		    .zone(under: rwc[1], .text("de01234")),
 		    .text("jk")), 1),
 		/* replace 5..<9 on (abc)defgh(ijk) with 01234, result
 		 * (abc)de01234(jk)
 		 */
 		(outerRW, 5..<9, "01234",
-		    .nodes(.extent(under: rwc[0], .text("abc")),
+		    .nodes(.zone(under: rwc[0], .text("abc")),
 		    .text("de01234"),
-		    .extent(under: rwc[2], .text("jk"))), 1),
+		    .zone(under: rwc[2], .text("jk"))), 1),
 		/* replace 8..<11 on abc(defgh)ijk with 01234, result
 		 * abc(defgh)01234
 		 */
 		(innerRW, 8..<11, "01234", .nodes(.text("abc"),
-		    .extent(under: rwc[1], .text("defgh")),
+		    .zone(under: rwc[1], .text("defgh")),
 		    .text("01234")), 2),
 		/* replace 8..<11 on (abc)defgh(ijk) with 01234, result
 		 * (abc)defgh(01234)
 		 */
 		(outerRW, 8..<11, "01234",
-		    .nodes(.extent(under: rwc[0], .text("abc")),
+		    .nodes(.zone(under: rwc[0], .text("abc")),
 		    .text("defgh"),
-		    .extent(under: rwc[2], .text("01234"))), 2),
+		    .zone(under: rwc[2], .text("01234"))), 2),
 		/* replace 10..<11 on abc(defgh)ijk with 01234, result
 		 * abc(defgh)ij01234
 		 */
 		(innerRW, 10..<11, "01234", .nodes(.text("abc"),
-		    .extent(under: rwc[1], .text("defgh")),
+		    .zone(under: rwc[1], .text("defgh")),
 		    .text("ij01234")), 4),
 		/* replace 10..<11 on (abc)defgh(ijk) with 01234, result
 		 * (abc)defgh(ij01234)
 		 */
 		(outerRW, 10..<11, "01234",
-		    .nodes(.extent(under: rwc[0], .text("abc")),
+		    .nodes(.zone(under: rwc[0], .text("abc")),
 		    .text("defgh"),
-		    .extent(under: rwc[2], .text("ij01234"))), 4)
+		    .zone(under: rwc[2], .text("ij01234"))), 4)
 		]
 	static func functionAssertingThrows(iff assert: Bool,
 	    file: StaticString = #filePath, line: UInt = #line)

@@ -14,7 +14,7 @@ public struct LabelSet : SetAlgebra, ExpressibleByArrayLiteral {
 		switch e {
 		case .cursor(_):
 			_cursorCount -= 1
-		case .extent(_):
+		case .zone(_):
 			_extentCount -= 1
 		case .index(_):
 			_indexCount -= 1
@@ -24,7 +24,7 @@ public struct LabelSet : SetAlgebra, ExpressibleByArrayLiteral {
 		switch e {
 		case .cursor(_):
 			_cursorCount += 1
-		case .extent(_):
+		case .zone(_):
 			_extentCount += 1
 		case .index(_):
 			_indexCount += 1

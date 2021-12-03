@@ -6,7 +6,7 @@ public class Label : Hashable {
 	public enum Id : Hashable {
 	public typealias Number = UInt64
 	case cursor(Number)
-	case extent(Number)
+	case zone(Number)
 	case index(Number)
 	}
 	static var nextNumber: Id.Number = 0
@@ -29,7 +29,7 @@ extension Label.Id : CustomDebugStringConvertible {
 		switch self {
 		case .cursor(let n):
 			return ".cursor(\(n))"
-		case .extent(let n):
+		case .zone(let n):
 			return ".zone(\(n))"
 		case .index(let n):
 			return ".index(\(n))"
