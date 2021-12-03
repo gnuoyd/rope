@@ -718,19 +718,19 @@ extension Rope {
 		top = newtop
 		return .interior(of: self, label: label)
 	}
-	public func index(afterExtent target: Label) -> Index? {
+	public func index(afterZone target: Label) -> Index? {
 		let label = Label()
 		guard let newtop = top.insertingIndex(label,
-		    afterExtent: target) else {
+		    afterZone: target) else {
 			return nil
 		}
 		top = newtop
 		return .interior(of: self, label: label)
 	}
-	public func index(beforeExtent target: Label) -> Index? {
+	public func index(beforeZone target: Label) -> Index? {
 		let label = Label()
 		guard let newtop = top.insertingIndex(label,
-		    beforeExtent: target) else {
+		    beforeZone: target) else {
 			return nil
 		}
 		top = newtop

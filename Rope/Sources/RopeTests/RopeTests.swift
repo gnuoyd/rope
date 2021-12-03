@@ -129,18 +129,18 @@ class BoundaryIndexComparisons : XCTestCase {
 	lazy var empty: RSS = Rope(with: .empty)
 	lazy var allIndices: RSS = Rope(with:
 	    .index(label: l[0]), .index(label: l[1]), .index(label: l[2]))
-	lazy var emptyExtent: RSS = Rope(with: .extent(under: c[0], .empty))
-	lazy var indexInEmptyExtent: RSS = Rope(with:
+	lazy var emptyZone: RSS = Rope(with: .extent(under: c[0], .empty))
+	lazy var indexInEmptyZone: RSS = Rope(with:
 	    .extent(under: c[0], .index(label: l[0])))
 	lazy var text: RSS = Rope(with: .text("a"))
-	func testEmptyExtent() {
-		XCTAssert(emptyExtent.startIndex < emptyExtent.endIndex)
+	func testEmptyZone() {
+		XCTAssert(emptyZone.startIndex < emptyZone.endIndex)
 	}
 	func testEmpty() {
 		XCTAssert(empty.startIndex == empty.endIndex)
 	}
-	func testIndexInEmptyExtent() {
-		let rope = indexInEmptyExtent
+	func testIndexInEmptyZone() {
+		let rope = indexInEmptyZone
 		XCTAssert(rope.startIndex < rope.endIndex)
 		let index = RSS.Index.interior(of: rope, label: l[0])
 		XCTAssert(index < rope.endIndex)
@@ -166,10 +166,10 @@ class HasSingleIndex : XCTestCase {
 	lazy var empty: RSS = Rope(with: .empty)
 	lazy var allIndices: RSS = Rope(with:
 	    .index(label: l[0]), .index(label: l[1]), .index(label: l[2]))
-	lazy var emptyExtent: RSS = Rope(with: .extent(under: c[0], .empty))
+	lazy var emptyZone: RSS = Rope(with: .extent(under: c[0], .empty))
 	lazy var text: RSS = Rope(with: .text("a"))
-	func testEmptyExtent() {
-		XCTAssert(!emptyExtent.hasSingleIndex)
+	func testEmptyZone() {
+		XCTAssert(!emptyZone.hasSingleIndex)
 	}
 	func testEmpty() {
 		XCTAssert(empty.hasSingleIndex)
@@ -225,19 +225,19 @@ class IndexedExtentBase : XCTestCase {
 		          .interior(of: rope, label: l[6]))
 	}
 	func testInsertingIndexAfter() {
-		XCTAssert(rope.index(afterExtent: c[0]) ==
+		XCTAssert(rope.index(afterZone: c[0]) ==
 		          .interior(of: rope, label: l[9]))
-		XCTAssert(rope.index(afterExtent: c[1]) ==
+		XCTAssert(rope.index(afterZone: c[1]) ==
 		          .interior(of: rope, label: l[8]))
-		XCTAssert(rope.index(afterExtent: c[2]) ==
+		XCTAssert(rope.index(afterZone: c[2]) ==
 		          .interior(of: rope, label: l[7]))
 	}
 	func testInsertingIndexBefore() {
-		XCTAssert(rope.index(beforeExtent: c[0]) ==
+		XCTAssert(rope.index(beforeZone: c[0]) ==
 		          .interior(of: rope, label: l[0]))
-		XCTAssert(rope.index(beforeExtent: c[1]) ==
+		XCTAssert(rope.index(beforeZone: c[1]) ==
 		          .interior(of: rope, label: l[2]))
-		XCTAssert(rope.index(beforeExtent: c[2]) ==
+		XCTAssert(rope.index(beforeZone: c[2]) ==
 		          .interior(of: rope, label: l[4]))
 	}
 }
@@ -657,94 +657,94 @@ class IndexOffsetBy : XCTestCase {
 	}
 }
 
-class SegmentingAtExtent : XCTestCase {
+class SegmentingAtZone : XCTestCase {
 	let c: [RWZC] = [RWZC(), RWZC(), RWZC(), RWZC()]
-	var _extentInExtent: NSS? = nil
+	var _extentInZone: NSS? = nil
 	var _extentInCenter: NSS? = nil
 	var _multipleExtentsInCenter: NSS? = nil
 	var _extentOnLeft: NSS? = nil
 	var _extentOnRight: NSS? = nil
-	var _innermostExtent: NSS? = nil
-	var _innerExtent: NSS? = nil
-	var _otherExtent: NSS? = nil
-	lazy var innermostExtent: NSS = .extent(under: c[2], .text("ghi"))
-	lazy var innerExtent: NSS =
-	    .extent(under: c[1], .text("def"), innermostExtent)
-	lazy var otherExtent: NSS = .extent(under: c[3], .text("012"))
-	lazy var extentInExtent: NSS =
-	    .extent(under: c[0], .text("abc"), innerExtent)
-	lazy var extentOnRight: NSS = .nodes(.text("abc"), innerExtent)
-	lazy var extentOnLeft: NSS = .nodes(innerExtent, .text("jkl"))
+	var _innermostZone: NSS? = nil
+	var _innerZone: NSS? = nil
+	var _otherZone: NSS? = nil
+	lazy var innermostZone: NSS = .extent(under: c[2], .text("ghi"))
+	lazy var innerZone: NSS =
+	    .extent(under: c[1], .text("def"), innermostZone)
+	lazy var otherZone: NSS = .extent(under: c[3], .text("012"))
+	lazy var extentInZone: NSS =
+	    .extent(under: c[0], .text("abc"), innerZone)
+	lazy var extentOnRight: NSS = .nodes(.text("abc"), innerZone)
+	lazy var extentOnLeft: NSS = .nodes(innerZone, .text("jkl"))
 	lazy var multipleExtentsInCenter: NSS =
-	    .nodes(.text("abc"), innerExtent, otherExtent, .text("jkl"))
+	    .nodes(.text("abc"), innerZone, otherZone, .text("jkl"))
 	lazy var extentInCenter: NSS =
-	    .nodes(.text("abc"), innerExtent, .text("jkl"))
+	    .nodes(.text("abc"), innerZone, .text("jkl"))
 	func testSegmentingEmbeddedExtents() {
-		XCTAssertThrowsError(try extentInExtent.segmenting(atExtent: c[1]))
-		XCTAssertThrowsError(try extentInExtent.segmenting(atExtent: c[2]))
+		XCTAssertThrowsError(try extentInZone.segmenting(atZone: c[1]))
+		XCTAssertThrowsError(try extentInZone.segmenting(atZone: c[2]))
 	}
-	func testSegmentingExtent() {
+	func testSegmentingZone() {
 		guard let (l, m, r) =
-		    try? extentInExtent.segmenting(atExtent: c[0]) else {
+		    try? extentInZone.segmenting(atZone: c[0]) else {
 			XCTFail("no such extent controller")
 			return
 		}
 		XCTAssert(l == .empty)
-		XCTAssert(m == extentInExtent)
+		XCTAssert(m == extentInZone)
 		XCTAssert(r == .empty)
 	}
 	func testSegmentingExtentOnLeft() {
 		guard let (l, m, r) =
-		    try? extentOnLeft.segmenting(atExtent: c[1]) else {
+		    try? extentOnLeft.segmenting(atZone: c[1]) else {
 			XCTFail("no such extent controller")
 			return
 		}
 		XCTAssert(l == .empty)
-		XCTAssert(m == innerExtent)
+		XCTAssert(m == innerZone)
 		XCTAssert(r == .text("jkl"))
 	}
 	func testSegmentingExtentOnRight() {
 		guard let (l, m, r) =
-		    try? extentOnRight.segmenting(atExtent: c[1])
+		    try? extentOnRight.segmenting(atZone: c[1])
 		else {
 			XCTFail("no such extent controller")
 			return
 		}
 		XCTAssert(l == .text("abc"))
-		XCTAssert(m == innerExtent)
+		XCTAssert(m == innerZone)
 		XCTAssert(r == .empty)
 	}
 	func testSegmentingExtentInCenter() {
 		guard let (l, m, r) =
-		    try? extentInCenter.segmenting(atExtent: c[1])
+		    try? extentInCenter.segmenting(atZone: c[1])
 		else {
 			XCTFail("no such extent controller")
 			return
 		}
 		XCTAssert(l == .text("abc"))
-		XCTAssert(m == innerExtent)
+		XCTAssert(m == innerZone)
 		XCTAssert(r == .text("jkl"))
 	}
 	func testSegmentingMultipleExtentsInCenter1() {
 		guard let (l, m, r) =
-		    try? multipleExtentsInCenter.segmenting(atExtent: c[1])
+		    try? multipleExtentsInCenter.segmenting(atZone: c[1])
 		else {
 			XCTFail("no such extent controller")
 			return
 		}
 		XCTAssert(l == .text("abc"))
-		XCTAssert(m == innerExtent)
-		XCTAssert(r == .nodes(otherExtent, .text("jkl")))
+		XCTAssert(m == innerZone)
+		XCTAssert(r == .nodes(otherZone, .text("jkl")))
 	}
 	func testSegmentingMultipleExtentsInCenter2() {
 		guard let (l, m, r) =
-		    try? multipleExtentsInCenter.segmenting(atExtent: c[3])
+		    try? multipleExtentsInCenter.segmenting(atZone: c[3])
 		else {
 			XCTFail("no such extent controller")
 			return
 		}
-		XCTAssert(l == .nodes(.text("abc"), innerExtent))
-		XCTAssert(m == otherExtent)
+		XCTAssert(l == .nodes(.text("abc"), innerZone))
+		XCTAssert(m == otherZone)
 		XCTAssert(r == .text("jkl"))
 	}
 }
@@ -1073,13 +1073,13 @@ class EmptyishRopeIndices : XCTestCase {
 	func testStartIndexEqualsEndIndex() {
 		XCTAssert(empty.startIndex == empty.endIndex)
 	}
-	func testStartIndexOneEmptyExtent() {
+	func testStartIndexOneEmptyZone() {
 		XCTAssert(one.startIndex != one.endIndex)
 		XCTAssert(one.index(after: one.startIndex) != one.endIndex)
 		XCTAssert(one.index(one.startIndex, offsetBy: 2) ==
 		    one.endIndex)
 	}
-	func testEndIndexOneEmptyExtent() {
+	func testEndIndexOneEmptyZone() {
 		XCTAssert(one.index(before: one.endIndex) != one.startIndex)
 		XCTAssert(one.index(one.endIndex, offsetBy: -2) ==
 		    one.startIndex)
@@ -1706,7 +1706,7 @@ class NodeAttributes : XCTestCase {
 	func testSettingCentralAttributes() {
 		NodeAttributes.helpTestSettingCentralAttributes(rope)
 	}
-	func testSettingCentralAttributesWithExtent() {
+	func testSettingCentralAttributesWithZone() {
 		NodeAttributes.helpTestSettingCentralAttributes(contained)
 	}
 	func testSettingBackAttributes() {

@@ -26,20 +26,20 @@ extension Rope {
 		    after lowerBound: Label, upTo upperBound: Label,
 		    in content: Rope.Node,
 		    with fn: (Attributes) -> Attributes) throws -> Rope.Node {
-			throw Rope.Node.NodeError.readonlyExtent
+			throw Rope.Node.NodeError.readonlyZone
 		}
 		override func replacing(
 		    after lowerBound: Label, upTo upperBound: Label,
 		    in content: Rope.Node,
 		    with replacement: Rope.Node,
 		    undoList: ChangeList<Rope.Node>?) throws -> Rope.Node {
-			throw Rope.Node.NodeError.readonlyExtent
+			throw Rope.Node.NodeError.readonlyZone
 		}
 		override func setController(_ ctlr: ZoneController,
 		    after lowerBound: Label, upTo upperBound: Label,
 		    in content: Rope.Node,
 		    undoList: ChangeList<Rope.Node>?) throws -> Rope.Node {
-			throw Rope.Node.NodeError.readonlyExtent
+			throw Rope.Node.NodeError.readonlyZone
 		}
 	}
 }
@@ -516,13 +516,13 @@ public extension Rope.Node {
 
 public extension Rope.Node {
 	enum NodeError : Error {
-	case unexpectedExtent
-	case expectedExtent
-	case readonlyExtent
-	case invalidExtentContent
+	case unexpectedZone
+	case expectedZone
+	case readonlyZone
+	case invalidZoneContent
 	case indexNotFound
 	case extentNotFound
-	case indicesCrossExtents
+	case indicesCrossZones
 	}
 	func attributes(at i: Offset, base: Offset)
 	    -> (Attributes, Range<Offset>) {
@@ -588,7 +588,7 @@ public extension Rope.Node {
 			 * extents in the range so that they get an
 			 * opportunity to cancel if they are read-only.
 			 */
-			switch middle.segmentingAtAnyExtent() {
+			switch middle.segmentingAtAnyZone() {
 			case (_, nil, _):
 				return head.appending(
 				    try middle.transformingAttributes(
@@ -616,14 +616,14 @@ public extension Rope.Node {
 			case (_, _?, _):
 				// m wasn't an extent for some reason
 				// TBD change return type of
-				// segmentingAtAnyExtent to avoid this
+				// segmentingAtAnyZone to avoid this
 				// impossible error case
-				throw NodeError.expectedExtent
+				throw NodeError.expectedZone
 			}
 		case (let loExt?, let hiExt?) where loExt == hiExt:
 			guard case (let l, .extent(let ctlr, let m), let r) =
-			    try segmenting(atExtent: loExt) else {
-				throw NodeError.expectedExtent
+			    try segmenting(atZone: loExt) else {
+				throw NodeError.expectedZone
 			}
 			let newm = try ctlr.transformingAttributes(
 			    after: lowerBound, upTo: upperBound, in: m,
@@ -631,8 +631,8 @@ public extension Rope.Node {
 			return l.appending(newm).appending(r)
 		case (let loExt?, _):
 			guard case (let l, .extent(let ctlr, let m), let r) =
-			    try segmenting(atExtent: loExt) else {
-				throw NodeError.expectedExtent
+			    try segmenting(atZone: loExt) else {
+				throw NodeError.expectedZone
 			}
 			let newm = try m.withFreshRightBoundary {
 			    (upper, node) in
@@ -648,8 +648,8 @@ public extension Rope.Node {
 			return l.appending(newm).appending(newr)
 		case (nil, let hiExt?):
 			guard case (let l, .extent(let ctlr, let m), let r) =
-			    try segmenting(atExtent: hiExt) else {
-				throw NodeError.expectedExtent
+			    try segmenting(atZone: hiExt) else {
+				throw NodeError.expectedZone
 			}
 			let newl = try l.withFreshRightBoundary {
 			    (upper, node) in
@@ -671,7 +671,7 @@ public extension Rope.Node {
 		case .cursor(let h, let attrs):
 			return .cursor(h, fn(attrs))
 		case .extent(_, _):
-			throw NodeError.unexpectedExtent
+			throw NodeError.unexpectedZone
 		case .concat(let l, _, _, _, let r, _):
 			return .nodes(try l.transformingAttributes(with: fn),
 			              try r.transformingAttributes(with: fn))
@@ -1719,15 +1719,15 @@ public extension Rope.Node {
 			return .nodes(head, .extent(ctlr, middle), tail)
 		case (let loExt?, let hiExt?) where loExt == hiExt:
 			guard case (let l, .extent(let ctlr, let m), let r) =
-			    try segmenting(atExtent: loExt) else {
-				throw NodeError.expectedExtent
+			    try segmenting(atZone: loExt) else {
+				throw NodeError.expectedZone
 			}
 			let mControlled = try ctlr.setController(ctlr,
 			    after: lowerBound, upTo: upperBound, in: m,
 			    undoList: undoList)
 			return l.appending(mControlled).appending(r)
 		default:
-			throw NodeError.indicesCrossExtents
+			throw NodeError.indicesCrossZones
 		}
 	}
 	/* A naive version of `replacing(after:upTo:with:)` splits extents.
@@ -1774,10 +1774,10 @@ public extension Rope.Node {
 			 * range so that they get an opportunity to cancel if
 			 * they are read-only.
 			 */
-			switch middle.segmentingAtAnyExtent() {
+			switch middle.segmentingAtAnyZone() {
 			case (_, nil, _):
 				break
-			/* By our contract with `segmentingAtAnyExtent`, the
+			/* By our contract with `segmentingAtAnyZone`, the
 			 * `middle` subrope left of the .extent is
 			 * .extent-free, so we do not need to test for
 			 * a read-only .extent's "veto."  We bind `l` only
@@ -1811,7 +1811,7 @@ public extension Rope.Node {
 				}
 				break
 			case (_, _?, _):
-				throw NodeError.expectedExtent
+				throw NodeError.expectedZone
 			}
 			undoList?.record { (node, undoList) in
 				try node.replacing(
@@ -1822,8 +1822,8 @@ public extension Rope.Node {
 			return .nodes(head, replacement, tail)
 		case (let loExt?, let hiExt?) where loExt == hiExt:
 			guard case (let l, .extent(let ctlr, let m), let r) =
-			    try segmenting(atExtent: loExt) else {
-				throw NodeError.expectedExtent
+			    try segmenting(atZone: loExt) else {
+				throw NodeError.expectedZone
 			}
 			let mReplaced = try ctlr.replacing(after: lowerBound,
 			    upTo: upperBound, in: m,
@@ -1831,8 +1831,8 @@ public extension Rope.Node {
 			return l.appending(mReplaced).appending(r)
 		case (let loExt?, _):
 			guard case (let l, .extent(let ctlr, let m), let r) =
-			    try segmenting(atExtent: loExt) else {
-				throw NodeError.expectedExtent
+			    try segmenting(atZone: loExt) else {
+				throw NodeError.expectedZone
 			}
 			let mReplaced: Rope.Node = try m.withFreshRightBoundary{
 			    (upper, node) in
@@ -1849,8 +1849,8 @@ public extension Rope.Node {
 			return l.appending(mReplaced).appending(rTrimmed)
 		case (nil, let hiExt?):
 			guard case (let l, .extent(let ctlr, let m), let r) =
-			    try segmenting(atExtent: hiExt) else {
-				throw NodeError.expectedExtent
+			    try segmenting(atZone: hiExt) else {
+				throw NodeError.expectedZone
 			}
 			let lReplaced: Rope.Node = try l.withFreshRightBoundary{
 			    (upper, node) in
@@ -1867,18 +1867,18 @@ public extension Rope.Node {
 			return lReplaced.appending(mTrimmed).appending(r)
 		}
 	}
-	func segmenting(atExtent target: Rope.ZoneController,
+	func segmenting(atZone target: Rope.ZoneController,
 	    leftSibling: Self = .empty) throws -> (Self, Self, Self) {
 		switch self {
 		case .extent(target, _):
 			return (leftSibling, self, .empty)
 		case .concat(let l, _, _, _, let r, _):
 			if case let (head, extent, tail)? =
-			    try? l.segmenting(atExtent: target) {
+			    try? l.segmenting(atZone: target) {
 				return (leftSibling.appending(head),
 					extent, tail.appending(r))
 			} else {
-				return try r.segmenting(atExtent: target,
+				return try r.segmenting(atZone: target,
 				    leftSibling: leftSibling.appending(l))
 			}
 		case .cursor(_, _), .empty, .extent(_, _), .index(_),
@@ -1886,7 +1886,7 @@ public extension Rope.Node {
 			throw NodeError.extentNotFound
 		}
 	}
-	func segmentingAtAnyExtent(leftSibling: Self = .empty)
+	func segmentingAtAnyZone(leftSibling: Self = .empty)
 	    -> (Self, Self?, Self) {
 		switch self {
 		case .cursor(_, _), .leaf(_, _), .index(_), .empty:
@@ -1895,16 +1895,16 @@ public extension Rope.Node {
 			return (leftSibling, self, .empty)
 		case .concat(let l, _, _, _, let r, _):
 			if case let (head, extent?, tail) =
-			    l.segmentingAtAnyExtent() {
+			    l.segmentingAtAnyZone() {
 				return (leftSibling.appending(head),
 					extent, tail.appending(r))
 			} else {
-				return r.segmentingAtAnyExtent(
+				return r.segmentingAtAnyZone(
 				    leftSibling: leftSibling.appending(l))
 			}
 		}
 	}
-	func indexingFirstExtent(label: Label, leftSibling: Self = .empty)
+	func indexingFirstZone(label: Label, leftSibling: Self = .empty)
 	    -> Self? {
 		switch self {
 		case .cursor(_, _), .leaf(_, _), .index(_), .empty:
@@ -1913,15 +1913,15 @@ public extension Rope.Node {
 			return leftSibling.appending(
 			    .index(label: label)).appending(self)
 		case .concat(let l, _, _, _, let r, _):
-			if let inserted = l.indexingFirstExtent(
+			if let inserted = l.indexingFirstZone(
 			    label: label, leftSibling: leftSibling) {
 				return inserted.appending(r)
 			}
-			return r.indexingFirstExtent(label: label,
+			return r.indexingFirstZone(label: label,
 			    leftSibling: leftSibling.appending(l))
 		}
 	}
-	func indexingFirstExtent(after index: Rope.Index,
+	func indexingFirstZone(after index: Rope.Index,
 	    label: Label) throws -> Self? {
 		/* If extents enclose `index`, then we are about to split
 		 * an extent.  That mustn't happen.  Instead, the operation
@@ -1937,7 +1937,7 @@ public extension Rope.Node {
 		      let r = subrope(after: index) else {
 			return nil
 		}
-		return r.indexingFirstExtent(label: label,
+		return r.indexingFirstZone(label: label,
 			leftSibling: l.appending(.index(label: index.label)))
 	}
 	/* TBD tighten up cursor placement?  Check if any nodes are
@@ -1949,7 +1949,7 @@ public extension Rope.Node {
 		return subrope(from: 0, upTo: i).appending(
 		    cursor).appending(subrope(from: i, upTo: endIndex))
 	}
-	func transformingExtent(withLabel target: Label,
+	func transformingZone(withLabel target: Label,
 	    with f: (_: Rope.ZoneController, _: Self) -> Self) -> Self? {
 		switch self {
 		case .cursor(_, _), .empty, .index(_), .leaf(_, _):
@@ -1957,7 +1957,7 @@ public extension Rope.Node {
 		case .extent(let ctlr, let content) where ctlr == target:
 			return f(ctlr, content)
 		case .extent(let ctlr, let n):
-			guard let newn = n.transformingExtent(withLabel: target,
+			guard let newn = n.transformingZone(withLabel: target,
 			    with: f) else {
 				return nil
 			}
@@ -1966,10 +1966,10 @@ public extension Rope.Node {
 			guard set.contains(target.id) else {
 				return nil
 			}
-			if let newl = l.transformingExtent(
+			if let newl = l.transformingZone(
 			    withLabel: target, with: f) {
 				return .nodes(newl, r)
-			} else if let newr = r.transformingExtent(
+			} else if let newr = r.transformingZone(
 			    withLabel: target, with: f) {
 				return .nodes(l, newr)
 			} else {
@@ -1979,29 +1979,29 @@ public extension Rope.Node {
 	}
 	func insertingFirstIndex(_ label: Label, inZone target: Label)
 	    -> Self? {
-		return transformingExtent(withLabel: target) {
+		return transformingZone(withLabel: target) {
 		    (ctlr, content) in
 		        .extent(under: ctlr, .index(label: label), content)
 		}
 	}
 	func insertingLastIndex(_ label: Label, inZone target: Label)
 	    -> Self? {
-		return transformingExtent(withLabel: target) {
+		return transformingZone(withLabel: target) {
 		    (ctlr, content) in
 			.extent(under: ctlr, content, .index(label: label))
 		}
 	}
-	func insertingIndex(_ label: Label, afterExtent target: Label)
+	func insertingIndex(_ label: Label, afterZone target: Label)
 	    -> Self? {
-		return transformingExtent(withLabel: target) {
+		return transformingZone(withLabel: target) {
 		    (ctlr, content) in
 			.nodes(.extent(under: ctlr, content),
 			       .index(label: label))
 		}
 	}
-	func insertingIndex(_ label: Label, beforeExtent target: Label)
+	func insertingIndex(_ label: Label, beforeZone target: Label)
 	    -> Self? {
-		return transformingExtent(withLabel: target) {
+		return transformingZone(withLabel: target) {
 		    (ctlr, content) in
 			.nodes(.index(label: label),
 			       .extent(under: ctlr, content))
