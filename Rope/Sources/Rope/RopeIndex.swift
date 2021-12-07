@@ -36,18 +36,10 @@ extension Rope.Index {
 	}
 
 	public static func == (_ l: Self, _ r: Self) -> Bool {
-		do {
-			return try l.aliases(r)
-		} catch {
-			fatalError("Not comparable")
-		}
+		return try! l.aliases(r)
 	}
 	public static func < (_ l: Self, _ r: Self) -> Bool {
-		do {
-			return try l.isLessThan(r)
-		} catch {
-			fatalError("Not comparable")
-		}
+		return try! l.isLessThan(r)
 	}
 }
 

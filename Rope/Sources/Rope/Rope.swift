@@ -346,13 +346,9 @@ public class Rope<C : Content> : Collection {
 	/* TBD tests */
 	public subscript(_ r: Range<Offset>) -> Content {
 		set(replacement) {
-			do {
-				let undoList = ChangeList<Rope>()
-				try replace(r, with: replacement,
-				            undoList: undoList)
-			} catch {
-				fatalError("No such range")
-			}
+			let undoList = ChangeList<Rope>()
+			try! replace(r, with: replacement,
+				    undoList: undoList)
 		}
 		get {
 			let ir = Range(r, in: self)

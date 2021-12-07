@@ -523,6 +523,7 @@ public extension Rope.Node {
 	case indexNotFound
 	case zoneNotFound
 	case indicesCrossZones
+	case indicesOutOfOrder
 	}
 	func attributes(at i: Offset, base: Offset)
 	    -> (Attributes, Range<Offset>) {
@@ -1682,7 +1683,7 @@ public extension Rope.Node {
 			 * precedes the lowerBound.
 			 */
 			if try index(upperBound, precedes: lowerBound) {
-				fatalError("bounds out of order")
+				throw NodeError.indicesOutOfOrder
 			}
 			/* Important: don't discard any embedded indices at
 			 * `range` boundaries!  Instead, use
@@ -1744,7 +1745,7 @@ public extension Rope.Node {
 			 * precedes the lowerBound.
 			 */
 			if try index(upperBound, precedes: lowerBound) {
-				fatalError("bounds out of order")
+				throw NodeError.indicesOutOfOrder
 			}
 			/* Important: don't discard any embedded indices at
 			 * `range` boundaries!  Instead, use

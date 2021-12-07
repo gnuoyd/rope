@@ -66,13 +66,9 @@ public class RopeTextStorage: NSTextStorage {
 	    with str: String) {
 		performEditing() {
 			let undoList = ChangeList<Backing>()
-			do {
-				try backing.replace(Offset.unitRange(range),
-				    with: Content(str.utf16[...]),
-				    undoList: undoList)
-			} catch {
-				fatalError("invalid range")
-			}
+			try! backing.replace(Offset.unitRange(range),
+			    with: Content(str.utf16[...]),
+			    undoList: undoList)
 		}
 	}
 	override public func setAttributes(
