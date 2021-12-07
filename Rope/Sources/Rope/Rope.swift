@@ -333,11 +333,7 @@ public class Rope<C : Content> : Collection {
 	}
 	public subscript(i: Index) -> Element {
 		get {
-			do {
-				return try element(at: i)
-			} catch {
-				fatalError("No such element")
-			}
+			return try! element(at: i)
 		}
 	}
 	public func element(at i: Index) throws -> Element {
