@@ -331,21 +331,6 @@ public class Rope<C : Content> : Collection {
 			return .interior(of: self, label: j)
 		}
 	}
-	public subscript(i: Offset) -> Content.Element {
-		return top.element(at: i)
-	}
-	public subscript(r: Range<Index>) -> Element {
-		get {
-			if r.isEmpty {
-				return .empty
-			}
-			guard let e = top.subrope(after: r.lowerBound,
-			    upTo: r.upperBound) else {
-				fatalError("No such range")
-			}
-			return e
-		}
-	}
 	public subscript(i: Index) -> Element {
 		get {
 			do {
