@@ -102,7 +102,7 @@ extension Rope.Node.Offset {
  * Insert some text left of a cursor; apply the cursor's attributes
  * to the text.
  */
-public class Rope<C : Content> : Collection {
+public class Rope<C : Content> {
 	public enum Climb {
 	case `in`
 	case out
@@ -331,18 +331,6 @@ public class Rope<C : Content> : Collection {
 			return .interior(of: self, label: j)
 		}
 	}
-	public subscript(i: Index) -> Element {
-		get {
-			return try! element(at: i)
-		}
-	}
-	public func element(at i: Index) throws -> Element {
-		let result = top.element(at: i.label)
-		guard case .step(let node) = result else {
-			throw RopeNoSuchElement.onInterior
-		}
-		return node
-	}
 	/* TBD tests */
 	public subscript(_ r: Range<Offset>) -> Content {
 		set(replacement) {
@@ -478,6 +466,71 @@ extension Rope.Node {
 }
 
 extension Rope {
+        public struct IndexView : BidirectionalCollection {
+		let rope: Rope
+		public typealias Index = Rope.Index
+		public var startIndex: Index {
+			return rope.startIndex
+		}
+		public var endIndex: Index {
+			return rope.endIndex
+		}
+		init(rope r: Rope) {
+			rope = r
+		}
+		public subscript(i: Index) -> Index {
+			return i
+		}
+		public func index(after i: Index) -> Index {
+			return rope.index(after: i)
+		}
+		public func index(before i: Index) -> Index {
+			return rope.index(before: i)
+		}
+	}
+	public var indices: IndexView {
+                return IndexView(rope: self)
+	}
+}
+
+extension Rope {
+        public struct NestedView : BidirectionalCollection {
+		let view: IndexView
+		public typealias Index = Rope.Index
+		public var startIndex: Index {
+			return view.startIndex
+		}
+		public var endIndex: Index {
+			return view.endIndex
+		}
+		init(rope r: Rope) {
+			view = IndexView(rope: r)
+		}
+		public subscript(i: Index) -> Element {
+			get {
+				return try! element(at: i)
+			}
+		}
+		func element(at i: Index) throws -> Element {
+			let result = view.rope.node.element(at: i.label)
+			guard case .step(let node) = result else {
+				throw RopeNoSuchElement.onInterior
+			}
+			return node
+		}
+		public func index(after i: Index) -> Index {
+			return view.index(after: i)
+		}
+		public func index(before i: Index) -> Index {
+			return view.index(before: i)
+		}
+	}
+	public var nests: NestedView {
+                return NestedView(rope: self)
+	}
+}
+
+extension Rope {
         public struct UnitView {
 		let rope: Rope
 		init(rope r: Rope) {
@@ -495,10 +548,6 @@ extension Rope {
 	public var units: UnitView {
                 return UnitView(rope: self)
 	}
-}
-
-// For index(_: Index, offsetBy: Int) -> Index
-extension Rope : BidirectionalCollection {
 }
 
 extension Rope {

@@ -395,14 +395,16 @@ class DirectSelection : XCTestCase {
 			return
 		}
 		// w(*x(y(z))*)
-		let l = wxyz.index(wxyz.startIndex, offsetBy: 2)
+		let indices = wxyz.indices
+		let l = indices.index(wxyz.startIndex, offsetBy: 2)
 		let r = end
 		XCTAssert(range == l..<r)
 		XCTAssert(narrow == c[0])
 		XCTAssert(wide == c[0])
 	}
 	func testDirectedWxyz2() {
-		let start = wxyz.index(wxyz.startIndex, offsetBy: 2)
+		let indices = wxyz.indices
+		let start = indices.index(wxyz.startIndex, offsetBy: 2)
 		let end = wxyz.index(before: wxyz.endIndex)
 		// w(*x(y(z))*)
 		guard let (range, narrow, wide) =
@@ -418,7 +420,8 @@ class DirectSelection : XCTestCase {
 		XCTAssert(wide == c[0])
 	}
 	func testDirectedWxyz3() {
-		let start = wxyz.index(wxyz.startIndex, offsetBy: 3)
+		let indices = wxyz.indices
+		let start = indices.index(wxyz.startIndex, offsetBy: 3)
 		let end = wxyz.index(before: wxyz.endIndex)
 		// w(x*(y(z))*)
 		guard let (range, narrow, wide) =
@@ -427,14 +430,15 @@ class DirectSelection : XCTestCase {
 			return
 		}
 		// w(x(*y(z)*))
-		let l = wxyz.index(wxyz.startIndex, offsetBy: 4)
-		let r = wxyz.index(wxyz.endIndex, offsetBy: -2)
+		let l = indices.index(wxyz.startIndex, offsetBy: 4)
+		let r = indices.index(wxyz.endIndex, offsetBy: -2)
 		XCTAssert(range == l..<r)
 		XCTAssert(narrow == c[1])
 		XCTAssert(wide == c[0])
 	}
 	func testDirectedWxyz4() {
-		let start = wxyz.index(wxyz.startIndex, offsetBy: 4)
+		let indices = wxyz.indices
+		let start = indices.index(wxyz.startIndex, offsetBy: 4)
 		let end = wxyz.index(before: wxyz.endIndex)
 		// w(x(*y(z))*)
 		guard let (range, narrow, wide) =
@@ -444,13 +448,14 @@ class DirectSelection : XCTestCase {
 		}
 		// w(x(*y(z)*))
 		let l = start
-		let r = wxyz.index(wxyz.endIndex, offsetBy: -2)
+		let r = indices.index(wxyz.endIndex, offsetBy: -2)
 		XCTAssert(range == l..<r)
 		XCTAssert(narrow == c[1])
 		XCTAssert(wide == c[0])
 	}
 	func testDirectedWxyz5() {
-		let start = wxyz.index(wxyz.startIndex, offsetBy: 5)
+		let indices = wxyz.indices
+		let start = indices.index(wxyz.startIndex, offsetBy: 5)
 		let end = wxyz.index(before: wxyz.endIndex)
 		// w(x(y*(z))*)
 		guard let (range, narrow, wide) =
@@ -459,15 +464,16 @@ class DirectSelection : XCTestCase {
 			return
 		}
 		// w(x(y(*z*)))
-		let l = wxyz.index(wxyz.startIndex, offsetBy: 6)
-		let r = wxyz.index(wxyz.endIndex, offsetBy: -3)
+		let l = indices.index(wxyz.startIndex, offsetBy: 6)
+		let r = indices.index(wxyz.endIndex, offsetBy: -3)
 		XCTAssert(range == l..<r)
 		XCTAssert(narrow == c[2])
 		XCTAssert(wide == c[0])
 	}
 	func testDirectedWxyz6() {
-		let start = wxyz.index(wxyz.startIndex, offsetBy: 6)
-		let end = wxyz.index(wxyz.endIndex, offsetBy: -4)
+		let indices = wxyz.indices
+		let start = indices.index(wxyz.startIndex, offsetBy: 6)
+		let end = indices.index(wxyz.endIndex, offsetBy: -4)
 		// w(x(y(**z)))
 		guard let (range, narrow, wide) =
 		    try? wxyz.directedSelection(start..<end) else {
@@ -496,8 +502,9 @@ class DirectSelection : XCTestCase {
 		XCTAssert(wide == nil)
 	}
 	func testTightenPqrs1() {
-		let start = pqrs.index(pqrs.startIndex, offsetBy: 2)
-		let end = pqrs.index(pqrs.endIndex, offsetBy: -3)
+		let indices = pqrs.indices
+		let start = indices.index(pqrs.startIndex, offsetBy: 2)
+		let end = indices.index(pqrs.endIndex, offsetBy: -3)
 		// (p*(q)r)*(s)
 		guard let (range, lctlrs, rctlrs) =
 		    try? pqrs.tightenedSelection(start..<end) else {
@@ -506,14 +513,15 @@ class DirectSelection : XCTestCase {
 		}
 		// (p*(q)r*)(s)
 		let l = start
-		let r = pqrs.index(pqrs.endIndex, offsetBy: -4)
+		let r = indices.index(pqrs.endIndex, offsetBy: -4)
 		XCTAssert(range == l..<r)
 		XCTAssert(lctlrs[...] == c[..<1])
 		XCTAssert(rctlrs[...] == c[..<1])
 	}
 	func testDirectedPqrs1() {
-		let start = pqrs.index(pqrs.startIndex, offsetBy: 2)
-		let end = pqrs.index(pqrs.endIndex, offsetBy: -3)
+		let indices = pqrs.indices
+		let start = indices.index(pqrs.startIndex, offsetBy: 2)
+		let end = indices.index(pqrs.endIndex, offsetBy: -3)
 		// (p*(q)r)*(s)
 		guard let (range, narrow, wide) =
 		    try? pqrs.directedSelection(start..<end) else {
@@ -522,14 +530,15 @@ class DirectSelection : XCTestCase {
 		}
 		// (p*(q)r*)(s)
 		let l = start
-		let r = pqrs.index(pqrs.endIndex, offsetBy: -4)
+		let r = indices.index(pqrs.endIndex, offsetBy: -4)
 		XCTAssert(range == l..<r)
 		XCTAssert(narrow == c[0])
 		XCTAssert(wide == c[0])
 	}
 	func testDirectedPqrs2() {
-		let start = pqrs.index(pqrs.startIndex, offsetBy: 2)
-		let end = pqrs.index(pqrs.endIndex, offsetBy: -5)
+		let indices = pqrs.indices
+		let start = indices.index(pqrs.startIndex, offsetBy: 2)
+		let end = indices.index(pqrs.endIndex, offsetBy: -5)
 		// (p*(q)*r)(s)
 		guard let (range, narrow, wide) =
 		    try? pqrs.directedSelection(start..<end) else {
@@ -537,15 +546,16 @@ class DirectSelection : XCTestCase {
 			return
 		}
 		// (p(*q*)r)(s)
-		let l = pqrs.index(pqrs.startIndex, offsetBy: 3)
-		let r = pqrs.index(pqrs.endIndex, offsetBy: -6)
+		let l = indices.index(pqrs.startIndex, offsetBy: 3)
+		let r = indices.index(pqrs.endIndex, offsetBy: -6)
 		XCTAssert(range == l..<r)
 		XCTAssert(narrow == c[1])
 		XCTAssert(wide == c[0])
 	}
 	func testDirectedAbcdef1() {
-		let start = abcdef.index(abcdef.startIndex, offsetBy: 3)
-		let end = abcdef.index(abcdef.endIndex, offsetBy: -5)
+		let indices = abcdef.indices
+		let start = indices.index(abcdef.startIndex, offsetBy: 3)
+		let end = indices.index(abcdef.endIndex, offsetBy: -5)
 		// (()*(a)b(c*d)ef)
 		guard let (range, narrow, wide) =
 		    try? abcdef.directedSelection(start..<end) else {
@@ -558,8 +568,9 @@ class DirectSelection : XCTestCase {
 		XCTAssert(wide == c[0])
 	}
 	func testDirectedAbcdef2() {
-		let start = abcdef.index(abcdef.startIndex, offsetBy: 4)
-		let end = abcdef.index(abcdef.endIndex, offsetBy: -5)
+		let indices = abcdef.indices
+		let start = indices.index(abcdef.startIndex, offsetBy: 4)
+		let end = indices.index(abcdef.endIndex, offsetBy: -5)
 		// (()(*a)b(c*d)ef)
 		guard let (range, narrow, wide) =
 		    try? abcdef.directedSelection(start..<end) else {
@@ -567,15 +578,16 @@ class DirectSelection : XCTestCase {
 			return
 		}
 		// (()*(a)b(c*d)ef)
-		let l = abcdef.index(abcdef.startIndex, offsetBy: 3)
+		let l = indices.index(abcdef.startIndex, offsetBy: 3)
 		let r = end
 		XCTAssert(range == l..<r)
 		XCTAssert(narrow == c[0])
 		XCTAssert(wide == c[0])
 	}
 	func testDirectedAbcdef3() {
-		let start = abcdef.index(abcdef.startIndex, offsetBy: 5)
-		let end = abcdef.index(abcdef.endIndex, offsetBy: -5)
+		let indices = abcdef.indices
+		let start = indices.index(abcdef.startIndex, offsetBy: 5)
+		let end = indices.index(abcdef.endIndex, offsetBy: -5)
 		// (()(a*)b(c*d)ef)
 		guard let (range, narrow, wide) =
 		    try? abcdef.directedSelection(start..<end) else {
@@ -590,8 +602,9 @@ class DirectSelection : XCTestCase {
 		XCTAssert(wide == c[0])
 	}
 	func testDirectedAbcdef4() {
-		let start = abcdef.index(abcdef.startIndex, offsetBy: 2)
-		let end = abcdef.index(abcdef.endIndex, offsetBy: -5)
+		let indices = abcdef.indices
+		let start = indices.index(abcdef.startIndex, offsetBy: 2)
+		let end = indices.index(abcdef.endIndex, offsetBy: -5)
 		// ((*)(a)b(c*d)ef)
 		guard let (range, narrow, wide) =
 		    try? abcdef.directedSelection(start..<end) else {
@@ -599,15 +612,16 @@ class DirectSelection : XCTestCase {
 			return
 		}
 		// (*()(a)b(c*d)ef)
-		let l = abcdef.index(abcdef.startIndex, offsetBy: 1)
+		let l = indices.index(abcdef.startIndex, offsetBy: 1)
 		let r = end
 		XCTAssert(range == l..<r)
 		XCTAssert(narrow == c[0])
 		XCTAssert(wide == c[0])
 	}
 	func testDirectedAbcdef5() {
-		let start = abcdef.index(abcdef.startIndex, offsetBy: 2)
-		let end = abcdef.index(abcdef.endIndex, offsetBy: -4)
+		let indices = abcdef.indices
+		let start = indices.index(abcdef.startIndex, offsetBy: 2)
+		let end = indices.index(abcdef.endIndex, offsetBy: -4)
 		// ((*)(a)b(cd*)ef)
 		guard let (range, narrow, wide) =
 		    try? abcdef.directedSelection(start..<end) else {
@@ -615,8 +629,8 @@ class DirectSelection : XCTestCase {
 			return
 		}
 		// (*()(a)b(cd)*ef)
-		let l = abcdef.index(abcdef.startIndex, offsetBy: 1)
-		let r = abcdef.index(abcdef.endIndex, offsetBy: -3)
+		let l = indices.index(abcdef.startIndex, offsetBy: 1)
+		let r = indices.index(abcdef.endIndex, offsetBy: -3)
 		XCTAssert(range == l..<r)
 		XCTAssert(narrow == c[0])
 		XCTAssert(wide == c[0])
@@ -634,25 +648,30 @@ class IndexOffsetBy : XCTestCase {
 		        .zone(under: c[3], .text("cd")),
 			.text("ef")))
 	func testStart() {
-		XCTAssert(abcdef.index(abcdef.startIndex, offsetBy: 0) ==
+		let indices = abcdef.indices
+		XCTAssert(indices.index(abcdef.startIndex, offsetBy: 0) ==
 		          abcdef.startIndex)
 	}
 	func testEnd() {
-		XCTAssert(abcdef.index(abcdef.endIndex, offsetBy: 0) ==
+		let indices = abcdef.indices
+		XCTAssert(indices.index(abcdef.endIndex, offsetBy: 0) ==
 		          abcdef.endIndex)
 	}
 	func testStartToEnd() {
-		XCTAssert(abcdef.index(abcdef.startIndex, offsetBy: 14) ==
+		let indices = abcdef.indices
+		XCTAssert(indices.index(abcdef.startIndex, offsetBy: 14) ==
 		          abcdef.endIndex)
 	}
 	func testEndToStart() {
-		XCTAssert(abcdef.index(abcdef.endIndex, offsetBy: -14) ==
+		let indices = abcdef.indices
+		XCTAssert(indices.index(abcdef.endIndex, offsetBy: -14) ==
 		          abcdef.startIndex)
 	}
 	func testAll() {
+		let indices = abcdef.indices
 		for i in 0...14 {
-			let l = abcdef.index(abcdef.startIndex, offsetBy: i)
-			let r = abcdef.index(abcdef.endIndex, offsetBy: i - 14)
+			let l = indices.index(abcdef.startIndex, offsetBy: i)
+			let r = indices.index(abcdef.endIndex, offsetBy: i - 14)
 			XCTAssert(l == r)
 		}
 	}
@@ -1075,33 +1094,37 @@ class EmptyishRopeIndices : XCTestCase {
 		XCTAssert(empty.startIndex == empty.endIndex)
 	}
 	func testStartIndexOneEmptyZone() {
+		let indices = one.indices
 		XCTAssert(one.startIndex != one.endIndex)
 		XCTAssert(one.index(after: one.startIndex) != one.endIndex)
-		XCTAssert(one.index(one.startIndex, offsetBy: 2) ==
+		XCTAssert(indices.index(one.startIndex, offsetBy: 2) ==
 		    one.endIndex)
 	}
 	func testEndIndexOneEmptyZone() {
+		let indices = one.indices
 		XCTAssert(one.index(before: one.endIndex) != one.startIndex)
-		XCTAssert(one.index(one.endIndex, offsetBy: -2) ==
+		XCTAssert(indices.index(one.endIndex, offsetBy: -2) ==
 		    one.startIndex)
 	}
 	func testStartIndexTwoEmptyZones() {
 		XCTAssert(two.startIndex != two.endIndex)
+		let indices = two.indices
 		XCTAssert(two.index(after: two.startIndex) != two.endIndex)
-		XCTAssert(two.index(two.startIndex, offsetBy: 2) !=
+		XCTAssert(indices.index(two.startIndex, offsetBy: 2) !=
 		    two.endIndex)
-		XCTAssert(two.index(two.startIndex, offsetBy: 3) !=
+		XCTAssert(indices.index(two.startIndex, offsetBy: 3) !=
 		    two.endIndex)
-		XCTAssert(two.index(two.startIndex, offsetBy: 4) ==
+		XCTAssert(indices.index(two.startIndex, offsetBy: 4) ==
 		    two.endIndex)
 	}
 	func testEndIndexTwoEmptyZones() {
+		let indices = two.indices
 		XCTAssert(two.index(before: two.endIndex) != two.startIndex)
-		XCTAssert(two.index(two.endIndex, offsetBy: -2) !=
+		XCTAssert(indices.index(two.endIndex, offsetBy: -2) !=
 		    two.startIndex)
-		XCTAssert(two.index(two.endIndex, offsetBy: -3) !=
+		XCTAssert(indices.index(two.endIndex, offsetBy: -3) !=
 		    two.startIndex)
-		XCTAssert(two.index(two.endIndex, offsetBy: -4) ==
+		XCTAssert(indices.index(two.endIndex, offsetBy: -4) ==
 		    two.startIndex)
 	}
 }
@@ -1257,11 +1280,13 @@ class LookupUsingRopeIndicesDerivedFromUTF16Offsets: XCTestCase {
 	lazy var r: RSS  = Rope(with:
 	    .zone(under: ctlr, .text("abc")),
 		   .text("def"))
+	lazy var nests = r.nests
 	func testIterateElements() {
+		let nests = r.nests
 		for (i, expected) in expectations.enumerated() {
 			let ofs = Offset(of: i)
 			let idx = RSS.Index(unitOffset: ofs, in: r)
-			let found = r[idx]
+			let found = nests[idx]
 			XCTAssert(found == expected,
 			    "found \(found) expected \(expected)")
 		}
@@ -1269,7 +1294,7 @@ class LookupUsingRopeIndicesDerivedFromUTF16Offsets: XCTestCase {
 	func testEndIndex() {
 		let ofs = Offset(of: expectations.count)
 		let idx = RSS.Index(unitOffset: ofs, in: r)
-		XCTAssertThrowsError(try r.element(at: idx))
+		XCTAssertThrowsError(try nests.element(at: idx))
 	}
 }
 
@@ -1287,11 +1312,12 @@ class ZoneElementLookupUsingRopeIndices: XCTestCase {
 	lazy var r: RSS = Rope(with:
 	    .nodes(.zone(under: ctlr, .text("abc")),
 		   .text("def")))
+	lazy var nests = r.nests
 	func testElementsCount() {
-		XCTAssert(r.count == expectations.count)
+		XCTAssert(nests.count == expectations.count)
 	}
 	func testIterateElements() {
-		for (found, expected) in zip(r, expectations) {
+		for (found, expected) in zip(nests, expectations) {
 			XCTAssert(found == expected)
 		}
 	}
@@ -1300,7 +1326,7 @@ class ZoneElementLookupUsingRopeIndices: XCTestCase {
 	}
 	func testLookupByIndices() {
 		for (idx, expected) in zip(r.indices, expectations) {
-			let found = r[idx]
+			let found = nests[idx]
 			XCTAssert(found == expected)
 		}
 	}
@@ -1330,32 +1356,34 @@ class ZoneElementLookupUsingRopeIndices: XCTestCase {
 	}
 	func testEndIndices() {
 		let idx = r.endIndex
-		XCTAssertThrowsError(try r.element(at: idx))
+		XCTAssertThrowsError(try nests.element(at: idx))
 	}
 }
 
 class BasicElementLookupUsingRopeIndex: XCTestCase {
 	let rope1: RSS = Rope(content: "abc")
 	let rope2: RSS = Rope(content: "def")
+	lazy var nests1 = rope1.nests
+	lazy var nests2 = rope2.nests
 	func testStartIndex() {
 		let idx1 = rope1.startIndex
 		let idx2 = rope2.startIndex
-		XCTAssert(rope1[idx1].content == "a")
-		XCTAssert(rope2[idx2].content == "d")
+		XCTAssert(nests1[idx1].content == "a")
+		XCTAssert(nests2[idx2].content == "d")
 	}
 	func testSecondIndex() {
 		let idx1 = rope1.index(after: rope1.startIndex)
 		let idx2 = rope2.index(after: rope2.startIndex)
-		XCTAssert(rope1[idx1].content == "b")
-		XCTAssert(rope2[idx2].content == "e")
+		XCTAssert(nests1[idx1].content == "b")
+		XCTAssert(nests2[idx2].content == "e")
 	}
 	func testThirdIndex() {
 		let idx1 = rope1.index(after:
 		           rope1.index(after: rope1.startIndex))
 		let idx2 = rope2.index(after:
 		           rope2.index(after: rope2.startIndex))
-		XCTAssert(rope1[idx1].content == "c")
-		XCTAssert(rope2[idx2].content == "f")
+		XCTAssert(nests1[idx1].content == "c")
+		XCTAssert(nests2[idx2].content == "f")
 		XCTAssert(rope1.index(after: idx1) == rope1.endIndex)
 		XCTAssert(rope2.index(after: idx2) == rope2.endIndex)
 	}
@@ -1366,8 +1394,8 @@ class BasicElementLookupUsingRopeIndex: XCTestCase {
 		let idx2 = rope2.index(before:
 		           rope2.index(before:
 			   rope2.index(before: rope2.endIndex)))
-		XCTAssert(rope1[idx1].content == "a")
-		XCTAssert(rope2[idx2].content == "d")
+		XCTAssert(nests1[idx1].content == "a")
+		XCTAssert(nests2[idx2].content == "d")
 		XCTAssert(idx1 == rope1.startIndex)
 		XCTAssert(idx2 == rope2.startIndex)
 	}
@@ -1376,22 +1404,22 @@ class BasicElementLookupUsingRopeIndex: XCTestCase {
 		           rope1.index(before: rope1.endIndex))
 		let idx2 = rope2.index(before:
 		           rope2.index(before: rope2.endIndex))
-		XCTAssert(rope1[idx1].content == "b")
-		XCTAssert(rope2[idx2].content == "e")
+		XCTAssert(nests1[idx1].content == "b")
+		XCTAssert(nests2[idx2].content == "e")
 	}
 	func testOneLeftOfEndIndex() {
 		let idx1 = rope1.index(before: rope1.endIndex)
 		let idx2 = rope2.index(before: rope2.endIndex)
-		XCTAssert(rope1[idx1].content == "c")
-		XCTAssert(rope2[idx2].content == "f")
+		XCTAssert(nests1[idx1].content == "c")
+		XCTAssert(nests2[idx2].content == "f")
 		XCTAssert(rope1.index(after: idx1) == rope1.endIndex)
 		XCTAssert(rope2.index(after: idx2) == rope2.endIndex)
 	}
 	func testEndIndex() {
 		let idx1 = rope1.endIndex
 		let idx2 = rope2.endIndex
-		XCTAssertThrowsError(try rope1.element(at: idx1))
-		XCTAssertThrowsError(try rope2.element(at: idx2))
+		XCTAssertThrowsError(try nests1.element(at: idx1))
+		XCTAssertThrowsError(try nests2.element(at: idx2))
 	}
 }
 
@@ -1974,8 +2002,9 @@ class TightenSelection: NestedZoneBase {
 	}
 	public func testBothTighten2() {
 		// (abc*(def(ghi))*)
-		let start = rope.index(rope.startIndex, offsetBy: 4)
-		let end = rope.index(rope.endIndex, offsetBy: -1)
+		let indices = rope.indices
+		let start = indices.index(rope.startIndex, offsetBy: 4)
+		let end = indices.index(rope.endIndex, offsetBy: -1)
 		let outer = start..<end
 		let result = try? rope.tightenedSelection(outer)
 		guard let (tightened, lctlrs, rctlrs) = result else {
@@ -1983,17 +2012,18 @@ class TightenSelection: NestedZoneBase {
 			    "expected non-nil .tightenedSelection()")
 			return
 		}
-		let l = rope.index(rope.startIndex, offsetBy: 5)
-		let r = rope.index(rope.endIndex, offsetBy: -2)
+		let l = indices.index(rope.startIndex, offsetBy: 5)
+		let r = indices.index(rope.endIndex, offsetBy: -2)
 		// (abc(*def(ghi)*))
 		XCTAssert(tightened == l..<r)
 		XCTAssert(lctlrs[...] == c[..<2])
 		XCTAssert(rctlrs[...] == c[..<2])
 	}
 	public func testBothTighten3() {
+		let indices = rope.indices
 		// (abc(def*(ghi)*))
-		let start = rope.index(rope.startIndex, offsetBy: 8)
-		let end = rope.index(rope.endIndex, offsetBy: -2)
+		let start = indices.index(rope.startIndex, offsetBy: 8)
+		let end = indices.index(rope.endIndex, offsetBy: -2)
 		let outer = start..<end
 		let result = try? rope.tightenedSelection(outer)
 		guard let (tightened, lctlrs, rctlrs) = result else {
@@ -2001,8 +2031,8 @@ class TightenSelection: NestedZoneBase {
 			    "expected non-nil .tightenedSelection()")
 			return
 		}
-		let l = rope.index(rope.startIndex, offsetBy: 9)
-		let r = rope.index(rope.endIndex, offsetBy: -3)
+		let l = indices.index(rope.startIndex, offsetBy: 9)
+		let r = indices.index(rope.endIndex, offsetBy: -3)
 		// (abc(def(*ghi*)))
 		XCTAssert(tightened == l..<r)
 		XCTAssert(lctlrs == c)
@@ -2027,9 +2057,10 @@ class TightenSelection: NestedZoneBase {
 	 *   (abc(def(ghi)))*
 	 */
 	public func testLeftTighten1() {
+		let indices = rope.indices
 		// *(abc(def(ghi))*)
 		let start = rope.startIndex
-		let end = rope.index(rope.endIndex, offsetBy: -1)
+		let end = indices.index(rope.endIndex, offsetBy: -1)
 		let outer = start..<end
 		let result = try? rope.tightenedSelection(outer)
 		guard let (tightened, lctlrs, rctlrs) = result else {
@@ -2037,16 +2068,17 @@ class TightenSelection: NestedZoneBase {
 			    "expected non-nil .tightenedSelection()")
 			return
 		}
-		let l = rope.index(rope.startIndex, offsetBy: 1)
-		let r = rope.index(rope.endIndex, offsetBy: -1)
+		let l = indices.index(rope.startIndex, offsetBy: 1)
+		let r = indices.index(rope.endIndex, offsetBy: -1)
 		// (*abc(def(ghi))*)
 		XCTAssert(tightened == l..<r)
 		XCTAssert(lctlrs[...] == c[..<1])
 		XCTAssert(rctlrs[...] == c[..<1])
 	}
 	public func testRightTighten1() {
+		let indices = rope.indices
 		// (*abc(def(ghi)))*
-		let start = rope.index(rope.startIndex, offsetBy: 1)
+		let start = indices.index(rope.startIndex, offsetBy: 1)
 		let end = rope.endIndex
 		let outer = start..<end
 		let result = try? rope.tightenedSelection(outer)
@@ -2056,16 +2088,17 @@ class TightenSelection: NestedZoneBase {
 			return
 		}
 		let l = start
-		let r = rope.index(rope.endIndex, offsetBy: -1)
+		let r = indices.index(rope.endIndex, offsetBy: -1)
 		// (*abc(def(ghi))*)
 		XCTAssert(tightened == l..<r)
 		XCTAssert(lctlrs[...] == c[..<1])
 		XCTAssert(rctlrs[...] == c[..<1])
 	}
 	public func testUntightenable1() {
+		let indices = rope.indices
 		// (*abc(def(ghi))*)
-		let start = rope.index(rope.startIndex, offsetBy: 1)
-		let end = rope.index(rope.endIndex, offsetBy: -1)
+		let start = indices.index(rope.startIndex, offsetBy: 1)
+		let end = indices.index(rope.endIndex, offsetBy: -1)
 		let outer = start..<end
 		let result = try? rope.tightenedSelection(outer)
 		guard let (tightened, lctlrs, rctlrs) = result else {
@@ -2082,11 +2115,12 @@ class TightenSelection: NestedZoneBase {
 
 class CompareIndicesAndEndComplicatedRopes: NestedZoneBase {
 	func testEquals() {
+		let indices = rope.indices
 		XCTAssert(
 		    rope.index(after: rope.index(before: rope.endIndex)) ==
 		    rope.endIndex)
 		XCTAssert(
-		    rope.index(rope.index(rope.endIndex, offsetBy: -2),
+		    indices.index(indices.index(rope.endIndex, offsetBy: -2),
 		               offsetBy: 2) == rope.endIndex)
 	}
 	/* Delete right of index(pqrs.endIndex, offsetBy: n < 0): an interior
@@ -2095,7 +2129,8 @@ class CompareIndicesAndEndComplicatedRopes: NestedZoneBase {
 	 */
 	func testEdits() {
 		let pqrs = RSS(content: "pqrs")
-		let idx = pqrs.index(pqrs.endIndex, offsetBy: -2)
+		let indices = pqrs.indices
+		let idx = indices.index(pqrs.endIndex, offsetBy: -2)
 		let range = Offset.unitRange(2..<4)
 		/* Unfortunately, the following removes the .index(_) node
 		 * corresponding to `idx`:
@@ -2107,12 +2142,13 @@ class CompareIndicesAndEndComplicatedRopes: NestedZoneBase {
 
 class CompareIndicesAndStartComplicatedRopes: NestedZoneBase {
 	func testEquals() {
+		let ixs = rope.indices
 		XCTAssert(
-		    rope.index(before: rope.index(after: rope.startIndex)) ==
-		    rope.startIndex)
+		    ixs.index(before: ixs.index(after: ixs.startIndex)) ==
+		    ixs.startIndex)
 		XCTAssert(
-		    rope.index(rope.index(rope.startIndex, offsetBy: 2),
-		               offsetBy: -2) == rope.startIndex)
+		    ixs.index(ixs.index(ixs.startIndex, offsetBy: 2),
+		              offsetBy: -2) == ixs.startIndex)
 	}
 	/* Delete left of index(pqrs.startIndex, offsetBy: n > 0): an interior
 	 * index is no longer interior if the content to its left was
@@ -2120,7 +2156,8 @@ class CompareIndicesAndStartComplicatedRopes: NestedZoneBase {
 	 */
 	func testEdits() {
 		let pqrs = RSS(content: "pqrs")
-		let idx = pqrs.index(pqrs.startIndex, offsetBy: 2)
+		let indices = pqrs.indices
+		let idx = indices.index(pqrs.startIndex, offsetBy: 2)
 		let range = Offset.unitRange(0..<2)
 		/* Unfortunately, the following removes the .index(_) node
 		 * corresponding to `idx`:
@@ -2150,24 +2187,25 @@ class CompareDisparateIndicesComplicatedRopes: NestedZoneBase {
 	 *   (abc(def(ghi)))*
 	 */
 	func testEquals() {
-		XCTAssert(rope.index(before: rope.endIndex) ==
-		    rope.index(rope.endIndex, offsetBy: -1))
+		let ixs = rope.indices
+		XCTAssert(ixs.index(before: ixs.endIndex) ==
+		    ixs.index(ixs.endIndex, offsetBy: -1))
 		XCTAssert(
-		    rope.index(before: rope.index(before: rope.endIndex)) ==
-		    rope.index(rope.endIndex, offsetBy: -2))
-		XCTAssert(rope.index(before: rope.endIndex) ==
-		    rope.index(rope.startIndex, offsetBy: 14))
-		XCTAssert(rope.index(after: rope.startIndex) ==
-		    rope.index(rope.endIndex, offsetBy: -14))
-		let n = rope.indices.count + 1
+		    ixs.index(before: ixs.index(before: ixs.endIndex)) ==
+		    ixs.index(ixs.endIndex, offsetBy: -2))
+		XCTAssert(ixs.index(before: ixs.endIndex) ==
+		    ixs.index(ixs.startIndex, offsetBy: 14))
+		XCTAssert(ixs.index(after: ixs.startIndex) ==
+		    ixs.index(ixs.endIndex, offsetBy: -14))
+		let n = ixs.count + 1
 		/* Test 3 times.  Each test leaves stale indices behind
 		 * that should confound defective index comparison.
 		 */
 		for _ in 0..<3 {
 			for step in 0..<n {
-				let i1 = rope.index(rope.startIndex,
-				                    offsetBy: step)
-				let i2 = rope.index(rope.endIndex,
+				let i1 = ixs.index(ixs.startIndex,
+				                   offsetBy: step)
+				let i2 = ixs.index(ixs.endIndex,
 				    offsetBy: step - (n - 1))
 				XCTAssert(i1 == i2)
 			}
@@ -2178,8 +2216,9 @@ class CompareDisparateIndicesComplicatedRopes: NestedZoneBase {
 		 * that should confound defective index comparison.
 		 */
 		for _ in 0..<3 {
+			let ixs = rope.indices
 			let numberedIndices =
-			    (rope.indices + [rope.endIndex]).enumerated()
+			    (ixs.indices + [rope.endIndex]).enumerated()
 			for ((n1, idx1), (n2, idx2)) in
 			    numberedIndices ⨯ numberedIndices {
 				XCTAssert((n1 == n2) && (idx1 == idx2) ||
