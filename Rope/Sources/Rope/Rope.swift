@@ -752,14 +752,14 @@ extension Rope {
 }
 
 /*
-extension Rope : ExpressibleByStringLiteral,
-    ExpressibleByExtendedGraphemeClusterLiteral where
+extension Rope : ExpressibleByStringLiteral where
     Rope.Content : ExpressibleByStringLiteral {
-	public init(stringLiteral s: S) {
-		top = Rope.Node(content: s)
+	public convenience init<S>(stringLiteral s: S) where S : ExpressibleByStringLiteral {
+		self = Rope(content: Rope.Content(s))
 	}
 }
 */
+
 extension RopeOffsetDelegate {
 	func indicateAttributeChanges<T>(
 	    on range: Range<Rope<T>.Offset>,

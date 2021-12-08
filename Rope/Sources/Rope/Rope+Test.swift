@@ -14,7 +14,7 @@ extension Rope {
 	}
 /*
 	subscript(i: Offset) -> Content.Element {
-		return top.element(at: i)
+		return node.element(at: i)
 	}
 */
 }
