@@ -160,6 +160,7 @@ class BoundaryIndexComparisons : XCTestCase {
 		XCTAssert(text.startIndex < text.endIndex)
 	}
 }
+
 class HasSingleIndex : XCTestCase {
 	let c = [RWZC(), RWZC(), RWZC()]
 	let l = Array<Label>((0..<3).map { _ in Label() })
