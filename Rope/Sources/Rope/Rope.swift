@@ -81,26 +81,14 @@ extension Rope.Node.Offset {
  *
  * Get/set/add/remove attributes on characters.
  *
- * Get/set/add/remove attributes on a cursor.
- *
  * Enclose a range in a zone.  The range must be
  * well-formed: must begin and end inside the same zone.
  *
- * Insert a cursor between characters or nested between zones.
+ * "Step" an index left or right by a character.
  *
- * Remove a cursor.
+ * "Scoot" an index left or right by a zone boundary.
  *
- * "Step" a cursor left or right by a character.
- *
- * "Scoot" a cursor left or right by a zone boundary.
- *
- * "Scoot" a cursor left or right by a cursor?
- *
- * Replace a cursor by a zone; apply the cursor's attributes to
- * the zone's content.
- *
- * Insert some text left of a cursor; apply the cursor's attributes
- * to the text.
+ * "Scoot" an index left or right by a label.
  */
 public class Rope<C : Content> {
 	public enum Climb {
@@ -168,11 +156,11 @@ public class Rope<C : Content> {
 		}
 	}
 
-	/* A Node directly encodes the presence of cursors because it is
-	 * possible for a cursor to move up and down the hierarchy of text
-	 * zones without changing between-character positions.  A cursor
+	/* A Node directly encodes the presence of indices because it is
+	 * possible for an index to move up and down the hierarchy of text
+	 * zones without changing between-character positions.  An index
 	 * can appear at the position left of the first character or right of
-	 * the last character in a Node.  A cursor can also appear in a
+	 * the last character in a Node.  An index can also appear in a
 	 * Node that contains no characters.
 	 */
 	public indirect enum Node {
@@ -181,7 +169,6 @@ public class Rope<C : Content> {
 	public enum Offset {
 		case offset(Int)
 	}
-	case cursor(Label, Attributes)
 	case index(Weak<Label>)
 	case zone(ZoneController, Node)
 	case concat(Node, Offset, UInt, LabelSet, Node, Dimensions)
