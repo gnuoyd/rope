@@ -289,11 +289,8 @@ class ConstructEmbeddedSelections : XCTestCase {
 			        text.prefix(innerLast).dropFirst(innerFirst),
 			    tail: text.dropFirst(innerLast))
 
-			let outer = Offset.unitRange(
-			    text.unitRange(for: outerParts.middle))
-
-			let inner = Offset.unitRange(
-			        text.unitRange(for: innerParts.middle))
+			let outer = text.unitRange(for: outerParts.middle)
+			let inner = text.unitRange(for: innerParts.middle)
 
 			let outerRange = Range(outer, in: pqrstu)
 			let innerRange = Range(inner, in: pqrstu)
@@ -1689,7 +1686,7 @@ class NodeAttributes : XCTestCase {
 		XCTAssert(range == Offset.unitRange(8..<12))
 	}
 	func testSettingFrontAndMiddleAttributes() {
-		let ir = Range(Offset.unitRange(0..<8), in: rope)
+		let ir = Range(0..<8, in: rope)
 		XCTAssertNoThrow { [rope] in
 			let newn = try rope.node.settingAttributes(
 			    NodeAttributes.newAttrs, range: ir)
@@ -1702,7 +1699,7 @@ class NodeAttributes : XCTestCase {
 		}
 	}
 	static func helpTestSettingCentralAttributes(_ oldr: RSS) {
-		let ir = Range(Offset.unitRange(2..<9), in: oldr)
+		let ir = Range(2..<9, in: oldr)
 		XCTAssertNoThrow { [oldr] in
 			let newn = try oldr.node.settingAttributes(
 			    NodeAttributes.newAttrs, range: ir)
@@ -1739,7 +1736,7 @@ class NodeAttributes : XCTestCase {
 		NodeAttributes.helpTestSettingCentralAttributes(contained)
 	}
 	func testSettingBackAttributes() {
-		let ir = Range(Offset.unitRange(8..<12), in: rope)
+		let ir = Range(8..<12, in: rope)
 		XCTAssertNoThrow { [self] in
 			let newn = try rope.node.settingAttributes(
 			    NodeAttributes.newAttrs, range: ir)
@@ -1752,7 +1749,7 @@ class NodeAttributes : XCTestCase {
 		}
 	}
 	func testSettingLastAttributes() {
-		let ir = Range(Offset.unitRange(11..<12), in: rope)
+		let ir = Range(11..<12, in: rope)
 		XCTAssertNoThrow { [rope] in
 			let newn = try rope.node.settingAttributes(
 			    NodeAttributes.newAttrs, range: ir)
@@ -2131,11 +2128,9 @@ class CompareIndicesAndEndComplicatedRopes: NestedZoneBase {
 		let pqrs = RSS(content: "pqrs")
 		let indices = pqrs.indices
 		let idx = indices.index(pqrs.endIndex, offsetBy: -2)
-		let range = Offset.unitRange(2..<4)
-		/* Unfortunately, the following removes the .index(_) node
-		 * corresponding to `idx`:
-		 */
-		pqrs[range] = Substring("")
+		let undoList = ChangeList<RSS>()
+		try! pqrs.replace(Range(2..<4, in: pqrs), with: Substring(""),
+		    undoList: undoList)
 		XCTAssert(idx == pqrs.endIndex)
 	}
 }
@@ -2158,11 +2153,9 @@ class CompareIndicesAndStartComplicatedRopes: NestedZoneBase {
 		let pqrs = RSS(content: "pqrs")
 		let indices = pqrs.indices
 		let idx = indices.index(pqrs.startIndex, offsetBy: 2)
-		let range = Offset.unitRange(0..<2)
-		/* Unfortunately, the following removes the .index(_) node
-		 * corresponding to `idx`:
-		 */
-		pqrs[range] = Substring("")
+		let undoList = ChangeList<RSS>()
+		try! pqrs.replace(Range(0..<2, in: pqrs), with: Substring(""),
+		    undoList: undoList)
 		XCTAssert(idx == pqrs.startIndex)
 	}
 }
@@ -2274,9 +2267,7 @@ class UndoRedo : XCTestCase {
 		// nibble away at the 5th paragraph unit by unit starting
 		// at the front
 		for _ in 0..<paragraphLength {
-			let ir = Range(
-			    Offset.unitRange(offset..<offset+1),
-			    in: rope)
+			let ir = Range(offset..<offset+1, in: rope)
 
 			contentHistory.append(rope.node.content)
 			changes = ChangeList<RSS>()
@@ -2455,7 +2446,7 @@ class ZoneReplacementsBase : XCTestCase {
 			let tree = ro ? innerRO : innerRW
 			let rope: RSS = Rope(with: tree)
 			let range = start..<(start + width)
-			let ir = Range(Offset.unitRange(range), in: rope)
+			let ir = Range(range, in: rope)
 			let overlaps = range.overlaps(3...7)
 			let fails = ro && overlaps
 			let assert = Self.functionAssertingThrows(iff: fails)
@@ -2484,7 +2475,7 @@ class ZoneReplacementsBase : XCTestCase {
 			let tree = ro ? outerRO : outerRW
 			let rope: RSS = Rope(with: tree)
 			let range = start..<(start + width)
-			let ir = Range(Offset.unitRange(range), in: rope)
+			let ir = Range(range, in: rope)
 			let overlaps = range.overlaps(0...2) ||
 			               range.overlaps(8...10)
 			let fails = ro && overlaps
@@ -2510,7 +2501,7 @@ class ZoneReplacementsBase : XCTestCase {
 		for (before, range, replacement, expected, _) in
 		    beforeAfterCombos {
 			let rope: RSS = Rope(with: before)
-			let ir = Range(Offset.unitRange(range), in: rope)
+			let ir = Range(range, in: rope)
 			guard let after = try? rope.node.replacing(
 			    after: ir.lowerBound.label,
 			    upTo: ir.upperBound.label,
@@ -2541,7 +2532,9 @@ class ZoneReplacementsBase : XCTestCase {
 				change.range = range
 				change.changeInLength = delta
 				}, attributesDidChange: { _ in return })
-			rope[Offset.unitRange(range)] = replacement
+			let undoList = ChangeList<RSS>()
+			try! rope.replace(Range(range, in: rope),
+			    with: replacement, undoList: undoList)
 			XCTAssert(changeInLength == change.changeInLength,
 			    "\(changeInLength ) !~ \(change.changeInLength)")
 		}

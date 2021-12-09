@@ -8,6 +8,14 @@ case onInterior
 }
 
 extension Range {
+	public init<C : Content>(_ r: Range<Int>,
+	                   in rope: Rope<C>) where Bound == Rope<C>.Index {
+		self.init(Rope<C>.Node.Offset.unitRange(r), in: rope)
+	}
+	public init<C : Content>(_ r: NSRange,
+	                   in rope: Rope<C>) where Bound == Rope<C>.Index {
+		self.init(Rope<C>.Node.Offset.unitRange(r), in: rope)
+	}
 	public init<C : Content>(_ r: Range<Rope<C>.Node.Offset>,
 	                   in rope: Rope<C>) where Bound == Rope<C>.Index {
 		let lower = Rope.Index(abutting: r.lowerBound, on: .right,

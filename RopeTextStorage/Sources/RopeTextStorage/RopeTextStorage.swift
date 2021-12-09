@@ -66,7 +66,7 @@ public class RopeTextStorage: NSTextStorage {
 	    with str: String) {
 		performEditing() {
 			let undoList = ChangeList<Backing>()
-			try! backing.replace(Offset.unitRange(range),
+			try! backing.replace(Range(range, in: backing),
 			    with: Content(str.utf16[...]),
 			    undoList: undoList)
 		}
