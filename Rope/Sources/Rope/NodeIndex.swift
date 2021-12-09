@@ -14,10 +14,6 @@ extension Rope.Node.Offset {
 		let upper = Self(of: range.upperBound)
 		return lower..<upper
 	}
-	public static func unitRangeTo(_ upperBound: Int) -> Range<Self> {
-		let upper = Self(of: upperBound)
-		return 0..<upper
-	}
 	public static func +(_ l: Self, _ r: Self) -> Self {
 		return Self(of: l.unitOffset + r.unitOffset)
 	}

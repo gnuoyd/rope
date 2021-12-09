@@ -1671,7 +1671,7 @@ class NodeAttributes : XCTestCase {
 	func testFrontAttributes() {
 		let (attrs, range) = n.attributes(at: 0)
 		XCTAssert(Self.frontAttrs ~ attrs)
-		XCTAssert(range == Offset.unitRangeTo(3))
+		XCTAssert(range == Offset.unitRange(0..<3))
 	}
 	func testMiddleAttributes() {
 		let (attrs, range) = n.attributes(at: Offset(of: 3))
