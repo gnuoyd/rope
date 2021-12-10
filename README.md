@@ -14,11 +14,11 @@ zone: a rope may contain zero or more nested spans called zones.
     modifies and performs or suppresses rope insertions, deletions, et
     cetera, that overlap the zone.
 
-step: from the exterior of an zone to its interior, from the interior of
-  an zone to its exterior, and across one UTF-16 code unit is one step
+step: from the exterior of a zone to its interior, from the interior of
+  a zone to its exterior, and across one UTF-16 code unit is one step
 
-index: a labeled entity embedded in a rope, or an `Rope.Index struct`
-  identifying to such an entity by its label.
+index: a labeled entity embedded in a rope, or a `struct Rope.Index`
+  identifying such an entity by its label.
 
   adjacent: two indices are adjacent if no *steps* separate them
   alias: two indices *alias* one another if they are adjacent
