@@ -913,9 +913,7 @@ class UTF16IndexedControllerPaths: XCTestCase {
 	     [c[0], c[1], c[2]],
 	     [c[0], c[1], c[2]],
 	     [c[0], c[1], c[2]]]
-	let indices: [Offset] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map { i in
-	    Offset(of: i)
-	}
+	let indices: [Offset] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 	func testControllerPaths() {
 		for (i, expected) in zip(indices, expectations) {
 			XCTAssert(tree.zonesEnclosing(i) == expected)
@@ -1258,9 +1256,8 @@ class ConvertIndicesToUTF16Offsets : XCTestCase {
 		    "expectations.count \(expectations.count) != r.indices.count \(r.indices.count + 1)")
 		for (index, expectation) in zip(r.indices + [r.endIndex],
 			                        expectations) {
-			XCTAssert(try Offset(of: expectation) ==
-			              r.offset(of: index),
-				      "Offset(of: \(expectation)) != r.offset(of: \(index))")
+			XCTAssert(try expectation == r.offset(of: index),
+			          "\(expectation) != r.offset(of: \(index))")
 		}
 	}
 }
@@ -1281,7 +1278,7 @@ class LookupUsingRopeIndicesDerivedFromUTF16Offsets: XCTestCase {
 	func testIterateElements() {
 		let nests = r.nests
 		for (i, expected) in expectations.enumerated() {
-			let ofs = Offset(of: i)
+			let ofs = i
 			let idx = RSS.Index(unitOffset: ofs, in: r)
 			let found = nests[idx]
 			XCTAssert(found == expected,
@@ -1289,7 +1286,7 @@ class LookupUsingRopeIndicesDerivedFromUTF16Offsets: XCTestCase {
 		}
 	}
 	func testEndIndex() {
-		let ofs = Offset(of: expectations.count)
+		let ofs = expectations.count
 		let idx = RSS.Index(unitOffset: ofs, in: r)
 		XCTAssertThrowsError(try nests.element(at: idx))
 	}
@@ -1613,30 +1610,27 @@ class NodeSubropes : XCTestCase {
 	}
 
 	func testLeadingSubnode() {
-		let section = n.subrope(from: 0, upTo: Offset(of: 3))
+		let section = n.subrope(from: 0, upTo: 3)
 		XCTAssert(section.content == "abc")
 	}
 
 	func testCrossingFirstTwoSubnodes() {
-		let section = n.subrope(from: 0, upTo: Offset(of: 5))
+		let section = n.subrope(from: 0, upTo: 5)
 		XCTAssert(section.content == "abcde")
 	}
 
 	func testSecondSubnode() {
-		let section = n.subrope(from: Offset(of: 3),
-                                        upTo: Offset(of: 8))
+		let section = n.subrope(from: 3, upTo: 8)
 		XCTAssert(section.content == "defgh")
 	}
 
 	func testTrailingTwoSubnodes() {
-		let section = n.subrope(from: Offset(of: 3),
-		                        upTo: Offset(of: 12))
+		let section = n.subrope(from: 3, upTo: 12)
 		XCTAssert(section.content == "defghijkl")
 	}
 
 	func testCrossingLastTwoSubnodes() {
-		let section = n.subrope(from: Offset(of: 4),
-		                        upTo: Offset(of: 9))
+		let section = n.subrope(from: 4, upTo: 9)
 		XCTAssert(section.content == "efghi")
 	}
 }
@@ -1668,22 +1662,22 @@ class NodeAttributes : XCTestCase {
 	func testFrontAttributes() {
 		let (attrs, range) = n.attributes(at: 0)
 		XCTAssert(Self.frontAttrs ~ attrs)
-		XCTAssert(range == Offset.unitRange(0..<3))
+		XCTAssert(range == 0..<3)
 	}
 	func testMiddleAttributes() {
-		let (attrs, range) = n.attributes(at: Offset(of: 3))
+		let (attrs, range) = n.attributes(at: 3)
 		XCTAssert(Self.middleAttrs ~ attrs)
-		XCTAssert(range == Offset.unitRange(3..<8))
+		XCTAssert(range == 3..<8)
 	}
 	func testBackAttributes() {
-		let (attrs, range) = n.attributes(at: Offset(of: 8))
+		let (attrs, range) = n.attributes(at: 8)
 		XCTAssert(Self.backAttrs ~ attrs)
-		XCTAssert(range == Offset.unitRange(8..<12))
+		XCTAssert(range == 8..<12)
 	}
 	func testLastAttributes() {
-		let (attrs, range) = n.attributes(at: Offset(of: 11))
+		let (attrs, range) = n.attributes(at: 11)
 		XCTAssert(Self.backAttrs ~ attrs)
-		XCTAssert(range == Offset.unitRange(8..<12))
+		XCTAssert(range == 8..<12)
 	}
 	func testSettingFrontAndMiddleAttributes() {
 		let ir = Range(0..<8, in: rope)
@@ -1692,10 +1686,9 @@ class NodeAttributes : XCTestCase {
 			    NodeAttributes.newAttrs, range: ir)
 			let (attrs, frontRange) = newn.attributes(at: 0)
 			XCTAssert(Self.newAttrs ~ attrs)
-			XCTAssert(frontRange == Offset.unitRange(0..<3))
-			let (_, middleRange) =
-			    newn.attributes(at: Offset(of: 3))
-			XCTAssert(middleRange == Offset.unitRange(3..<8))
+			XCTAssert(frontRange == 0..<3)
+			let (_, middleRange) = newn.attributes(at: 3)
+			XCTAssert(middleRange == 3..<8)
 		}
 	}
 	static func helpTestSettingCentralAttributes(_ oldr: RSS) {
@@ -1705,27 +1698,23 @@ class NodeAttributes : XCTestCase {
 			    NodeAttributes.newAttrs, range: ir)
 
 			let (frontAttrs, frontRange) = newn.attributes(at: 0)
-			XCTAssert(frontRange == Offset.unitRange(0..<2))
+			XCTAssert(frontRange == 0..<2)
 			XCTAssert(Self.frontAttrs ~ frontAttrs)
 
-			let (midAttrs1, midRange1) =
-			    newn.attributes(at: Offset(of: 2))
-			XCTAssert(midRange1 == Offset.unitRange(2..<3))
+			let (midAttrs1, midRange1) = newn.attributes(at: 2)
+			XCTAssert(midRange1 == 2..<3)
 			XCTAssert(Self.newAttrs ~ midAttrs1)
 
-			let (midAttrs2, midRange2) =
-			    newn.attributes(at: Offset(of: 3))
-			XCTAssert(midRange2 == Offset.unitRange(3..<8))
+			let (midAttrs2, midRange2) = newn.attributes(at: 3)
+			XCTAssert(midRange2 == 3..<8)
 			XCTAssert(Self.newAttrs ~ midAttrs2)
 
-			let (midAttrs3, midRange3) =
-			    newn.attributes(at: Offset(of: 8))
-			XCTAssert(midRange3 == Offset.unitRange(8..<9))
+			let (midAttrs3, midRange3) = newn.attributes(at: 8)
+			XCTAssert(midRange3 == 8..<9)
 			XCTAssert(Self.newAttrs ~ midAttrs3)
 
-			let (backAttrs, backRange) =
-			    newn.attributes(at: Offset(of: 9))
-			XCTAssert(backRange == Offset.unitRange(9..<12))
+			let (backAttrs, backRange) = newn.attributes(at: 9)
+			XCTAssert(backRange == 9..<12)
 			XCTAssert(Self.backAttrs ~ backAttrs)
 		}
 	}
@@ -1740,9 +1729,9 @@ class NodeAttributes : XCTestCase {
 		XCTAssertNoThrow { [self] in
 			let newn = try rope.node.settingAttributes(
 			    NodeAttributes.newAttrs, range: ir)
-			let (attrs, range) = newn.attributes(at: Offset(of: 8))
+			let (attrs, range) = newn.attributes(at: 8)
 			XCTAssert(Self.newAttrs ~ attrs)
-			XCTAssert(range == Offset.unitRange(8..<12),
+			XCTAssert(range == 8..<12,
 			    "actual range \(range) " +
 			    "newn \(newn.debugDescription) " +
 			    "n \(n.debugDescription)")
@@ -1753,12 +1742,11 @@ class NodeAttributes : XCTestCase {
 		XCTAssertNoThrow { [rope] in
 			let newn = try rope.node.settingAttributes(
 			    NodeAttributes.newAttrs, range: ir)
-			let (attrs, range) = newn.attributes(at: Offset(of: 11))
+			let (attrs, range) = newn.attributes(at: 11)
 			XCTAssert(Self.newAttrs ~ attrs)
-			XCTAssert(range == Offset.unitRange(11..<12))
-			let (_, abuttingRange) =
-			    newn.attributes(at: Offset(of: 8))
-			XCTAssert(abuttingRange == Offset.unitRange(8..<11))
+			XCTAssert(range == 11..<12)
+			let (_, abuttingRange) = newn.attributes(at: 8)
+			XCTAssert(abuttingRange == 8..<11)
 		}
 	}
 }

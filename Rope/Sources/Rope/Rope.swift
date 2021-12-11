@@ -7,17 +7,21 @@ enum RopeNoSuchElement : Error {
 case onInterior
 }
 
-extension Range {
-	public init<C : Content>(_ r: Range<Int>,
-	                   in rope: Rope<C>) where Bound == Rope<C>.Index {
-		self.init(Rope<C>.Node.Offset.unitRange(r), in: rope)
+extension NSRange {
+	public var range: Range<Int> {
+		let lower: Int = location
+		let upper: Int = NSMaxRange(self)
+		return lower..<upper
 	}
+}
+
+extension Range {
 	public init<C : Content>(_ r: NSRange,
 	                   in rope: Rope<C>) where Bound == Rope<C>.Index {
-		self.init(Rope<C>.Node.Offset.unitRange(r), in: rope)
+		self.init(r.range, in: rope)
 	}
-	public init<C : Content>(_ r: Range<Rope<C>.Node.Offset>,
-	                   in rope: Rope<C>) where Bound == Rope<C>.Index {
+	public init<C : Content>(_ r: Range<Int>, in rope: Rope<C>)
+	    where Bound == Rope<C>.Index {
 		let lower = Rope.Index(abutting: r.lowerBound, on: .right,
 		    in: rope)
 		let upper = Rope.Index(abutting: r.upperBound, on: .left,
@@ -42,15 +46,12 @@ extension Rope.Node {
 		public static var zero: Dimensions {
 			return Dimensions(jots: 0, unitOffset: 0)
 		}
-		public init(jots: Int = 0, unitOffset offset: Offset = 0) {
+		public init(jots: Int = 0, unitOffset: Offset = 0) {
 			self.jots = jots
-			self.unitOffset = offset
+			self.unitOffset = unitOffset
 		}
 		public var halfPerimeter: Int {
-			guard case .offset(let n) = unitOffset else {
-				return jots
-			}
-			return jots + n
+			return jots + unitOffset
 		}
 	}
 }
@@ -62,27 +63,8 @@ extension Rope.Node.Dimensions {
 	}
 }
 
-extension Rope.Node.Offset : ExpressibleByIntegerLiteral {
-	public typealias IntegerLiteralType = Int
-	public init(integerLiteral n: Self.IntegerLiteralType) {
-		self = .offset(n)
-	}
-}
-
 extension Rope.Node {
 	public typealias Unit = C.Unit
-}
-
-extension Rope.Node.Offset {
-	public init(of n: Int) {
-		self = .offset(n)
-	}
-	public var unitOffset: Int {
-		switch self {
-		case .offset(let n):
-			return n
-		}
-	}
 }
 
 /* Use cases:
@@ -174,18 +156,17 @@ public class Rope<C : Content> {
 	public indirect enum Node {
 	public typealias Content = C
 	public typealias Element = C.Element
-	public enum Offset {
-		case offset(Int)
-	}
+	public typealias Offset = Int
 	case index(Weak<Label>)
 	case zone(ZoneController, Node)
 	case concat(Node, Offset, UInt, LabelSet, Node, Dimensions)
 	case leaf(Attributes, C)
 	case empty
 	}
+	typealias OffsetPair = (lower: Offset, upper: Offset)
 
-	private var _delegate: TypeErasedOffsetDelegate? = nil
-	public var delegate: TypeErasedOffsetDelegate {
+	private var _delegate: RopeOffsetDelegate? = nil
+	public var delegate: RopeOffsetDelegate {
 		set {
 			_delegate = newValue
 		}
@@ -326,7 +307,6 @@ public class Rope<C : Content> {
 			return .interior(of: self, label: j)
 		}
 	}
-	typealias OffsetPair = (lower: Offset, upper: Offset)
 	public func replace(_ r: Range<Index>, with replacement: Content,
 	    undoList: ChangeList<Rope>) throws {
 		/* Create a ChangeList and record .replacing(...) changes on
@@ -383,22 +363,24 @@ public class Rope<C : Content> {
 	public func attributes(at i: Offset) -> (Attributes, Range<Offset>) {
 		return top.attributes(at: i)
 	}
-	public func setAttributes(_ attrs: Attributes, range r: Range<Offset>){
+	public func setAttributes(_ attrs: Attributes, range r: Range<Int>) {
 		let ir = Range(r, in: self)
 		guard let newtop = try? top.settingAttributes(attrs, range: ir)
 		    else {
 			return
 		}
 		top = newtop
-		delegate.indicateAttributeChanges(on: r)
+		delegate.indicateAttributeChanges(on: r,
+		    undoList: nil as ChangeList<Rope>?)
 	}
-	public func clearAttributes(on r: Range<Offset>) {
+	public func clearAttributes(on r: Range<Int>) {
 		let ir = Range(r, in: self)
 		guard let newtop = try? top.clearingAttributes(on: ir) else {
 			return
 		}
 		top = newtop
-		delegate.indicateAttributeChanges(on: r)
+		delegate.indicateAttributeChanges(on: r,
+		    undoList: nil as ChangeList<Rope>?)
 	}
 	public func offset(of index: Index) throws -> Offset {
 		guard case .interior(_, let label) = index else {
@@ -409,10 +391,10 @@ public class Rope<C : Content> {
 }
 
 extension Rope : RopeOffsetDelegate {
-	public func ropeDidChange(on: Range<Offset>, changeInLength: Int) {
+	public func ropeDidChange(on: Range<Int>, changeInLength: Int) {
 		return
 	}
-	public func ropeAttributesDidChange(on: Range<Offset>) {
+	public func ropeAttributesDidChange(on: Range<Int>) {
 		return
 	}
 }
@@ -778,10 +760,8 @@ extension Rope : ExpressibleByStringLiteral where
 */
 
 extension RopeOffsetDelegate {
-	func indicateAttributeChanges<T>(
-	    on range: Range<Rope<T>.Offset>,
-	    undoList: ChangeList<Rope<T>>? = nil)
-	  where Rope<T>.Offset == Offset {
+	func indicateAttributeChanges<T>(on range: Range<Int>,
+	    undoList: ChangeList<Rope<T>>? = nil) {
 		undoList?.record { (rope, undoList) in
 			self.indicateAttributeChanges(
 			    on: range, undoList: undoList)
@@ -790,9 +770,9 @@ extension RopeOffsetDelegate {
 		ropeAttributesDidChange(on: range)
 	}
 	func indicateChanges<T>(
-	    new: (lower: Rope<T>.Offset, upper: Rope<T>.Offset),
-	    old: (lower: Rope<T>.Offset, upper: Rope<T>.Offset),
-	    undoList: ChangeList<Rope<T>>) where Rope<T>.Offset == Offset {
+	    new: (lower: Int, upper: Int),
+	    old: (lower: Int, upper: Int),
+	    undoList: ChangeList<Rope<T>>) {
 		undoList.record { (rope, undoList) in
 			self.indicateChanges(
 			    new: old,
@@ -801,10 +781,8 @@ extension RopeOffsetDelegate {
 			return rope
 		}
 		let length: (new: Int, old: Int) =
-		    ((new.upper - new.lower).unitOffset,
-		     (old.upper - old.lower).unitOffset)
-		let range: Range<Rope<T>.Offset> = old.lower..<old.upper
-		ropeDidChange(on: range,
+		    ((new.upper - new.lower), (old.upper - old.lower))
+		ropeDidChange(on: old.lower..<old.upper,
 		    changeInLength: length.new - length.old)
 	}
 }

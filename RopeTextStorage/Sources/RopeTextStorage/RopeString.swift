@@ -28,14 +28,14 @@ class RopeString : NSString {
 		return backing.units.length
 	}
 	override func character(at i: Int) -> unichar {
-		let c = backing.units[Offset(of: i)]
+		let c = backing.units[i]
 		// Swift.print("character(at: \(i)) -> \(c)")
 		return c
 	}
 	override func getCharacters(_ buffer_in: UnsafeMutablePointer<unichar>,
 	    range: NSRange) {
 		var buffer = buffer_in
-		backing.extractUnits(Offset.unitRange(range), filling: &buffer)
+		backing.extractUnits(range.range, filling: &buffer)
 	}
 	override func copy(with zone: NSZone? = nil) -> Any {
 		return self

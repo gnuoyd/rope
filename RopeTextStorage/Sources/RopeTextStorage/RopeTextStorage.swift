@@ -40,8 +40,7 @@ public class RopeTextStorage: NSTextStorage {
 	override public func attributes(at location: Int,
 	    effectiveRange _range: NSRangePointer?)
 	    -> [NSAttributedString.Key : Any] {
-		let i = Offset(of: location)
-		let (attrs, r) = backing.attributes(at: i)
+		let (attrs, r) = backing.attributes(at: location)
 		if let range = _range {
 			range.initialize(to: r.nsRange)
 		}
@@ -74,7 +73,7 @@ public class RopeTextStorage: NSTextStorage {
 	override public func setAttributes(
 	    _ optAttrs: [NSAttributedString.Key : Any]?, range r: NSRange) {
 		performEditing() {
-			let range = Offset.unitRange(r)
+			let range = r.range
 			if let attrs = optAttrs {
 				backing.setAttributes(attrs, range: range)
 			} else {

@@ -295,8 +295,7 @@ public extension Rope.Node {
 				return self.appending(.index(label: h))
 			}
 		case .leaf(let attrs, let content):
-			let idx = C.Index(unitOffset: offset.unitOffset,
-			    in: content)
+			let idx = C.Index(unitOffset: offset, in: content)
 			let l = content.prefix(upTo: idx)
 			let r = content.suffix(from: idx)
 			return Rope.Node(content: C.init(l), attributes: attrs)
@@ -332,8 +331,7 @@ public extension Rope.Node {
 			assert(place == 0)
 			return self.appending(.index(label: h))
 		case .leaf(let attrs, let content):
-			let idx = C.Index(unitOffset: place.unitOffset,
-			    in: content)
+			let idx = C.Index(unitOffset: place, in: content)
 			let l = content.prefix(upTo: idx)
 			let r = content.suffix(from: idx)
 			return Rope.Node(content: C.init(l), attributes: attrs)
@@ -1091,8 +1089,7 @@ public extension Rope.Node {
 		case .leaf(_, let s):
 			let endOffset = s.endIndex.unitOffset(in: s)
 			let startOffset = s.startIndex.unitOffset(in: s)
-			return Dimensions(
-			    unitOffset: Offset(of: endOffset - startOffset))
+			return Dimensions(unitOffset: endOffset - startOffset)
 		case .empty:
 			return Dimensions.zero
 		case .index(_):
@@ -1111,13 +1108,13 @@ public extension Rope.Node {
 		case .leaf(_, let s):
 			let endOffset = s.endIndex.unitOffset(in: s)
 			let startOffset = s.startIndex.unitOffset(in: s)
-			return Offset(of: endOffset - startOffset)
+			return endOffset - startOffset
 		case .empty, .index(_):
 			return 0
 		}
 	}
 	var length: Int {
-		return endIndex.unitOffset - startIndex.unitOffset
+		return endIndex - startIndex
 	}
 	func transforming<R>(at i: Offset, base: Offset = 0,
 	    with fn: (Self, Offset, Offset) -> R) -> R {
@@ -1142,7 +1139,7 @@ public extension Rope.Node {
 			guard case .leaf(_, let s) = node else {
 				fatalError("In \(#function), no unit \(i)")
 			}
-			let sidx = C.Index(unitOffset: i.unitOffset, in: s)
+			let sidx = C.Index(unitOffset: i, in: s)
 			return s.units[sidx]
 		}
 		return transforming(at: i, with: unit)
@@ -1239,7 +1236,7 @@ public extension Rope.Node {
 		return try zonesClosing(at: i.label, in: controllers)
 	}
 	func offset(of label: Label,
-	            origin: Offset = Offset.offset(0)) throws -> Offset {
+	            origin: Offset = 0) throws -> Offset {
 		switch self {
 		case .zone(_, let content):
 			return try content.offset(of: label, origin: origin)
@@ -1292,7 +1289,7 @@ public extension Rope.Node {
 	func element(at i: Offset) -> Element {
 		switch self {
 		case .leaf(_, let s):
-			let idx = C.Index(unitOffset: i.unitOffset, in: s)
+			let idx = C.Index(unitOffset: i, in: s)
 			let c: Element = s[idx]
 			return c
 		case .concat(let ropel, let idx, _, _, let roper, _):
@@ -1438,7 +1435,7 @@ public extension Rope.Node {
 			    rightSibling: r.appending(rightSibling),
 			    depth: depth + 1)
 		case let .leaf(attrs, s):
-			let i = C.Index(unitOffset: from.unitOffset, in: s)
+			let i = C.Index(unitOffset: from, in: s)
 			if i == s.units.endIndex {
 				return rightSibling
 			}
@@ -1480,8 +1477,7 @@ public extension Rope.Node {
 				upTo: min(endIndex - idx, boundary - idx),
 				tightly: tightly, depth: depth + 1)
 		case let .leaf(attrs, s):
-			let i = C.Index(unitOffset: boundary.unitOffset,
-			    in: s)
+			let i = C.Index(unitOffset: boundary, in: s)
 			if i == s.units.startIndex {
 				return leftSibling
 			}
@@ -2005,18 +2001,18 @@ public extension Rope.Node {
 				guard let base = $0.baseAddress else {
 					return false
 				}
-				let length = end.unitOffset - start.unitOffset
-				buffer.initialize(from: base + start.unitOffset,
+				let length = end - start
+				buffer.initialize(from: base + start,
 				    count: length)
 				buffer += length
 				return true
 			} as Bool?) else {
 				let units = s.units
 				guard let sidx = units.index(units.startIndex,
-				        offsetBy: start.unitOffset,
+				        offsetBy: start,
 				        limitedBy: units.endIndex),
 				    let eidx = units.index(units.startIndex,
-				        offsetBy: end.unitOffset,
+				        offsetBy: end,
 					limitedBy: units.endIndex)
 				    else {
 					fatalError("In \(#function), " +
@@ -2052,11 +2048,9 @@ public extension Rope.Node {
 			return c[...]
 		case .leaf(_, let s):
 			guard let sidx = s.units.index(s.units.startIndex,
-			    offsetBy: start.unitOffset,
-			    limitedBy: s.units.endIndex),
+			    offsetBy: start, limitedBy: s.units.endIndex),
 			    let eidx = s.units.index(s.units.startIndex,
-			    offsetBy: end.unitOffset,
-			    limitedBy: s.units.endIndex) else {
+			    offsetBy: end, limitedBy: s.units.endIndex) else {
 				fatalError("In \(#function), " +
 				    "no units range \(start)..<\(end)")
 			}
@@ -2082,11 +2076,9 @@ public extension Rope.Node {
 			}
 		case .leaf(_, let s):
 			guard let sidx = s.units.index(s.units.startIndex,
-			    offsetBy: start.unitOffset,
-			    limitedBy: s.units.endIndex),
+			    offsetBy: start, limitedBy: s.units.endIndex),
 			    let eidx = s.units.index(s.units.startIndex,
-			    offsetBy: end.unitOffset,
-			    limitedBy: s.units.endIndex) else {
+			    offsetBy: end, limitedBy: s.units.endIndex) else {
 				fatalError("In \(#function), " +
 				    "no units range \(start)..<\(end)")
 			}
