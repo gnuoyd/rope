@@ -4,11 +4,12 @@
 extension RangeReplaceableCollection {
     func firstIndex<C : Collection>(of target: C) -> Index? where C.Element == Element, Element : Equatable {
 		guard let first = target.first else {
-			return startIndex   // every Collection starts with the empty Collection
+			// every Collection starts with the empty Collection
+			return startIndex
 		}
 		var rest = self
 		while let start = rest.firstIndex(of: first) {
-            rest.removeFirst(1)
+			rest.removeFirst(1)
 			if rest.starts(with: target.dropFirst(1)) {
 				return start
 			}
