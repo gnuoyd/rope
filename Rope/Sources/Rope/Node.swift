@@ -527,22 +527,6 @@ public extension Rope.Node {
 				node.attributes(at: i, base: base)
 		}
 	}
-/*
-	func transforming(range: Range<Rope.Index>, with fn: (Self) -> Self)
-	    -> Self? {
-		guard let l = subrope(upTo: range.lowerBound) else {
-			return nil
-		}
-		guard let m = subrope(after: range.lowerBound,
-		                      upTo: range.upperBound) else {
-			return nil
-		}
-		guard let r = subrope(after: range.upperBound) else {
-			return nil
-		}
-		return l.appending(fn(m)).appending(r)
-	}
-*/
 	/* A naive version of `transformingAttributes(after:upTo:with:)` splits
 	 * zones.  This version finds affected zones, splits before
 	 * and after each zone, and performs `fn` on each affected zone.
@@ -668,28 +652,6 @@ public extension Rope.Node {
 			return self
 		}
 	}
-/*
-	func addingAttributes(_ nattrs: Attributes) -> Self {
-		switch self {
-		case .zone(let ctlr, let n):
-			return .zone(ctlr, n.addingAttributes(nattrs))
-		case .concat(let l, _, _, _, let r, _):
-			return Self(left: l.addingAttributes(nattrs),
-			    right: r.addingAttributes(nattrs))
-		case .leaf(var attrs, let content):
-			attrs.merge(nattrs) { (_, new) in new }
-			return .leaf(attrs, content)
-		case .empty, .index(_):
-			return self
-		}
-	}
-	func addingAttributes(_ attrs: Attributes, range: Range<Rope.Index>)
-	    -> Self? {
-		return transforming(range) { node in
-			node.addingAttributes(attrs)
-		}
-	}
-*/
 	func settingAttributes(_ attrs: Attributes, range: Range<Rope.Index>)
 	    throws -> Self {
 		return try transformingAttributes(
