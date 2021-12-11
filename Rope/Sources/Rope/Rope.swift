@@ -7,14 +7,6 @@ enum RopeNoSuchElement : Error {
 case onInterior
 }
 
-extension NSRange {
-	public var range: Range<Int> {
-		let lower: Int = location
-		let upper: Int = NSMaxRange(self)
-		return lower..<upper
-	}
-}
-
 extension Range {
 	public init<C : Content>(_ r: NSRange,
 	                   in rope: Rope<C>) where Bound == Rope<C>.Index {

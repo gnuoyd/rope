@@ -11,3 +11,10 @@ extension Range where Bound == Int {
 	}
 }
 
+extension NSRange {
+	public var range: Range<Int> {
+		let lower: Int = location
+		let upper: Int = NSMaxRange(self)
+		return lower..<upper
+	}
+}
