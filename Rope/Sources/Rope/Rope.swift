@@ -497,13 +497,6 @@ extension Rope {
 			return rope.top.length
 		}
 		public subscript(_ r: Range<Offset>) -> Content {
-/*
-			set(replacement) {
-				let undoList = ChangeList<Rope>()
-				try! replace(r, with: replacement,
-					    undoList: undoList)
-			}
-*/
 			get {
 				let ir = Range(r, in: rope)
 				return rope.top[ir]
@@ -511,25 +504,10 @@ extension Rope {
 		}
 		public subscript<I>(_ r: Range<Offset>)
 		    -> I where Content.SubSequence == I {
-/*
-			set(replacement) {
-				self[r] = Content(replacement)
-			}
-*/
 			get {
 				return self[r][...]
 			}
 		}
-		/* TBD tests */
-/*
-		public func replace(_ r: Range<Offset>,
-		    with replacement: Content,
-		    undoList: ChangeList<Rope>) throws {
-			let ir = Range(r, in: rope)
-			try rope.replace(ir, with: replacement,
-			    undoList: undoList)
-		}
-*/
 	}
 	public var units: UnitView {
                 return UnitView(rope: self)
