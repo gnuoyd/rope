@@ -440,7 +440,7 @@ extension Rope {
 
 extension Rope {
 	public func index(after i: Index, climbing dir: Climb,
-	    bottom: inout ZoneController?) -> Index? {
+	    innermostZone: inout ZoneController?) -> Index? {
 		do {
 			if try !top.indices(follow: i.label) {
 				return nil
@@ -449,47 +449,57 @@ extension Rope {
 			return nil
 		}
 		let j = index(after: i)
-		switch ((try? zonesEnclosing(i))?.count,
-			dir,
-		        (try? zonesEnclosing(j))?.count) {
-		case (let ni?, .in, let nj?) where ni < nj:
+		switch (try? zonesEnclosing(i), dir, try? zonesEnclosing(j)) {
+		/* ((.(( -> (((.(
+		 *   i   ->    j
+		 */
+		case (let zi?, .in, let zj?) where zi.count < zj.count:
+			innermostZone = zj.last
 			return j
-		case (let ni?, .out, let nj?) where ni > nj:
+		/* )).)) -> ))).)
+		 *   i   ->    j
+		 */
+		case (let zi?, .out, let zj?) where zi.count > zj.count:
+			innermostZone = zj.last
 			return j
 		default:
 			return nil
 		}
 	}
-	public func index(before i: Index, climbing dir: Climb,
-	    bottom: inout ZoneController?) -> Index? {
+	public func index(before j: Index, climbing dir: Climb,
+	    innermostZone: inout ZoneController?) -> Index? {
 		do {
-			if try !top.indices(precede: i.label) {
+			if try !top.indices(precede: j.label) {
 				return nil
 			}
 		} catch {
 			return nil
 		}
-		let j = index(before: i)
-		switch (try? zonesEnclosing(i),
-			dir,
-		        try? zonesEnclosing(j)) {
-		case (let ei?, .in, let ej?) where ei.count < ej.count:
-			bottom = ej.last
-			return j
-		case (let ei?, .out, let ej?) where ei.count > ej.count:
-			bottom = ej.last
-			return j
+		let i = index(before: j)
+		switch (try? zonesEnclosing(i), dir, try? zonesEnclosing(j)) {
+		/* )).)) <- ))).)
+		 *   i   <-    j
+		 */
+		case (let zi?, .in, let zj?) where zi.count > zj.count:
+			innermostZone = zi.last
+			return i
+		/* ((.(( <- (((.(
+		 *   i   <-    j
+		 */
+		case (let zi?, .out, let zj?) where zi.count < zj.count:
+			innermostZone = zi.last
+			return i
 		default:
 			return nil
 		}
 	}
 	public func index(after i: Index, climbing dir: Climb) -> Index? {
 		var discard: ZoneController?
-		return index(after: i, climbing: dir, bottom: &discard)
+		return index(after: i, climbing: dir, innermostZone: &discard)
 	}
 	public func index(before i: Index, climbing dir: Climb) -> Index? {
 		var discard: ZoneController?
-		return index(before: i, climbing: dir, bottom: &discard)
+		return index(before: i, climbing: dir, innermostZone: &discard)
 	}
 }
 
@@ -505,8 +515,8 @@ extension Rope {
 	               rightControllers: [ZoneController]) {
 		var (l, r) = (selection.lowerBound, selection.upperBound)
 		/* TBD move zonesEnclosing() calls out of loop, use
-		 * index(after/before: ..., climbing: .in, bottom: ...) to
-		 * get the next deeper zone at each step
+		 * index(after/before: ..., climbing: .in, innermostZone: ...)
+		 * to get the next deeper zone at each step
 		 */
 		while true {
 			let (lo, ro) = (try zonesEnclosing(l),
@@ -535,15 +545,15 @@ extension Rope {
 	    limit: ZoneController?) throws -> Range<Index> {
 		let l = s.lowerBound
 		var r = s.upperBound
-		var bottom: ZoneController?
+		var innermostZone: ZoneController?
 		let zones = try zonesEnclosing(r)
 		if zones.last == limit {
 			return l..<r
 		}
 		while let next = index(after: r, climbing: .out,
-		    bottom: &bottom) {
+		    innermostZone: &innermostZone) {
 			r = next
-			if bottom == limit {
+			if innermostZone == limit {
 				break
 			}
 		}
@@ -553,15 +563,15 @@ extension Rope {
 	    limit: ZoneController?) throws -> Range<Index> {
 		var l = s.lowerBound
 		let r = s.upperBound
-		var bottom: ZoneController?
+		var innermostZone: ZoneController?
 		let zones = try zonesEnclosing(l)
 		if zones.last == limit {
 			return l..<r
 		}
 		while let next = index(before: l, climbing: .out,
-		    bottom: &bottom) {
+		    innermostZone: &innermostZone) {
 			l = next
-			if bottom == limit {
+			if innermostZone == limit {
 				break
 			}
 		}
