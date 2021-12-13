@@ -4,16 +4,12 @@
 public struct LabelSet : SetAlgebra, ExpressibleByArrayLiteral {
 	public typealias Element = Label.Id
 	var content: Set<Element>
-	var _cursorCount: Int = 0
 	var _zoneCount: Int = 0
 	var _indexCount: Int = 0
-	public var cursorCount: Int { return _cursorCount }
 	public var zoneCount: Int { return _zoneCount }
 	public var indexCount: Int { return _indexCount }
 	mutating func decreaseCounts(for e: Element) {
 		switch e {
-		case .cursor(_):
-			_cursorCount -= 1
 		case .zone(_):
 			_zoneCount -= 1
 		case .index(_):
@@ -22,8 +18,6 @@ public struct LabelSet : SetAlgebra, ExpressibleByArrayLiteral {
 	}
 	mutating func increaseCounts(for e: Element) {
 		switch e {
-		case .cursor(_):
-			_cursorCount += 1
 		case .zone(_):
 			_zoneCount += 1
 		case .index(_):
@@ -31,7 +25,6 @@ public struct LabelSet : SetAlgebra, ExpressibleByArrayLiteral {
 		}
 	}
 	mutating func resetCounts() {
-		_cursorCount = 0
 		_zoneCount = 0
 		_indexCount = 0
 	}

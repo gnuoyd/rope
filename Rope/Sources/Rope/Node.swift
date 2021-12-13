@@ -211,8 +211,8 @@ public extension Rope.Node {
 	}
 	func inserting(_ j: Label, after step: DirectedStep) -> Step {
 		switch (self, step) {
-		/* A step over a cursor, index, or empty string is NOT
-		 * a full step.
+		/* A step over an index or empty string is NOT a
+		 * full step.
 		 */
 		case (.empty, _), (.index(_), _):
 			return .inchOut
@@ -1366,7 +1366,7 @@ public extension Rope.Node {
 	/* Return the subrope that starts at `from`, the unit offset
 	 * from the beginning of `self`, with `rightSibling` appended.
 	 *
-	 * In the subrope, *exclude* all indices, cursors, and other nodes
+	 * In the subrope, *exclude* all indices and other nodes
 	 * that do not affect the unit offset and that are adjacent to
 	 * `from`, if `tightly` is true.  Otherwise, *include* those nodes.
 	 *
@@ -1409,7 +1409,7 @@ public extension Rope.Node {
 	/* Append to `leftSibling` and return the subrope that ends at `to`,
 	 * the unit offset from the beginning of `self`.
 	 *
-	 * In the subrope, *exclude* all indices, cursors, and other nodes
+	 * In the subrope, *exclude* all indices and other nodes
 	 * adjacent to `to` that do not increase the unit offset, if `tightly`
 	 * is true.  Otherwise, *include* those nodes.
 	 *

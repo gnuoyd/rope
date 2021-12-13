@@ -5,7 +5,6 @@
 public class Label : Hashable {
 	public enum Id : Hashable {
 	public typealias Number = UInt64
-	case cursor(Number)
 	case zone(Number)
 	case index(Number)
 	}
@@ -27,8 +26,6 @@ public class Label : Hashable {
 extension Label.Id : CustomDebugStringConvertible {
 	public var debugDescription: String {
 		switch self {
-		case .cursor(let n):
-			return ".cursor(\(n))"
 		case .zone(let n):
 			return ".zone(\(n))"
 		case .index(let n):
