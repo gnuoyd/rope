@@ -14,11 +14,11 @@ zone: a rope may contain zero or more nested spans called zones.
     modifies and performs or suppresses rope insertions, deletions, et
     cetera, that overlap the zone.
 
-boundary: the distance from the interior of a zone to its exterior, or vice
-    versa, is one boundary
+boundary: the distance from the interior of a zone to its exterior, or
+    vice versa, is one boundary
 
-step: the distance of one boundary or across one UTF-16 code unit is
-    one step
+step: the distance of one boundary or across one UTF-16 code unit is one
+    step
 
 jot: the distance of one step or across one index is a jot
 
