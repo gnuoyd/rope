@@ -689,8 +689,8 @@ public class ChangeList<Target> {
 }
 
 public extension Rope.Node {
-	enum LabelKind {
-	case index
+	enum Interval {
+	case jot
 	case step
 	}
 	// TBD introduce a property for all Labels but the
@@ -725,12 +725,12 @@ public extension Rope.Node {
 		}
 	}
 	func steps(follow target: Label) throws -> Bool {
-		return try labels(of: .step, follow: target)
+		return try exists(.step, following: target)
 	}
-	func indices(follow target: Label) throws -> Bool {
-		return try labels(of: .index, follow: target)
+	func jots(follow target: Label) throws -> Bool {
+		return try exists(.jot, following: target)
 	}
-	func labels(of kind: LabelKind, follow target: Label) throws -> Bool {
+	func exists(_ ival: Interval, following target: Label) throws -> Bool {
 		switch self {
 		case .index(let w) where w.get() == target:
 			return false
@@ -738,13 +738,13 @@ public extension Rope.Node {
 			return true
 		case .concat(let l, let midx, _, _, let r, let w):
 			do {
-				return try l.labels(of: kind, follow: target) ||
+				return try l.exists(ival, following: target) ||
 				    r.labelSet.zoneCount > 0 ||
 				    midx != w.units ||
-				    (kind == .index &&
+				    (ival == .jot &&
 				     r.rightmostIndexLabel() != nil)
 			} catch {
-				return try r.labels(of: kind, follow: target)
+				return try r.exists(ival, following: target)
 			}
 		case .empty, .zone(_, _), .index(_),
 		     .leaf(_, _):
@@ -777,12 +777,12 @@ public extension Rope.Node {
 		}
 	}
 	func steps(precede target: Label) throws -> Bool {
-		return try labels(of: .step, precede: target)
+		return try exists(.step, preceding: target)
 	}
-	func indices(precede target: Label) throws -> Bool {
-		return try labels(of: .index, precede: target)
+	func jots(precede target: Label) throws -> Bool {
+		return try exists(.jot, preceding: target)
 	}
-	func labels(of kind: LabelKind, precede target: Label) throws -> Bool {
+	func exists(_ ival: Interval, preceding target: Label) throws -> Bool {
 		switch self {
 		case .index(let w) where w.get() == target:
 			return false
@@ -791,45 +791,39 @@ public extension Rope.Node {
 		case .concat(let l, let midx, _, _, let r, _):
 			do {
 				return
-				    try r.labels(of: kind, precede: target) ||
+				    try r.exists(ival, preceding: target) ||
 				    l.labelSet.zoneCount > 0 ||
 				    0 != midx ||
-				    (kind == .index &&
+				    (ival == .jot &&
 				     l.leftmostIndexLabel() != nil)
 			} catch {
-				return try l.labels(of: kind, precede: target)
+				return try l.exists(ival, preceding: target)
 			}
 		case .empty, .zone(_, _), .index(_),
 		     .leaf(_, _):
 			throw NodeError.indexNotFound
 		}
 	}
-	func step(_ h1: Label, precedes h2: Label) throws -> Bool {
-		return try label(h1, precedes: h2, by: .step)
-	}
-	func index(_ h1: Label, precedes h2: Label) throws -> Bool {
-		return try label(h1, precedes: h2, by: .index)
-	}
-	func label(_ h1: Label, precedes h2: Label, by kind: LabelKind)
+	func label(_ h1: Label, precedes h2: Label, by ival: Interval)
 	    throws -> Bool {
 		switch self {
 		case .zone(_, let rope):
-			return try rope.label(h1, precedes: h2, by: kind)
+			return try rope.label(h1, precedes: h2, by: ival)
 		case .concat(let l, _, _, _, let r, _):
 			if l.contains(h2) && r.contains(h1) {
 				return false
 			}
 			if l.contains(h1) && r.contains(h2) {
-				return try kind == .index ||
-				           l.labels(of: kind, follow: h1) ||
-				           r.labels(of: kind, precede: h2)
+				return try ival == .jot ||
+				           l.exists(ival, following: h1) ||
+				           r.exists(ival, preceding: h2)
 			}
 			if let ordered = try? l.label(h1, precedes: h2,
-			    by: kind) {
+			    by: ival) {
 				return ordered
 			}
 			if let ordered = try? r.label(h1, precedes: h2,
-			    by: kind) {
+			    by: ival) {
 				return ordered
 			}
 			throw NodeError.indexNotFound
@@ -1057,9 +1051,6 @@ public extension Rope.Node {
 		case .index(_):
 			return Dimensions(indices: 1)
 		}
-	}
-	var jots: Int {
-		return dimensions.jots
 	}
 	var endIndex: Offset {
 		switch self {
@@ -1296,7 +1287,7 @@ public extension Rope.Node {
 		}
 	}
 	var balanced: Bool {
-		return jots >= fibonacci(index: depth + 2)
+		return dimensions.jots >= fibonacci(index: depth + 2)
 	}
 	// Return this Node with all of the expired indices removed.
 	func cleaned() -> Self? {
@@ -1331,7 +1322,7 @@ public extension Rope.Node {
 			break
 		}
 		var slot: [Self?] = []
-		let totlen = jots
+		let totlen = dimensions.jots
 		for fn in Fibonacci(from: 2) {
 			if fn > totlen {
 				break
@@ -1346,7 +1337,7 @@ public extension Rope.Node {
 					tree = .nodes(left, tree)
 					slot[slot.count - i - 1] = nil
 				}
-				if fip3 >= tree.jots {
+				if fip3 >= tree.dimensions.jots {
 					n = i
 					break
 				}
@@ -1615,7 +1606,8 @@ public extension Rope.Node {
 			/* Catch a faulty range where the upperBound
 			 * precedes the lowerBound.
 			 */
-			if try index(upperBound, precedes: lowerBound) {
+			if try label(upperBound, precedes: lowerBound,
+			    by: .jot) {
 				throw NodeError.indicesOutOfOrder
 			}
 			/* Important: don't discard any embedded indices at
@@ -1677,7 +1669,8 @@ public extension Rope.Node {
 			/* Catch a faulty range where the upperBound
 			 * precedes the lowerBound.
 			 */
-			if try index(upperBound, precedes: lowerBound) {
+			if try label(upperBound, precedes: lowerBound,
+			    by: .jot) {
 				throw NodeError.indicesOutOfOrder
 			}
 			/* Important: don't discard any embedded indices at
@@ -1936,8 +1929,8 @@ public extension Rope.Node {
 		if h1 == h2 {
 			return true
 		}
-		let precedes = try step(h1, precedes: h2)
-		let follows = try step(h2, precedes: h1)
+		let precedes = try label(h1, precedes: h2, by: .step)
+		let follows = try label(h2, precedes: h1, by: .step)
 		return !precedes && !follows
 	}
 }

@@ -22,7 +22,7 @@ extension Range {
 			self = lower..<upper
 		} else if try! rope.node.label(lower.label,
 		                               precedes: upper.label,
-					       by: .index) {
+					       by: .jot) {
 			self = lower..<upper
 		} else {
 			self = upper..<lower
@@ -198,14 +198,14 @@ public class Rope<C : Content> {
 			} else {
 				tmp = newValue
 			}
-			switch try? tmp.indices(precede: _startLabel) {
+			switch try? tmp.jots(precede: _startLabel) {
 			case false?:
 				break
 			default:
 				_startLabel = Label()
 				tmp = .nodes(.index(label: _startLabel), tmp)
 			}
-			switch try? tmp.indices(follow: _endLabel) {
+			switch try? tmp.jots(follow: _endLabel) {
 			case false?:
 				break
 			default:
@@ -236,14 +236,14 @@ public class Rope<C : Content> {
 		let prototype = Node.tree(from: nodes)
 		var tmp = prototype
 		if let leftmost = prototype.leftmostIndexLabel(),
-		    case false? = try? prototype.indices(precede: leftmost) {
+		    case false? = try? prototype.jots(precede: leftmost) {
 			_startLabel = leftmost
 		} else {
 			_startLabel = Label()
 			tmp = .nodes(.index(label: _startLabel), tmp)
 		}
 		if let rightmost = prototype.rightmostIndexLabel(),
-		    case false? = try? prototype.indices(follow: rightmost) {
+		    case false? = try? prototype.jots(follow: rightmost) {
 			_endLabel = rightmost
 		} else {
 			_endLabel = Label()
@@ -259,15 +259,16 @@ public class Rope<C : Content> {
 			top = newValue
 		}
 	}
-	public func step(_ h1: Label, precedes h2: Label) throws -> Bool {
-		return try top.step(h1, precedes: h2)
+	public func label(_ h1: Label, precedes h2: Label,
+	    by ival: Rope.Node.Interval) throws -> Bool {
+		return try top.label(h1, precedes: h2, by: ival)
 	}
 	public func label(_ h1: Label, aliases h2: Label) throws -> Bool {
 		if h1 == h2 {
 			return true
 		}
-		let precedes = try top.step(h1, precedes: h2)
-		let follows = try top.step(h2, precedes: h1)
+		let precedes = try top.label(h1, precedes: h2, by: .step)
+		let follows = try top.label(h2, precedes: h1, by: .step)
 		return !precedes && !follows
 	}
 	public init<T>(content t: T) where C.SubSequence == T {
@@ -455,7 +456,7 @@ extension Rope {
 	public func index(after i: Index, climbing dir: Climb,
 	    innermostZone: inout ZoneController?) -> Index? {
 		do {
-			if try !top.indices(follow: i.label) {
+			if try !top.jots(follow: i.label) {
 				return nil
 			}
 		} catch {
@@ -482,7 +483,7 @@ extension Rope {
 	public func index(before j: Index, climbing dir: Climb,
 	    innermostZone: inout ZoneController?) -> Index? {
 		do {
-			if try !top.indices(precede: j.label) {
+			if try !top.jots(precede: j.label) {
 				return nil
 			}
 		} catch {

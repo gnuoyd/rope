@@ -54,14 +54,15 @@ extension Rope.Index {
 		guard self.owner === other.owner else {
 			throw RopeIndexComparisonError.mismatchedOwners
 		}
-		return try self.owner.step(self, precedes: other)
+		return try self.owner.label(self.label, precedes: other.label,
+		    by: .step)
 	}
 }
 
 extension Rope {
 	public func step(_ l: Rope.Index, precedes r: Rope.Index)
 	    throws -> Bool {
-		return try node.step(l, precedes: r)
+		return try node.label(l.label, precedes: r.label, by: .step)
 	}
 }
 
@@ -69,6 +70,6 @@ extension Rope.Node {
 	public func step(_ l: Rope.Index, precedes r: Rope.Index)
 	    throws -> Bool {
 		return try l.label != r.label &&
-	                   step(l.label, precedes: r.label)
+	                   label(l.label, precedes: r.label, by: .step)
 	}
 }

@@ -34,8 +34,10 @@ class IndexOrderByIndex: XCTestCase {
 				previous = label
 				continue
 			}
-			XCTAssert(try rope.node.index(p, precedes: label))
-			XCTAssert(try !rope.node.index(label, precedes: p))
+			XCTAssert(try rope.node.label(p, precedes: label,
+			    by: .jot))
+			XCTAssert(try !rope.node.label(label, precedes: p,
+			    by: .jot))
 		}
 	}
 	func testComparingIndicesPairwise() {
@@ -47,8 +49,9 @@ class IndexOrderByIndex: XCTestCase {
 		let indices = rope.indices.enumerated()
 		for (l, r) in indices ⨯ indices {
 			XCTAssert(try (l.offset < r.offset) ==
-			          (rope.node.index(l.element.label,
-				                  precedes: r.element.label)))
+			          rope.node.label(l.element.label,
+				                   precedes: r.element.label,
+						   by: .jot))
 		}
 	}
 	func testFollow() {
@@ -58,13 +61,13 @@ class IndexOrderByIndex: XCTestCase {
 		          .reduce(.empty) { (tree, next) in
 			                    .nodes(tree, next) } )
 		for label in labels.dropLast() {
-			XCTAssert(try rope.node.indices(follow: label))
+			XCTAssert(try rope.node.jots(follow: label))
 		}
 		guard let last = labels.last else {
 			XCTFail("No last array element.")
 			return
 		}
-		XCTAssert(try !rope.node.indices(follow: last))
+		XCTAssert(try !rope.node.jots(follow: last))
 	}
 	func testPrecede() {
 		let labels = [Label(), Label(), Label()]
@@ -73,13 +76,13 @@ class IndexOrderByIndex: XCTestCase {
 		          .reduce(.empty) { (tree, next) in
 			                    .nodes(tree, next) } )
 		for label in labels.dropFirst() {
-			XCTAssert(try rope.node.indices(precede: label))
+			XCTAssert(try rope.node.jots(precede: label))
 		}
 		guard let first = labels.first else {
 			XCTFail("No first array element.")
 			return
 		}
-		XCTAssert(try !rope.node.indices(precede: first))
+		XCTAssert(try !rope.node.jots(precede: first))
 	}
 }
 
