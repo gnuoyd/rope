@@ -14,8 +14,13 @@ zone: a rope may contain zero or more nested spans called zones.
     modifies and performs or suppresses rope insertions, deletions, et
     cetera, that overlap the zone.
 
-step: from the exterior of a zone to its interior, from the interior of
-  a zone to its exterior, and across one UTF-16 code unit is one step
+boundary: the distance from the interior of a zone to its exterior, or vice
+    versa, is one boundary
+
+step: the distance of one boundary or across one UTF-16 code unit is
+    one step
+
+jot: the distance of one step or across one index is a jot
 
 index: a labeled entity embedded in a rope, or a `struct Rope.Index`
   identifying such an entity by its label.

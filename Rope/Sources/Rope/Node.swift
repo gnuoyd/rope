@@ -740,7 +740,7 @@ public extension Rope.Node {
 			do {
 				return try l.labels(of: kind, follow: target) ||
 				    r.labelSet.zoneCount > 0 ||
-				    midx != w.unitOffset ||
+				    midx != w.units ||
 				    (kind == .index &&
 				     r.rightmostIndexLabel() != nil)
 			} catch {
@@ -1047,11 +1047,11 @@ public extension Rope.Node {
 		case Self.concat(_, _, _, _, _, let dims):
 			return dims
 		case .zone(_, let rope):
-			return rope.dimensions + Dimensions(jots: 2)
+			return rope.dimensions + Dimensions(boundaries: 2)
 		case .leaf(_, let s):
 			let endOffset = s.endIndex.unitOffset(in: s)
 			let startOffset = s.startIndex.unitOffset(in: s)
-			return Dimensions(unitOffset: endOffset - startOffset)
+			return Dimensions(units: endOffset - startOffset)
 		case .empty:
 			return Dimensions.zero
 		case .index(_):
@@ -1064,7 +1064,7 @@ public extension Rope.Node {
 	var endIndex: Offset {
 		switch self {
 		case Self.concat(_, _, _, _, _, let w):
-			return w.unitOffset
+			return w.units
 		case .zone(_, let rope):
 			return rope.endIndex
 		case .leaf(_, let s):
@@ -1237,7 +1237,7 @@ public extension Rope.Node {
 				 * Rather, they close at an index on the right.
 				 * So leave them out of the list.
 				 */
-				guard midx == w.unitOffset &&
+				guard midx == w.units &&
 				      r.labelSet.zoneCount == 0 else {
 					return try l.zonesClosing(at: label)
 				}
