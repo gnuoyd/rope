@@ -33,11 +33,11 @@ extension Range {
 
 extension Rope.Node {
 	public struct Dimensions {
-		public let _jots: Int
+		public let _indices: Int
 		public let _boundaries: Int
 		public let _units: Offset
 		public var jots: Int {
-			return _jots + _boundaries + _units
+			return _indices + _boundaries + _units
 		}
 		public var steps: Int {
 			return _boundaries + _units
@@ -46,11 +46,11 @@ extension Rope.Node {
 			return _units
 		}
 		public static var zero: Dimensions {
-			return Dimensions(jots: 0, boundaries: 0, units: 0)
+			return Dimensions(indices: 0, boundaries: 0, units: 0)
 		}
-		public init(jots: Int = 0, boundaries: Int = 0,
+		public init(indices: Int = 0, boundaries: Int = 0,
 		    units: Offset = 0) {
-			_jots = jots
+			_indices = indices
 			_boundaries = boundaries
 			_units = units
 		}
@@ -62,7 +62,7 @@ extension Rope.Node {
 
 extension Rope.Node.Dimensions {
 	public static func +(_ l: Self, _ r: Self) -> Self {
-		return Self(jots: l._jots + r._jots,
+		return Self(indices: l._indices + r._indices,
 		            boundaries: l._boundaries + r._boundaries,
 		            units: l._units + r._units)
 	}

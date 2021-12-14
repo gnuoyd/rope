@@ -1055,11 +1055,11 @@ public extension Rope.Node {
 		case .empty:
 			return Dimensions.zero
 		case .index(_):
-			return Dimensions(jots: 1)
+			return Dimensions(indices: 1)
 		}
 	}
-	var halfPerimeter: Int {
-		return dimensions.halfPerimeter
+	var jots: Int {
+		return dimensions.jots
 	}
 	var endIndex: Offset {
 		switch self {
@@ -1296,7 +1296,7 @@ public extension Rope.Node {
 		}
 	}
 	var balanced: Bool {
-		return halfPerimeter >= fibonacci(index: depth + 2)
+		return jots >= fibonacci(index: depth + 2)
 	}
 	// Return this Node with all of the expired indices removed.
 	func cleaned() -> Self? {
@@ -1331,7 +1331,7 @@ public extension Rope.Node {
 			break
 		}
 		var slot: [Self?] = []
-		let totlen = halfPerimeter
+		let totlen = jots
 		for fn in Fibonacci(from: 2) {
 			if fn > totlen {
 				break
@@ -1346,7 +1346,7 @@ public extension Rope.Node {
 					tree = .nodes(left, tree)
 					slot[slot.count - i - 1] = nil
 				}
-				if fip3 >= tree.halfPerimeter {
+				if fip3 >= tree.jots {
 					n = i
 					break
 				}
