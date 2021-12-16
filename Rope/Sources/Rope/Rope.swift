@@ -424,15 +424,6 @@ extension Rope.Node {
 }
 
 extension Rope {
-	public func extractContent(_ range: Range<Offset>) -> C.SubSequence {
-		return top.extractContent(from: range.lowerBound,
-		    upTo: range.upperBound)
-	}
-	public func extractContent(_ range: Range<Offset>,
-	    filling buffer: inout C) {
-		top.extractContent(from: range.lowerBound,
-		    upTo: range.upperBound, filling: &buffer)
-	}
 	public func extractUnits(_ range: Range<Offset>,
 	    filling buffer: inout UnsafeMutablePointer<C.Unit>){
 		return top.extractUnits(from: range.lowerBound,
