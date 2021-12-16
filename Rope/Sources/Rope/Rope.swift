@@ -8,27 +8,42 @@ case onInterior
 }
 
 extension Range {
-	public init<C : Content>(_ r: NSRange,
-	                   in rope: Rope<C>) where Bound == Rope<C>.Index {
-		self.init(r.range, in: rope)
-	}
-	public init<C : Content>(_ r: Range<Int>, in rope: Rope<C>)
+	public init<C : Content>(_ r: NSRange, within view: Rope<C>.UnitView)
 	    where Bound == Rope<C>.Index {
+		self.init(r.range, within: view)
+	}
+	public init<C : Content>(_ r: Range<Int>,
+	    within steps: Rope<C>.StepView) where Bound == Rope<C>.Index {
 		let lower = Rope.Index(abutting: r.lowerBound, on: .right,
-		    in: rope)
-		let upper = Rope.Index(abutting: r.upperBound, on: .left,
-		    in: rope)
+		    within: steps)
+		let upper = Rope<C>.Index(abutting: r.upperBound, on: .left,
+		    within: steps)
 		if r.lowerBound != r.upperBound {
 			self = lower..<upper
-		} else if try! rope.node.label(lower.label,
-		                               precedes: upper.label,
-					       by: .jot) {
+		} else if try! steps.rope.node.label(lower.label,
+		                                     precedes: upper.label,
+						     by: .jot) {
 			self = lower..<upper
 		} else {
 			self = upper..<lower
 		}
 	}
-	// TBD add (Bound, Bound) property `orderedAliasedBounds`
+	public init<C : Content>(_ r: Range<Int>,
+	    within units: Rope<C>.UnitView) where Bound == Rope<C>.Index {
+		let lower = Rope.Index(abutting: r.lowerBound, on: .right,
+		    within: units)
+		let upper = Rope.Index(abutting: r.upperBound, on: .left,
+		    within: units)
+		if r.lowerBound != r.upperBound {
+			self = lower..<upper
+		} else if try! units.rope.node.label(lower.label,
+		                                     precedes: upper.label,
+						     by: .jot) {
+			self = lower..<upper
+		} else {
+			self = upper..<lower
+		}
+	}
 }
 
 extension Rope.Node {
@@ -370,7 +385,7 @@ public class Rope<C : Content> {
 		return top.attributes(at: i)
 	}
 	public func setAttributes(_ attrs: Attributes, range r: Range<Int>) {
-		let ir = Range(r, in: self)
+		let ir = Range(r, within: self.units)
 		guard let newtop = try? top.settingAttributes(attrs, range: ir)
 		    else {
 			return
@@ -380,7 +395,7 @@ public class Rope<C : Content> {
 		    undoList: nil as ChangeList<Rope>?)
 	}
 	public func clearAttributes(on r: Range<Int>) {
-		let ir = Range(r, in: self)
+		let ir = Range(r, within: self.units)
 		guard let newtop = try? top.clearingAttributes(on: ir) else {
 			return
 		}

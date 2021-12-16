@@ -14,7 +14,7 @@ extension Rope {
 		}
 		public subscript(_ r: Range<Offset>) -> Content {
 			get {
-				let ir = Range(r, in: rope)
+				let ir = Range(r, within: rope.units)
 				return rope.node[ir]
 			}
 		}

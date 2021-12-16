@@ -273,7 +273,6 @@ extension Range where Bound : Comparable {
 class ConstructEmbeddedSelections : XCTestCase {
 	let c = [RWZC(), RWZC(), RWZC(), RWZC()]
 	let text: Substring = "pqrstu"
-	// let idx = RSS.Index(unitOffset: ofs, in: r)
 	func testInitialSelection() {
 		var nonEmptyRanges: [(Int, Int)] = []
 		let length = text.count
@@ -281,7 +280,8 @@ class ConstructEmbeddedSelections : XCTestCase {
 		nonEmptyRanges = (0..<length).flatMap { first in
 			((first + 1)..<length).map { last in (first, last) }
 		}
-		for ((first, last), (innerFirst, innerLast)) in nonEmptyRanges ⨯ nonEmptyRanges {
+		for ((first, last), (innerFirst, innerLast)) in
+		    nonEmptyRanges ⨯ nonEmptyRanges {
 			let changes = ChangeList<RSS>()
 			let pqrstu: RSS = Rope(with: .text(text))
 			let outerParts = (head: text.prefix(first),
@@ -295,8 +295,8 @@ class ConstructEmbeddedSelections : XCTestCase {
 			let outer = text.unitRange(for: outerParts.middle)
 			let inner = text.unitRange(for: innerParts.middle)
 
-			let outerRange = Range(outer, in: pqrstu)
-			let innerRange = Range(inner, in: pqrstu)
+			let outerRange = Range(outer, within: pqrstu.units)
+			let innerRange = Range(inner, within: pqrstu.units)
 			let after: NSS =
 			    .nodes(.text(outerParts.head),
 				   .zone(c[0], .text(outerParts.middle)),
@@ -1282,7 +1282,8 @@ class LookupUsingRopeIndicesDerivedFromUTF16Offsets: XCTestCase {
 		let nests = r.nests
 		for (i, expected) in expectations.enumerated() {
 			let ofs = i
-			let idx = RSS.Index(unitOffset: ofs, in: r)
+			let idx = RSS.Index(abutting: ofs, on: .right,
+			    within: r.units)
 			let found = nests[idx]
 			XCTAssert(found == expected,
 			    "found \(found) expected \(expected)")
@@ -1290,7 +1291,7 @@ class LookupUsingRopeIndicesDerivedFromUTF16Offsets: XCTestCase {
 	}
 	func testEndIndex() {
 		let ofs = expectations.count
-		let idx = RSS.Index(unitOffset: ofs, in: r)
+		let idx = RSS.Index(abutting: ofs, on: .right, within: r.units)
 		XCTAssertThrowsError(try nests.element(at: idx))
 	}
 }
@@ -1683,7 +1684,7 @@ class NodeAttributes : XCTestCase {
 		XCTAssert(range == 8..<12)
 	}
 	func testSettingFrontAndMiddleAttributes() {
-		let ir = Range(0..<8, in: rope)
+		let ir = Range(0..<8, within: rope.units)
 		XCTAssertNoThrow { [rope] in
 			let newn = try rope.node.settingAttributes(
 			    NodeAttributes.newAttrs, range: ir)
@@ -1695,7 +1696,7 @@ class NodeAttributes : XCTestCase {
 		}
 	}
 	static func helpTestSettingCentralAttributes(_ oldr: RSS) {
-		let ir = Range(2..<9, in: oldr)
+		let ir = Range(2..<9, within: oldr.units)
 		XCTAssertNoThrow { [oldr] in
 			let newn = try oldr.node.settingAttributes(
 			    NodeAttributes.newAttrs, range: ir)
@@ -1728,7 +1729,7 @@ class NodeAttributes : XCTestCase {
 		NodeAttributes.helpTestSettingCentralAttributes(contained)
 	}
 	func testSettingBackAttributes() {
-		let ir = Range(8..<12, in: rope)
+		let ir = Range(8..<12, within: rope.units)
 		XCTAssertNoThrow { [self] in
 			let newn = try rope.node.settingAttributes(
 			    NodeAttributes.newAttrs, range: ir)
@@ -1741,7 +1742,7 @@ class NodeAttributes : XCTestCase {
 		}
 	}
 	func testSettingLastAttributes() {
-		let ir = Range(11..<12, in: rope)
+		let ir = Range(11..<12, within: rope.units)
 		XCTAssertNoThrow { [rope] in
 			let newn = try rope.node.settingAttributes(
 			    NodeAttributes.newAttrs, range: ir)
@@ -2084,8 +2085,8 @@ class CompareIndicesAndEndComplicatedRopes: NestedZoneBase {
 		let indices = pqrs.indices
 		let idx = indices.index(pqrs.endIndex, offsetBy: -2)
 		let undoList = ChangeList<RSS>()
-		try! pqrs.replace(Range(2..<4, in: pqrs), with: Substring(""),
-		    undoList: undoList)
+		try! pqrs.replace(Range(2..<4, within: pqrs.units),
+		    with: Substring(""), undoList: undoList)
 		XCTAssert(idx == pqrs.endIndex)
 	}
 }
@@ -2109,8 +2110,8 @@ class CompareIndicesAndStartComplicatedRopes: NestedZoneBase {
 		let indices = pqrs.indices
 		let idx = indices.index(pqrs.startIndex, offsetBy: 2)
 		let undoList = ChangeList<RSS>()
-		try! pqrs.replace(Range(0..<2, in: pqrs), with: Substring(""),
-		    undoList: undoList)
+		try! pqrs.replace(Range(0..<2, within: pqrs.units),
+		    with: Substring(""), undoList: undoList)
 		XCTAssert(idx == pqrs.startIndex)
 	}
 }
@@ -2222,7 +2223,7 @@ class UndoRedo : XCTestCase {
 		// nibble away at the 5th paragraph unit by unit starting
 		// at the front
 		for _ in 0..<paragraphLength {
-			let ir = Range(offset..<offset+1, in: rope)
+			let ir = Range(offset..<offset+1, within: rope.units)
 
 			contentHistory.append(rope.node.content)
 			changes = ChangeList<RSS>()
@@ -2401,7 +2402,7 @@ class ZoneReplacementsBase : XCTestCase {
 			let tree = ro ? innerRO : innerRW
 			let rope: RSS = Rope(with: tree)
 			let range = start..<(start + width)
-			let ir = Range(range, in: rope)
+			let ir = Range(range, within: rope.units)
 			let overlaps = range.overlaps(3...7)
 			let fails = ro && overlaps
 			let assert = Self.functionAssertingThrows(iff: fails)
@@ -2430,7 +2431,7 @@ class ZoneReplacementsBase : XCTestCase {
 			let tree = ro ? outerRO : outerRW
 			let rope: RSS = Rope(with: tree)
 			let range = start..<(start + width)
-			let ir = Range(range, in: rope)
+			let ir = Range(range, within: rope.units)
 			let overlaps = range.overlaps(0...2) ||
 			               range.overlaps(8...10)
 			let fails = ro && overlaps
@@ -2456,7 +2457,7 @@ class ZoneReplacementsBase : XCTestCase {
 		for (before, range, replacement, expected, _) in
 		    beforeAfterCombos {
 			let rope: RSS = Rope(with: before)
-			let ir = Range(range, in: rope)
+			let ir = Range(range, within: rope.units)
 			guard let after = try? rope.node.replacing(
 			    after: ir.lowerBound.label,
 			    upTo: ir.upperBound.label,
@@ -2488,7 +2489,7 @@ class ZoneReplacementsBase : XCTestCase {
 				change.changeInLength = delta
 				}, attributesDidChange: { _ in return })
 			let undoList = ChangeList<RSS>()
-			try! rope.replace(Range(range, in: rope),
+			try! rope.replace(Range(range, within: rope.units),
 			    with: replacement, undoList: undoList)
 			XCTAssert(changeInLength == change.changeInLength,
 			    "\(changeInLength ) !~ \(change.changeInLength)")

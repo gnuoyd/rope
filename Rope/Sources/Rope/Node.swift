@@ -283,69 +283,94 @@ public extension Rope.Node {
 			}
 		}
 	}
-	func inserting(index h: Label, abutting side: Side,
-	    of offset: Offset) -> Rope.Node {
+	func inserting(_ label: Label, abutting side: Side,
+	    ofStep offset: Int) -> Rope.Node {
 		switch self {
 		case .index(_), .empty:
 			assert(offset == 0)
 			switch side {
 			case .left:
-				return Self.index(label: h).appending(self)
+				return Self.index(label: label).appending(self)
 			case .right:
-				return self.appending(.index(label: h))
+				return self.appending(.index(label: label))
 			}
 		case .leaf(let attrs, let content):
 			let idx = C.Index(unitOffset: offset, in: content)
 			let l = content.prefix(upTo: idx)
 			let r = content.suffix(from: idx)
 			return Rope.Node(content: C.init(l), attributes: attrs)
-			    .appending(.index(label: h))
+			    .appending(.index(label: label))
 			    .appending(Rope.Node(content: C.init(r),
 			        attributes: attrs))
+		case .zone(_, _) where offset == 0:
+			return Self.index(label: label).appending(self)
+		case .zone(_, _) where offset == dimensions.steps:
+			return self.appending(Self.index(label: label))
 		case .zone(let ctlr, let n):
+			assert(offset >= 1)
 			return Rope.Node(controller: ctlr,
-			    node: n.inserting(index: h, abutting: side,
-			        of: offset))
-		case .concat(let l, let middle, _, _, let r, _):
+			    node: n.inserting(label, abutting: side,
+			        ofStep: offset - 1))
+		case .concat(let l, _, _, _, let r, _):
+			let middle = l.dimensions.steps
 			if offset < middle {
-				return l.inserting(index: h, abutting: side,
-				    of: offset).appending(r)
+				return l.inserting(label, abutting: side,
+				    ofStep: offset).appending(r)
 			}
 			if middle < offset {
-				return l.appending(r.inserting(index: h,
-				    abutting: side, of: offset - middle))
+				return l.appending(r.inserting(label,
+				    abutting: side, ofStep: offset - middle))
 			}
 			switch side {
 			case .left:
-				return l.inserting(index: h, abutting: side,
-				    of: offset).appending(r)
+				return l.inserting(label, abutting: side,
+				    ofStep: offset).appending(r)
 			case .right:
-				return l.appending(r.inserting(index: h,
-				    abutting: side, of: offset - middle))
+				return l.appending(r.inserting(label,
+				    abutting: side, ofStep: offset - middle))
 			}
 		}
 	}
-	func inserting(index h: Label, at place: Offset) -> Rope.Node {
+	func inserting(_ label: Label, abutting side: Side,
+	    ofUnit offset: Offset) -> Rope.Node {
 		switch self {
 		case .index(_), .empty:
-			assert(place == 0)
-			return self.appending(.index(label: h))
+			assert(offset == 0)
+			switch side {
+			case .left:
+				return Self.index(label: label).appending(self)
+			case .right:
+				return self.appending(.index(label: label))
+			}
 		case .leaf(let attrs, let content):
-			let idx = C.Index(unitOffset: place, in: content)
+			let idx = C.Index(unitOffset: offset, in: content)
 			let l = content.prefix(upTo: idx)
 			let r = content.suffix(from: idx)
 			return Rope.Node(content: C.init(l), attributes: attrs)
-			    .appending(.index(label: h))
+			    .appending(.index(label: label))
 			    .appending(Rope.Node(content: C.init(r),
 			        attributes: attrs))
 		case .zone(let ctlr, let n):
 			return Rope.Node(controller: ctlr,
-			    node: n.inserting(index: h, at: place))
-		case .concat(let l, let idx, _, _, let r, _) where place < idx:
-			return l.inserting(index: h, at: place).appending(r)
-		case .concat(let l, let idx, _, _, let r, _):
-			return l.appending(
-			    r.inserting(index: h, at: place - idx))
+			    node: n.inserting(label, abutting: side,
+			        ofUnit: offset))
+		case .concat(let l, let middle, _, _, let r, _):
+			if offset < middle {
+				return l.inserting(label, abutting: side,
+				    ofUnit: offset).appending(r)
+			}
+			if middle < offset {
+				return l.appending(r.inserting(label,
+				    abutting: side, ofUnit: offset - middle))
+			}
+			switch side {
+			case .left:
+				return l.inserting(label, abutting: side,
+				    ofUnit: offset).appending(r)
+			case .right:
+				return l.appending(r.inserting(label,
+				    abutting: side, ofUnit: offset - middle))
+			}
 		}
 	}
 	func inserting(_ j: Label, one step: DirectedStep, after i: Label)

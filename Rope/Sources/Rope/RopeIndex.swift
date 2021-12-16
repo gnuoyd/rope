@@ -2,16 +2,20 @@
 // Copyright (c) 2019, 2020, 2021 David Young.  All rights reserved.
 //
 extension Rope.Index {
-	init(abutting offset: Rope.Node.Offset, on side: Rope.Node.Side,
-	     in rope: Rope) {
+	init(abutting offset: Int, on side: Rope.Node.Side,
+	     within view: Rope.UnitView) {
 		let h = Label()
-		rope.node = rope.node.inserting(index: h, abutting: side,
-		    of: offset)
+		let rope = view.rope
+		rope.node = rope.node.inserting(h, abutting: side,
+		    ofUnit: offset)
 		self = .interior(of: rope, label: h)
 	}
-	init(unitOffset offset: Rope.Node.Offset, in rope: Rope) {
+	init(abutting offset: Int, on side: Rope.Node.Side,
+	    within view: Rope.StepView) {
 		let h = Label()
-		rope.node = rope.node.inserting(index: h, at: offset)
+		let rope = view.rope
+		rope.node = rope.node.inserting(h, abutting: side,
+		    ofStep: offset)
 		self = .interior(of: rope, label: h)
 	}
 }
