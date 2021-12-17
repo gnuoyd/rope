@@ -50,7 +50,7 @@ extension Rope.Node {
 	public struct Dimensions {
 		public let _indices: Int
 		public let _boundaries: Int
-		public let _units: Offset
+		public let _units: Int
 		public var jots: Int {
 			return _indices + _boundaries + _units
 		}
@@ -64,7 +64,7 @@ extension Rope.Node {
 			return Dimensions(indices: 0, boundaries: 0, units: 0)
 		}
 		public init(indices: Int = 0, boundaries: Int = 0,
-		    units: Offset = 0) {
+		    units: Int = 0) {
 			_indices = indices
 			_boundaries = boundaries
 			_units = units
