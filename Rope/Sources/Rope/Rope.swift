@@ -341,14 +341,12 @@ public class Rope<C : Content> {
 		 */
 		let changes = ChangeList<Rope.Node>()
 		let oldOffsets: OffsetPair =
-		    try (top.offset(of: r.lowerBound.label),
-		         top.offset(of: r.upperBound.label))
+		    try (offset(of: r.lowerBound), offset(of: r.upperBound))
 		top = try top.replacing(
 		    after: r.lowerBound, upTo: r.upperBound,
 		    with: replacement, undoList: changes)
 		let newOffsets: (lower: Offset, upper: Offset) =
-		    try (top.offset(of: r.lowerBound.label),
-		         top.offset(of: r.upperBound.label))
+		    try (offset(of: r.lowerBound), offset(of: r.upperBound))
 		undoList.record { (rope, undoList) in
 			try rope.applyChanges(changes, undoList: undoList)
 			return rope
@@ -360,8 +358,7 @@ public class Rope<C : Content> {
 	    on r: Range<Index>, undoList: ChangeList<Rope>) throws {
 		let changes = ChangeList<Rope.Node>()
 		let offsets: OffsetPair =
-		    try (top.offset(of: r.lowerBound.label),
-		         top.offset(of: r.upperBound.label))
+		    try (offset(of: r.lowerBound), offset(of: r.upperBound))
 		top = try top.setController(ctlr,
 		    after: r.lowerBound.label, upTo: r.upperBound.label,
 		    undoList: changes)
