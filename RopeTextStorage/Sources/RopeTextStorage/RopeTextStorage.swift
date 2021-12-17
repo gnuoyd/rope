@@ -40,7 +40,7 @@ public class RopeTextStorage: NSTextStorage {
 	override public func attributes(at location: Int,
 	    effectiveRange _range: NSRangePointer?)
 	    -> [NSAttributedString.Key : Any] {
-		let (attrs, r) = backing.attributes(at: location)
+		let (attrs, r) = backing.units.attributes(at: location)
 		if let range = _range {
 			range.initialize(to: r.nsRange)
 		}

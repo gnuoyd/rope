@@ -24,6 +24,10 @@ extension Rope {
 				return self[r][...]
 			}
 		}
+		public func attributes(at i: Offset)
+		    -> (Attributes, Range<Offset>) {
+			return rope.node.attributes(at: i)
+		}
 	}
 	public var units: UnitView {
                 return UnitView(rope: self)
