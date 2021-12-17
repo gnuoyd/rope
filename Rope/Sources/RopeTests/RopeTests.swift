@@ -1607,35 +1607,36 @@ class LabelHolding : XCTestCase {
 }
 
 class NodeSubropes : XCTestCase {
-	let n: NSS = .nodes(.text("abc"), .text("defgh"), .text("ijkl"))
+	let rope: RSS =
+	    Rope(with: .nodes(.text("abc"), .text("defgh"), .text("ijkl")))
 
 	func testFullContent() {
-		XCTAssert(n.content == "abcdefghijkl")
+		XCTAssert(rope.node.content == "abcdefghijkl")
 	}
 
 	func testLeadingSubnode() {
-		let section = n.subrope(from: 0, upTo: 3)
-		XCTAssert(section.content == "abc")
+		let section = rope.units[0..<3]
+		XCTAssert(section == "abc")
 	}
 
 	func testCrossingFirstTwoSubnodes() {
-		let section = n.subrope(from: 0, upTo: 5)
-		XCTAssert(section.content == "abcde")
+		let section = rope.units[0..<5]
+		XCTAssert(section == "abcde")
 	}
 
 	func testSecondSubnode() {
-		let section = n.subrope(from: 3, upTo: 8)
-		XCTAssert(section.content == "defgh")
+		let section = rope.units[3..<8]
+		XCTAssert(section == "defgh")
 	}
 
 	func testTrailingTwoSubnodes() {
-		let section = n.subrope(from: 3, upTo: 12)
-		XCTAssert(section.content == "defghijkl")
+		let section = rope.units[3..<12]
+		XCTAssert(section == "defghijkl")
 	}
 
 	func testCrossingLastTwoSubnodes() {
-		let section = n.subrope(from: 4, upTo: 9)
-		XCTAssert(section.content == "efghi")
+		let section = rope.units[4..<9]
+		XCTAssert(section == "efghi")
 	}
 }
 
