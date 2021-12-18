@@ -20,6 +20,10 @@ extension Dictionary where Key == NSAttributedString.Key, Value == Any {
 	}
 }
 
+extension Rope.Node {
+	public typealias Unit = C.Unit
+}
+
 extension Rope {
 	class ReadonlyZoneController : ZoneController {
 		override func transformingAttributes(

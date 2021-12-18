@@ -83,10 +83,6 @@ extension Rope.Node.Dimensions {
 	}
 }
 
-extension Rope.Node {
-	public typealias Unit = C.Unit
-}
-
 /* Use cases:
  *
  * Get/set/add/remove attributes on characters.
