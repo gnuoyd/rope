@@ -1026,6 +1026,43 @@ public extension Rope.Node {
 	}
 }
 
+extension Rope.Node {
+	public struct Dimensions {
+		public let _indices: Int
+		public let _boundaries: Int
+		public let _units: Int
+		public var jots: Int {
+			return _indices + _boundaries + _units
+		}
+		public var steps: Int {
+			return _boundaries + _units
+		}
+		public var units: Int {
+			return _units
+		}
+		public static var zero: Dimensions {
+			return Dimensions(indices: 0, boundaries: 0, units: 0)
+		}
+		public init(indices: Int = 0, boundaries: Int = 0,
+		    units: Int = 0) {
+			_indices = indices
+			_boundaries = boundaries
+			_units = units
+		}
+		public var halfPerimeter: Int {
+			return jots
+		}
+	}
+}
+
+extension Rope.Node.Dimensions {
+	public static func +(_ l: Self, _ r: Self) -> Self {
+		return Self(indices: l._indices + r._indices,
+		            boundaries: l._boundaries + r._boundaries,
+		            units: l._units + r._units)
+	}
+}
+
 public extension Rope.Node {
 	var leaves: LeafSequence {
 		return LeafSequence(of: self)
