@@ -168,12 +168,8 @@ public class Rope<C : Content> : RopeDelegation {
 		}
 	}
 
-	/* A Node directly encodes the presence of indices because it is
-	 * possible for an index to move up and down the hierarchy of text
-	 * zones without changing between-character positions.  An index
-	 * can appear at the position left of the first character or right of
-	 * the last character in a Node.  An index can also appear in a
-	 * Node that contains no characters.
+	/* Any number of indices can appear between two character positions,
+	 * between zone boundaries, at the start and at the end of a Rope.
 	 */
 	public indirect enum Node {
 	public typealias Content = C
