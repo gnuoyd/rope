@@ -28,7 +28,7 @@ extension Rope {
 			return rope.node.attributes(at: i)
 		}
 		public func extract(_ range: Range<Int>,
-		    filling buffer: inout UnsafeMutablePointer<C.Unit>){
+		    filling buffer: inout UnsafeMutablePointer<C.Unit>) {
 			return rope.node.extractUnits(from: range.lowerBound,
 			    upTo: range.upperBound, filling: &buffer)
 		}
