@@ -1092,16 +1092,6 @@ public extension Rope.Node {
 	var startIndex: Offset {
 		return 0
 	}
-	var midIndex: Offset {
-		switch self {
-		case .zone(_, let rope):
-			return rope.midIndex
-		case .concat(_, let idx, _, _, _, _):
-			return idx
-		case .leaf(_, _), .empty, .index(_):
-			return self.endIndex
-		}
-	}
 	var dimensions: Dimensions {
 		switch self {
 		case Self.concat(_, _, _, _, _, let dims):
