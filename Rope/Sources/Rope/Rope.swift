@@ -432,14 +432,6 @@ extension Rope.Node {
 }
 
 extension Rope {
-	public func extractUnits(_ range: Range<Offset>,
-	    filling buffer: inout UnsafeMutablePointer<C.Unit>){
-		return top.extractUnits(from: range.lowerBound,
-		    upTo: range.upperBound, filling: &buffer)
-	}
-}
-
-extension Rope {
 	func zonesEnclosing(_ i: Index) throws -> [ZoneController] {
 		return try top.zonesEnclosing(i)
 	}

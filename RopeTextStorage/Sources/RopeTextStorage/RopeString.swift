@@ -35,7 +35,7 @@ class RopeString : NSString {
 	override func getCharacters(_ buffer_in: UnsafeMutablePointer<unichar>,
 	    range: NSRange) {
 		var buffer = buffer_in
-		backing.extractUnits(range.range, filling: &buffer)
+        backing.units.extract(range.range, filling: &buffer)
 	}
 	override func copy(with zone: NSZone? = nil) -> Any {
 		return self

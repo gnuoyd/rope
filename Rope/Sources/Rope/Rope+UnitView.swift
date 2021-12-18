@@ -28,6 +28,11 @@ extension Rope {
 		    -> (Attributes, Range<Offset>) {
 			return rope.node.attributes(at: i)
 		}
+		public func extract(_ range: Range<Int>,
+		    filling buffer: inout UnsafeMutablePointer<C.Unit>){
+			return rope.node.extractUnits(from: range.lowerBound,
+			    upTo: range.upperBound, filling: &buffer)
+		}
 	}
 	public var units: UnitView {
                 return UnitView(rope: self)
