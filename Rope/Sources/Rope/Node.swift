@@ -1284,6 +1284,9 @@ public extension Rope.Node {
 		case .index(let w) where w.get() == label:
 			return origin
 		case .concat(let l, let midx, _, _, let r, _):
+			/* TBD accelerate: check for `label` presence in
+			 * `l` and `r`.
+			 */
 			do {
 				return try l.unitOffset(
 				    of: label, origin: origin)
