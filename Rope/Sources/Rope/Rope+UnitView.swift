@@ -4,7 +4,7 @@ extension Rope {
 		init(rope r: Rope) {
 			rope = r
 		}
-                public subscript(i: Offset) -> Rope.Node.Unit {
+                public subscript(i: Int) -> Rope.Node.Unit {
                         get {
                                 return rope.node.unit(at: i)
                         }
@@ -12,20 +12,19 @@ extension Rope {
 		public var length: Int {
 			return rope.node.length
 		}
-		public subscript(_ r: Range<Offset>) -> Content {
+		public subscript(_ r: Range<Int>) -> Content {
 			get {
 				let ir = Range(r, within: rope.units)
 				return rope.node[ir]
 			}
 		}
-		public subscript<I>(_ r: Range<Offset>)
+		public subscript<I>(_ r: Range<Int>)
 		    -> I where Content.SubSequence == I {
 			get {
 				return self[r][...]
 			}
 		}
-		public func attributes(at i: Offset)
-		    -> (Attributes, Range<Offset>) {
+		public func attributes(at i: Int) -> (Attributes, Range<Int>) {
 			return rope.node.attributes(at: i)
 		}
 		public func extract(_ range: Range<Int>,
