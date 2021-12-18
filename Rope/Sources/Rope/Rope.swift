@@ -44,6 +44,12 @@ extension Range {
 			self = upper..<lower
 		}
 	}
+	public func relative<C : Content>(to view: Rope<C>.UnitView)
+	    throws -> Range<Int> where Bound == Rope<C>.Index {
+		let lower = try view.rope.offset(of: lowerBound)
+		let upper = try view.rope.offset(of: upperBound)
+		return lower..<upper
+	}
 }
 
 extension Rope.Node {
