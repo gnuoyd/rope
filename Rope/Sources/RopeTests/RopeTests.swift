@@ -21,6 +21,54 @@ func ⨯<L, R, Lseq : Sequence, Rseq : Sequence>(_ l: Lseq, _ r: Rseq)
 	}
 }
 
+extension Range where Bound : Comparable {
+	func contains(_ other: Range<Bound>) -> Bool {
+		return self.lowerBound <= other.lowerBound &&
+		       other.upperBound <= self.upperBound
+	}
+	func intersects(_ other: Range<Bound>) -> Bool {
+		/* self |-----|
+		 * other      |-----|
+		 *
+		 * self        |-----|
+		 * other |-----|
+		 */
+		return !(other.upperBound <= self.lowerBound ||
+		         self.upperBound <= other.lowerBound)
+	}
+}
+
+extension Range where Bound : Comparable {
+	func strictlyOverlaps(_ other: Range<Bound>) -> Bool {
+		return other.clamped(to: self) == other ||
+		       self.clamped(to: other) == self
+	}
+}
+
+extension Rope {
+	class ReadonlyZoneController : ZoneController {
+		override func transformingAttributes(
+		    after lowerBound: Label, upTo upperBound: Label,
+		    in content: Rope.Node,
+		    with fn: (Attributes) -> Attributes) throws -> Rope.Node {
+			throw Rope.Node.NodeError.readonlyZone
+		}
+		override func replacing(
+		    after lowerBound: Label, upTo upperBound: Label,
+		    in content: Rope.Node,
+		    with replacement: Rope.Node,
+		    undoList: ChangeList<Rope.Node>?) throws -> Rope.Node {
+			throw Rope.Node.NodeError.readonlyZone
+		}
+		override func setController(_ ctlr: ZoneController,
+		    after lowerBound: Label, upTo upperBound: Label,
+		    in content: Rope.Node,
+		    undoList: ChangeList<Rope.Node>?) throws -> Rope.Node {
+			throw Rope.Node.NodeError.readonlyZone
+		}
+	}
+}
+
 class IndexOrderByIndex: XCTestCase {
 	func testComparingIndicesSequentially() {
 		let labels = [Label(), Label(), Label()]
@@ -243,30 +291,6 @@ class IndexedZoneBase : XCTestCase {
 		          .interior(of: rope, label: l[2]))
 		XCTAssert(rope.index(beforeZone: c[2]) ==
 		          .interior(of: rope, label: l[4]))
-	}
-}
-
-extension Range where Bound : Comparable {
-	func contains(_ other: Range<Bound>) -> Bool {
-		return self.lowerBound <= other.lowerBound &&
-		       other.upperBound <= self.upperBound
-	}
-	func intersects(_ other: Range<Bound>) -> Bool {
-		/* self |-----|
-		 * other      |-----|
-		 *
-		 * self        |-----|
-		 * other |-----|
-		 */
-		return !(other.upperBound <= self.lowerBound ||
-		         self.upperBound <= other.lowerBound)
-	}
-}
-
-extension Range where Bound : Comparable {
-	func strictlyOverlaps(_ other: Range<Bound>) -> Bool {
-		return other.clamped(to: self) == other ||
-		       self.clamped(to: other) == self
 	}
 }
 

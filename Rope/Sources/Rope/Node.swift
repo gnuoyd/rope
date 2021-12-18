@@ -24,30 +24,6 @@ extension Rope.Node {
 	public typealias Unit = C.Unit
 }
 
-extension Rope {
-	class ReadonlyZoneController : ZoneController {
-		override func transformingAttributes(
-		    after lowerBound: Label, upTo upperBound: Label,
-		    in content: Rope.Node,
-		    with fn: (Attributes) -> Attributes) throws -> Rope.Node {
-			throw Rope.Node.NodeError.readonlyZone
-		}
-		override func replacing(
-		    after lowerBound: Label, upTo upperBound: Label,
-		    in content: Rope.Node,
-		    with replacement: Rope.Node,
-		    undoList: ChangeList<Rope.Node>?) throws -> Rope.Node {
-			throw Rope.Node.NodeError.readonlyZone
-		}
-		override func setController(_ ctlr: ZoneController,
-		    after lowerBound: Label, upTo upperBound: Label,
-		    in content: Rope.Node,
-		    undoList: ChangeList<Rope.Node>?) throws -> Rope.Node {
-			throw Rope.Node.NodeError.readonlyZone
-		}
-	}
-}
-
 extension Rope.Node {
 	/*
 	 * Result of taking a step in a Node.  A full step moves up or down
