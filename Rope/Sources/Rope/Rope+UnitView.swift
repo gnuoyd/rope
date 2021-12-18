@@ -10,7 +10,7 @@ extension Rope {
                         }
                 }
 		public var length: Int {
-			return rope.node.length
+			return rope.node.dimensions.units
 		}
 		public subscript(_ r: Range<Int>) -> Content {
 			get {
@@ -25,7 +25,7 @@ extension Rope {
 			}
 		}
 		public func attributes(at i: Int) -> (Attributes, Range<Int>) {
-			return rope.node.attributes(at: i)
+			return rope.node.attributes(atUnit: i)
 		}
 		public func extract(_ range: Range<Int>,
 		    filling buffer: inout UnsafeMutablePointer<C.Unit>) {

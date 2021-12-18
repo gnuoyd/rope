@@ -518,18 +518,17 @@ public extension Rope.Node {
 	case indicesCrossZones
 	case indicesOutOfOrder
 	}
-	func attributes(at i: Offset, base: Offset)
-	    -> (Attributes, Range<Offset>) {
+	func attributes(atUnit i: Int, base: Int) -> (Attributes, Range<Int>) {
 		guard case .leaf(let attrs, _) = self,
 		    0 <= i, i < endIndex else {
 			fatalError("Index out of bounds")
 		}
 		return (attrs, base..<base + endIndex)
 	}
-	func attributes(at i: Offset) -> (Attributes, Range<Offset>) {
-		return transforming(at: i) {
-			(node: Self, i: Offset, base: Offset) in
-				node.attributes(at: i, base: base)
+	func attributes(atUnit i: Int) -> (Attributes, Range<Int>) {
+		return transforming(atUnit: i) {
+			(node: Self, i: Int, base: Int) in
+				node.attributes(atUnit: i, base: base)
 		}
 	}
 	/* A naive version of `transformingAttributes(after:upTo:with:)` splits
@@ -1098,24 +1097,22 @@ public extension Rope.Node {
 			return 0
 		}
 	}
-	var length: Int {
-		return endIndex - startIndex
-	}
-	func transforming<R>(at i: Offset, base: Offset = 0,
+	func transforming<R>(atUnit i: Offset, base: Offset = 0,
 	    with fn: (Self, Offset, Offset) -> R) -> R {
 		switch self {
 		case .leaf(_, _), .empty, .index(_):
 			return fn(self, i, base)
 		case .concat(let ropel, let idx, _, _, let roper, _):
 			if i < idx {
-				return ropel.transforming(at: i, base: base,
+				return ropel.transforming(atUnit: i, base: base,
 				    with: fn)
 			} else {
-				return roper.transforming(at: i - idx,
+				return roper.transforming(atUnit: i - idx,
 				    base: base + idx, with: fn)
 			}
 		case .zone(_, let rope):
-			return rope.transforming(at: i, base: base, with: fn)
+			return rope.transforming(atUnit: i, base: base,
+			    with: fn)
 		}
 	}
 	func unit(at i: Offset) -> C.UnitView.Element {
@@ -1127,7 +1124,7 @@ public extension Rope.Node {
 			let sidx = C.Index(unitOffset: i, in: s)
 			return s.units[sidx]
 		}
-		return transforming(at: i, with: unit)
+		return transforming(atUnit: i, with: unit)
 	}
 	func zonesEnclosing(_ i0: Offset) -> [Rope.ZoneController] {
 		var path: [Rope.ZoneController] = []

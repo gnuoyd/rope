@@ -405,7 +405,7 @@ extension Rope {
 
 extension Rope.Node {
 	var hasSingleIndex: Bool {
-		return labelSet.zoneCount == 0 && length == 0
+		return dimensions.steps == 0
 	}
 }
 
