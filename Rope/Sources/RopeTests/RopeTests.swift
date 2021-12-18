@@ -2481,14 +2481,17 @@ class ZoneReplacementsBase : XCTestCase {
 		for (before, range, replacement, _, changeInLength) in
 		    beforeAfterCombos {
 			let rope: RSS = Rope(with: before)
-			var change: (range: Range<Offset>,
+			var change: (range: Range<Int>,
 			             changeInLength: Int) =
 			    (range: 0..<0, changeInLength: Int.min)
-			rope.delegate =
-			    AnyRopeOffsetDelegate(didChange: { (range, delta) in
-				change.range = range
-				change.changeInLength = delta
-				}, attributesDidChange: { _ in return })
+			rope.unitsDelegate =
+			    AnyRopeDelegate<RSS.Content>(
+			        didChange: {
+				    (range, delta) in
+					change.range = range
+					change.changeInLength = delta
+				},
+				attributesDidChange: { _ in return })
 			let undoList = ChangeList<RSS>()
 			try! rope.replace(Range(range, within: rope.units),
 			    with: replacement, undoList: undoList)

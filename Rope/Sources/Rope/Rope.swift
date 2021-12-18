@@ -102,7 +102,7 @@ extension Rope.Node.Dimensions {
  *
  * "Scoot" an index left or right by a label.
  */
-public class Rope<C : Content> {
+public class Rope<C : Content> : RopeDelegation {
 	public enum Climb {
 	case `in`
 	case out
@@ -187,13 +187,16 @@ public class Rope<C : Content> {
 	}
 	typealias OffsetPair = (lower: Offset, upper: Offset)
 
-	private var _delegate: RopeOffsetDelegate? = nil
-	public var delegate: RopeOffsetDelegate {
+	private var _delegate: AnyRopeDelegate<C>? = nil
+	public var unitsDelegate: RopeDelegate {
 		set {
-			_delegate = newValue
+			_delegate = AnyRopeDelegate(
+			    didChange: newValue.ropeDidChange,
+			    attributesDidChange:
+			        newValue.ropeAttributesDidChange)
 		}
 		get {
-			return _delegate ?? AnyRopeOffsetDelegate(
+			return _delegate ?? AnyRopeDelegate(
 			    didChange: self.ropeDidChange,
 			    attributesDidChange: self.ropeAttributesDidChange)
 		}
@@ -342,25 +345,22 @@ public class Rope<C : Content> {
 		 * was edited with its offsets and any change in length.
 		 */
 		let changes = ChangeList<Rope.Node>()
-		let oldOffsets: OffsetPair =
-		    try (offset(of: r.lowerBound), offset(of: r.upperBound))
+		let oldOffsets = try r.relative(to: units)
 		top = try top.replacing(
 		    after: r.lowerBound, upTo: r.upperBound,
 		    with: replacement, undoList: changes)
-		let newOffsets: (lower: Offset, upper: Offset) =
-		    try (offset(of: r.lowerBound), offset(of: r.upperBound))
+		let newOffsets = try r.relative(to: units)
 		undoList.record { (rope, undoList) in
 			try rope.applyChanges(changes, undoList: undoList)
 			return rope
 		}
-		delegate.indicateChanges(new: newOffsets, old: oldOffsets,
+		unitsDelegate.indicateChanges(new: newOffsets, old: oldOffsets,
 		    undoList: undoList)
 	}
 	public func setController(_ ctlr: ZoneController,
 	    on r: Range<Index>, undoList: ChangeList<Rope>) throws {
 		let changes = ChangeList<Rope.Node>()
-		let offsets: OffsetPair =
-		    try (offset(of: r.lowerBound), offset(of: r.upperBound))
+		let offsets = try r.relative(to: units)
 		top = try top.setController(ctlr,
 		    after: r.lowerBound.label, upTo: r.upperBound.label,
 		    undoList: changes)
@@ -368,7 +368,7 @@ public class Rope<C : Content> {
 			try rope.applyChanges(changes, undoList: undoList)
 			return rope
 		}
-		delegate.indicateChanges(new: offsets, old: offsets,
+		unitsDelegate.indicateChanges(new: offsets, old: offsets,
 		    undoList: undoList)
 	}
 	func applyChanges(_ changes: ChangeList<Rope.Node>,
@@ -380,29 +380,30 @@ public class Rope<C : Content> {
 			return rope
 		}
 	}
-	public func attributes(at i: Offset) -> (Attributes, Range<Offset>) {
-		return top.attributes(at: i)
-	}
-	public func setAttributes(_ attrs: Attributes, range r: Range<Int>) {
-		let ir = Range(r, within: self.units)
-		guard let newtop = try? top.settingAttributes(attrs, range: ir)
+	public func setAttributes(_ attrs: Attributes, range r: Range<Index>) {
+		guard let newtop = try? top.settingAttributes(attrs, range: r)
 		    else {
 			return
 		}
 		top = newtop
-		delegate.indicateAttributeChanges(on: r,
+		guard let range = try? r.relative(to: units) else {
+			return
+		}
+		unitsDelegate.indicateAttributeChanges(on: range,
 		    undoList: nil as ChangeList<Rope>?)
 	}
-	public func clearAttributes(on r: Range<Int>) {
-		let ir = Range(r, within: self.units)
-		guard let newtop = try? top.clearingAttributes(on: ir) else {
+	public func clearAttributes(on r: Range<Index>) {
+		guard let newtop = try? top.clearingAttributes(on: r) else {
 			return
 		}
 		top = newtop
-		delegate.indicateAttributeChanges(on: r,
+		guard let range = try? r.relative(to: units) else {
+			return
+		}
+		unitsDelegate.indicateAttributeChanges(on: range,
 		    undoList: nil as ChangeList<Rope>?)
 	}
-	public func offset(of index: Index) throws -> Offset {
+	public func offset(of index: Index) throws -> Int {
 		guard case .interior(_, let label) = index else {
 			throw RopeNoSuchElement.onInterior
 		}
@@ -410,7 +411,7 @@ public class Rope<C : Content> {
 	}
 }
 
-extension Rope : RopeOffsetDelegate {
+extension Rope : RopeDelegate {
 	public func ropeDidChange(on: Range<Int>, changeInLength: Int) {
 		return
 	}
@@ -653,7 +654,7 @@ extension Rope : ExpressibleByStringLiteral where
 }
 */
 
-extension RopeOffsetDelegate {
+extension RopeDelegate {
 	func indicateAttributeChanges<T>(on range: Range<Int>,
 	    undoList: ChangeList<Rope<T>>? = nil) {
 		undoList?.record { (rope, undoList) in
@@ -663,9 +664,7 @@ extension RopeOffsetDelegate {
 		}
 		ropeAttributesDidChange(on: range)
 	}
-	func indicateChanges<T>(
-	    new: (lower: Int, upper: Int),
-	    old: (lower: Int, upper: Int),
+	func indicateChanges<T>(new: Range<Int>, old: Range<Int>,
 	    undoList: ChangeList<Rope<T>>) {
 		undoList.record { (rope, undoList) in
 			self.indicateChanges(
@@ -674,9 +673,7 @@ extension RopeOffsetDelegate {
 			    undoList: undoList)
 			return rope
 		}
-		let length: (new: Int, old: Int) =
-		    ((new.upper - new.lower), (old.upper - old.lower))
-		ropeDidChange(on: old.lower..<old.upper,
-		    changeInLength: length.new - length.old)
+		ropeDidChange(on: old,
+		    changeInLength: new.count - old.count)
 	}
 }

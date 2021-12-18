@@ -14,7 +14,7 @@ public class RopeTextStorage: NSTextStorage {
 		self.backing = backing
 		_string = RopeString(with: backing)
 		super.init()
-		backing.delegate = AnyRopeOffsetDelegate(
+		backing.unitsDelegate = AnyRopeDelegate<Content>(
 		    didChange: self.ropeDidChange,
 		    attributesDidChange: self.ropeAttributesDidChange)
 	}
@@ -22,7 +22,7 @@ public class RopeTextStorage: NSTextStorage {
 		self.backing = Rope()
 		_string = RopeString(with: backing)
 		super.init()
-		backing.delegate = AnyRopeOffsetDelegate(
+		backing.unitsDelegate = AnyRopeDelegate<Content>(
 		    didChange: self.ropeDidChange,
 		    attributesDidChange: self.ropeAttributesDidChange)
 	}
@@ -65,15 +65,15 @@ public class RopeTextStorage: NSTextStorage {
 	    with str: String) {
 		performEditing() {
 			let undoList = ChangeList<Backing>()
-            try! backing.replace(Range(range, within: backing.units),
-			    with: Content(str.utf16[...]),
+			let ir = Range(range, within: backing.units)
+			try! backing.replace(ir, with: Content(str.utf16[...]),
 			    undoList: undoList)
 		}
 	}
 	override public func setAttributes(
 	    _ optAttrs: [NSAttributedString.Key : Any]?, range r: NSRange) {
 		performEditing() {
-			let range = r.range
+			let range = Range(r, within: backing.units)
 			if let attrs = optAttrs {
 				backing.setAttributes(attrs, range: range)
 			} else {
@@ -84,8 +84,8 @@ public class RopeTextStorage: NSTextStorage {
 
 }
 
-extension RopeTextStorage : RopeOffsetDelegate {
-	public func ropeDidChange(on range: Range<Offset>, changeInLength: Int){
+extension RopeTextStorage : RopeDelegate {
+	public func ropeDidChange(on range: Range<Int>, changeInLength: Int){
 		Swift.print("\(#function)(on: \(range), " +
 		    "changeInLength: \(changeInLength))")
 		let actions = NSTextStorageEditActions.editedCharacters.union(
@@ -94,7 +94,7 @@ extension RopeTextStorage : RopeOffsetDelegate {
 		    changeInLength: changeInLength)
 		return
 	}
-	public func ropeAttributesDidChange(on range: Range<Offset>) {
+	public func ropeAttributesDidChange(on range: Range<Int>) {
 		Swift.print("\(#function)(on: \(range))")
 		edited(.editedAttributes, range: range.nsRange,
 		       changeInLength: 0)
