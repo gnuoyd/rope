@@ -50,6 +50,12 @@ extension Range {
 		let upper = try view.rope.unitOffset(of: upperBound)
 		return lower..<upper
 	}
+	public func relative<C : Content>(to view: Rope<C>.StepView)
+	    throws -> Range<Int> where Bound == Rope<C>.Index {
+		let lower = try view.rope.stepOffset(of: lowerBound)
+		let upper = try view.rope.stepOffset(of: upperBound)
+		return lower..<upper
+	}
 }
 
 /* Use cases:
@@ -361,6 +367,12 @@ public class Rope<C : Content> : RopeDelegation {
 		}
 		unitsDelegate.indicateAttributeChanges(on: range,
 		    undoList: nil as ChangeList<Rope>?)
+	}
+	public func stepOffset(of index: Index) throws -> Int {
+		guard case .interior(_, let label) = index else {
+			throw RopeNoSuchElement.onInterior
+		}
+		return try top.stepOffset(of: label)
 	}
 	public func unitOffset(of index: Index) throws -> Int {
 		guard case .interior(_, let label) = index else {

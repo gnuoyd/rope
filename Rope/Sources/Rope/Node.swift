@@ -1254,6 +1254,28 @@ public extension Rope.Node {
 	    throws -> [Rope.ZoneController] {
 		return try zonesClosing(at: i.label, in: controllers)
 	}
+	func stepOffset(of label: Label, origin: Int = 0) throws -> Int {
+		switch self {
+		case .zone(_, let content):
+			return try content.stepOffset(of: label,
+			    origin: origin + 1)
+		case .index(let w) where w.get() == label:
+			return origin
+		case .concat(let l, _, _, _, let r, _):
+			/* TBD accelerate: check for `label` presence in
+			 * `l` and `r`.
+			 */
+			do {
+				return try l.stepOffset(
+				    of: label, origin: origin)
+			} catch NodeError.indexNotFound {
+				return try r.stepOffset(of: label,
+				    origin: origin + l.dimensions.steps)
+			}
+		default:
+			throw NodeError.indexNotFound
+		}
+	}
 	func unitOffset(of label: Label,
 	            origin: Offset = 0) throws -> Offset {
 		switch self {
