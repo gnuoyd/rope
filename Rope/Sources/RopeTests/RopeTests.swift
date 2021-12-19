@@ -109,13 +109,13 @@ class IndexOrderByIndex: XCTestCase {
 		          .reduce(.empty) { (tree, next) in
 			                    .nodes(tree, next) } )
 		for label in labels.dropLast() {
-			XCTAssert(try rope.node.jots(follow: label))
+			XCTAssert(try rope.node.any(.jot, follows: label))
 		}
 		guard let last = labels.last else {
 			XCTFail("No last array element.")
 			return
 		}
-		XCTAssert(try !rope.node.jots(follow: last))
+		XCTAssert(try !rope.node.any(.jot, follows: last))
 	}
 	func testPrecede() {
 		let labels = [Label(), Label(), Label()]
@@ -124,13 +124,13 @@ class IndexOrderByIndex: XCTestCase {
 		          .reduce(.empty) { (tree, next) in
 			                    .nodes(tree, next) } )
 		for label in labels.dropFirst() {
-			XCTAssert(try rope.node.jots(precede: label))
+			XCTAssert(try rope.node.any(.jot, precedes: label))
 		}
 		guard let first = labels.first else {
 			XCTFail("No first array element.")
 			return
 		}
-		XCTAssert(try !rope.node.jots(precede: first))
+		XCTAssert(try !rope.node.any(.jot, precedes: first))
 	}
 }
 

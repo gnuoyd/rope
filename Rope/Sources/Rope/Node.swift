@@ -730,13 +730,7 @@ public extension Rope.Node {
 			return false
 		}
 	}
-	func steps(follow target: Label) throws -> Bool {
-		return try exists(.step, following: target)
-	}
-	func jots(follow target: Label) throws -> Bool {
-		return try exists(.jot, following: target)
-	}
-	func exists(_ ival: Interval, following target: Label) throws -> Bool {
+	func any(_ ival: Interval, follows target: Label) throws -> Bool {
 		switch self {
 		case .index(let w) where w.get() == target:
 			return false
@@ -744,13 +738,13 @@ public extension Rope.Node {
 			return true
 		case .concat(let l, let midx, _, _, let r, let w):
 			do {
-				return try l.exists(ival, following: target) ||
+				return try l.any(ival, follows: target) ||
 				    r.labelSet.zoneCount > 0 ||
 				    midx != w.units ||
 				    (ival == .jot &&
 				     r.rightmostIndexLabel() != nil)
 			} catch {
-				return try r.exists(ival, following: target)
+				return try r.any(ival, follows: target)
 			}
 		case .empty, .zone(_, _), .index(_),
 		     .leaf(_, _):
@@ -782,13 +776,7 @@ public extension Rope.Node {
 			return nil
 		}
 	}
-	func steps(precede target: Label) throws -> Bool {
-		return try exists(.step, preceding: target)
-	}
-	func jots(precede target: Label) throws -> Bool {
-		return try exists(.jot, preceding: target)
-	}
-	func exists(_ ival: Interval, preceding target: Label) throws -> Bool {
+	func any(_ ival: Interval, precedes target: Label) throws -> Bool {
 		switch self {
 		case .index(let w) where w.get() == target:
 			return false
@@ -797,13 +785,13 @@ public extension Rope.Node {
 		case .concat(let l, let midx, _, _, let r, _):
 			do {
 				return
-				    try r.exists(ival, preceding: target) ||
+				    try r.any(ival, precedes: target) ||
 				    l.labelSet.zoneCount > 0 ||
 				    0 != midx ||
 				    (ival == .jot &&
 				     l.leftmostIndexLabel() != nil)
 			} catch {
-				return try l.exists(ival, preceding: target)
+				return try l.any(ival, precedes: target)
 			}
 		case .empty, .zone(_, _), .index(_),
 		     .leaf(_, _):
@@ -821,8 +809,8 @@ public extension Rope.Node {
 			}
 			if l.contains(h1) && r.contains(h2) {
 				return try ival == .jot ||
-				           l.exists(ival, following: h1) ||
-				           r.exists(ival, preceding: h2)
+				           l.any(ival, follows: h1) ||
+				           r.any(ival, precedes: h2)
 			}
 			if let ordered = try? l.label(h1, precedes: h2,
 			    by: ival) {

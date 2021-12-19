@@ -183,14 +183,14 @@ public class Rope<C : Content> : RopeDelegation {
 			} else {
 				tmp = newValue
 			}
-			switch try? tmp.jots(precede: _startLabel) {
+			switch try? tmp.any(.jot, precedes: _startLabel) {
 			case false?:
 				break
 			default:
 				_startLabel = Label()
 				tmp = .nodes(.index(label: _startLabel), tmp)
 			}
-			switch try? tmp.jots(follow: _endLabel) {
+			switch try? tmp.any(.jot, follows: _endLabel) {
 			case false?:
 				break
 			default:
@@ -221,14 +221,14 @@ public class Rope<C : Content> : RopeDelegation {
 		let prototype = Node.tree(from: nodes)
 		var tmp = prototype
 		if let leftmost = prototype.leftmostIndexLabel(),
-		    case false? = try? prototype.jots(precede: leftmost) {
+		    case false? = try? prototype.any(.jot, precedes: leftmost) {
 			_startLabel = leftmost
 		} else {
 			_startLabel = Label()
 			tmp = .nodes(.index(label: _startLabel), tmp)
 		}
 		if let rightmost = prototype.rightmostIndexLabel(),
-		    case false? = try? prototype.jots(follow: rightmost) {
+		    case false? = try? prototype.any(.jot, follows: rightmost) {
 			_endLabel = rightmost
 		} else {
 			_endLabel = Label()
@@ -392,12 +392,6 @@ extension Rope : RopeDelegate {
 }
 
 extension Rope {
-	func steps(follow target: Label) throws -> Bool {
-		return try top.steps(follow: target)
-	}
-	func steps(precede target: Label) throws -> Bool {
-		return try top.steps(precede: target)
-	}
 	var hasSingleIndex: Bool {
 		return top.hasSingleIndex
 	}
@@ -425,7 +419,7 @@ extension Rope {
 	public func index(after i: Index, climbing dir: Climb,
 	    innermostZone: inout ZoneController?) -> Index? {
 		do {
-			if try !top.jots(follow: i.label) {
+			if try !top.any(.jot, follows: i.label) {
 				return nil
 			}
 		} catch {
@@ -452,7 +446,7 @@ extension Rope {
 	public func index(before j: Index, climbing dir: Climb,
 	    innermostZone: inout ZoneController?) -> Index? {
 		do {
-			if try !top.jots(precede: j.label) {
+			if try !top.any(.jot, precedes: j.label) {
 				return nil
 			}
 		} catch {
