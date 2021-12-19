@@ -526,10 +526,12 @@ public extension Rope.Node {
 		return (attrs, base..<base + endIndex)
 	}
 	func attributes(atUnit i: Int) -> (Attributes, Range<Int>) {
-		return transforming(atUnit: i) {
-			(node: Self, i: Int, base: Int) in
-				node.attributes(atUnit: i, base: base)
+		let (node, residue, range) = retrieve(atUnit: i)
+		guard case .leaf(let attrs, _) = node,
+		    0 <= residue, residue < node.endIndex else {
+			fatalError("Index out of bounds")
 		}
+		return (attrs, range)
 	}
 	/* A naive version of `transformingAttributes(after:upTo:with:)` splits
 	 * zones.  This version finds affected zones, splits before
@@ -1097,34 +1099,29 @@ public extension Rope.Node {
 			return 0
 		}
 	}
-	func transforming<R>(atUnit i: Offset, base: Offset = 0,
-	    with fn: (Self, Offset, Offset) -> R) -> R {
+	func retrieve(atUnit i: Offset, base: Int = 0)
+	    -> (Self, Int, Range<Int>) {
 		switch self {
 		case .leaf(_, _), .empty, .index(_):
-			return fn(self, i, base)
+			return (self, i, base..<base+endIndex)
 		case .concat(let ropel, let idx, _, _, let roper, _):
 			if i < idx {
-				return ropel.transforming(atUnit: i, base: base,
-				    with: fn)
+				return ropel.retrieve(atUnit: i, base: base)
 			} else {
-				return roper.transforming(atUnit: i - idx,
-				    base: base + idx, with: fn)
+				return roper.retrieve(atUnit: i - idx,
+				    base: base + idx)
 			}
 		case .zone(_, let rope):
-			return rope.transforming(atUnit: i, base: base,
-			    with: fn)
+			return rope.retrieve(atUnit: i, base: base)
 		}
 	}
 	func unit(at i: Offset) -> C.UnitView.Element {
-		func unit(_ node: Self, at i: Offset, base: Offset)
-		    -> C.UnitView.Element {
-			guard case .leaf(_, let s) = node else {
-				fatalError("In \(#function), no unit \(i)")
-			}
-			let sidx = C.Index(unitOffset: i, in: s)
-			return s.units[sidx]
+		let (node, residue, _) = retrieve(atUnit: i)
+		guard case .leaf(_, let s) = node else {
+			fatalError("In \(#function), no unit \(i)")
 		}
-		return transforming(atUnit: i, with: unit)
+		let sidx = C.Index(unitOffset: residue, in: s)
+		return s.units[sidx]
 	}
 	func zonesEnclosing(_ i0: Offset) -> [Rope.ZoneController] {
 		var path: [Rope.ZoneController] = []
