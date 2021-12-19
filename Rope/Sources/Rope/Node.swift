@@ -1950,30 +1950,26 @@ public extension Rope.Node {
 			}
 		}
 	}
-	func insertingFirstIndex(_ label: Label, inZone target: Label)
-	    -> Self? {
+	func insertingFirstIndex(_ label: Label, inZone target: Label) ->Self? {
 		return transformingZone(withLabel: target) {
 		    (ctlr, content) in
 		        .zone(under: ctlr, .index(label: label), content)
 		}
 	}
-	func insertingLastIndex(_ label: Label, inZone target: Label)
-	    -> Self? {
+	func insertingLastIndex(_ label: Label, inZone target: Label) -> Self? {
 		return transformingZone(withLabel: target) {
 		    (ctlr, content) in
 			.zone(under: ctlr, content, .index(label: label))
 		}
 	}
-	func insertingIndex(_ label: Label, afterZone target: Label)
-	    -> Self? {
+	func insertingIndex(_ label: Label, afterZone target: Label) -> Self? {
 		return transformingZone(withLabel: target) {
 		    (ctlr, content) in
 			.nodes(.zone(under: ctlr, content),
 			       .index(label: label))
 		}
 	}
-	func insertingIndex(_ label: Label, beforeZone target: Label)
-	    -> Self? {
+	func insertingIndex(_ label: Label, beforeZone target: Label) -> Self? {
 		return transformingZone(withLabel: target) {
 		    (ctlr, content) in
 			.nodes(.index(label: label),
