@@ -518,13 +518,6 @@ public extension Rope.Node {
 	case indicesCrossZones
 	case indicesOutOfOrder
 	}
-	func attributes(atUnit i: Int, base: Int) -> (Attributes, Range<Int>) {
-		guard case .leaf(let attrs, _) = self,
-		    0 <= i, i < endIndex else {
-			fatalError("Index out of bounds")
-		}
-		return (attrs, base..<base + endIndex)
-	}
 	func attributes(atUnit i: Int) -> (Attributes, Range<Int>) {
 		let (node, residue, range) = retrieve(atUnit: i)
 		guard case .leaf(let attrs, _) = node,
