@@ -519,7 +519,7 @@ public extension Rope.Node {
 	case indicesOutOfOrder
 	}
 	func attributes(atUnit i: Int) -> (Attributes, Range<Int>) {
-		let (node, residue, range) = retrieve(atUnit: i)
+		let (node, residue, range) = retrieveLeaf(atUnit: i)
 		guard case .leaf(let attrs, _) = node,
 		    0 <= residue, residue < node.endIndex else {
 			fatalError("Index out of bounds")
@@ -1080,24 +1080,24 @@ public extension Rope.Node {
 			return 0
 		}
 	}
-	func retrieve(atUnit i: Offset, base: Int = 0)
+	func retrieveLeaf(atUnit i: Offset, base: Int = 0)
 	    -> (Self, Int, Range<Int>) {
 		switch self {
 		case .leaf(_, _), .empty, .index(_):
 			return (self, i, base..<base+endIndex)
 		case .concat(let ropel, let idx, _, _, let roper, _):
 			if i < idx {
-				return ropel.retrieve(atUnit: i, base: base)
+				return ropel.retrieveLeaf(atUnit: i, base: base)
 			} else {
-				return roper.retrieve(atUnit: i - idx,
+				return roper.retrieveLeaf(atUnit: i - idx,
 				    base: base + idx)
 			}
 		case .zone(_, let rope):
-			return rope.retrieve(atUnit: i, base: base)
+			return rope.retrieveLeaf(atUnit: i, base: base)
 		}
 	}
 	func unit(at i: Offset) -> C.UnitView.Element {
-		let (node, residue, _) = retrieve(atUnit: i)
+		let (node, residue, _) = retrieveLeaf(atUnit: i)
 		guard case .leaf(_, let s) = node else {
 			fatalError("In \(#function), no unit \(i)")
 		}
