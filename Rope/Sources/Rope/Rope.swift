@@ -223,7 +223,6 @@ public class Rope<C : Content> : RopeDelegation {
 	public var endIndex: Index {
 		return .interior(of: self, label: _endLabel)
 	}
-
 	public init() {
 		_startLabel = Label()
 		_endLabel = Label()

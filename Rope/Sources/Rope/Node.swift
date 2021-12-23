@@ -1107,6 +1107,7 @@ public extension Rope.Node {
 		case .zone(_, let rope):
 			return rope.dimensions + Dimensions(boundaries: 2)
 		case .leaf(_, let s):
+			// TBD maybe .leaf should cache dimensions?
 			let endOffset = s.endIndex.unitOffset(in: s)
 			let startOffset = s.startIndex.unitOffset(in: s)
 			return Dimensions(units: endOffset - startOffset)
