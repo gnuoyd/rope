@@ -136,6 +136,18 @@ public class Rope<C : Content> : RopeDelegation {
 			return .zone(self, xformed)
 		}
 	}
+	public struct StepUnits {
+		let open: Content.Unit
+		let close: Content.Unit
+	}
+	public struct StepAttributes {
+		let open: Attributes
+		let close: Attributes
+	}
+	public struct StepProperties {
+		let attributes: StepAttributes
+		let units: StepUnits
+	}
 
 	/* Any number of indices can appear between two character positions,
 	 * between zone boundaries, at the start and at the end of a Rope.
@@ -166,6 +178,7 @@ public class Rope<C : Content> : RopeDelegation {
 			    attributesDidChange: self.ropeAttributesDidChange)
 		}
 	}
+	var stepProperties: StepProperties? = nil
 	private var mutations: UInt = 0
 	private var rebalanceInterval: UInt = 32
 	internal var _startLabel: Label

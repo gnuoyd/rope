@@ -507,6 +507,38 @@ public extension Rope.Node {
 	}
 }
 
+extension Rope.Node {
+	public struct UnitView {
+		let node: Rope.Node
+		init(node n: Rope.Node) {
+			node = n
+		}
+		func attributes(at i: Int) -> (Attributes, Range<Int>) {
+			return node.attributes(atUnit: i)
+		}
+	}
+	public var units: UnitView {
+		return UnitView(node: self)
+	}
+}
+
+extension Rope.Node {
+        public struct StepView {
+		let node: Rope.Node
+		init(node n: Rope.Node) {
+			node = n
+		}
+		func attributes(at i: Int,
+		    defaults attrs: Rope.StepAttributes)
+		    -> (Attributes, Range<Int>) {
+			return node.attributes(atStep: i, defaults: attrs)
+		}
+	}
+	public var steps: StepView {
+                return StepView(node: self)
+	}
+}
+
 public extension Rope.Node {
 	enum NodeError : Error {
 	case unexpectedZone
@@ -517,6 +549,24 @@ public extension Rope.Node {
 	case zoneNotFound
 	case indicesCrossZones
 	case indicesOutOfOrder
+	}
+	func attributes(atStep i: Int, defaults attrs: Rope.StepAttributes)
+	    -> (Attributes, Range<Int>) {
+		let (n, residue, range) = retrieveNode(atStep: i)
+		switch n {
+		case .zone(_, _) where residue == 0:
+			return (attrs.open,
+			        range.lowerBound..<(range.lowerBound + 1))
+		case .zone(_, _):
+			return (attrs.close,
+			        (range.upperBound - 1)..<range.upperBound)
+		case .leaf(let attrs, _) where
+		    0 <= residue && residue < n.dimensions.steps:
+			return (attrs, range)
+		default:
+			break
+		}
+		fatalError("Index out of bounds")
 	}
 	func attributes(atUnit i: Int) -> (Attributes, Range<Int>) {
 		let (node, residue, range) = retrieveLeaf(atUnit: i)
@@ -1078,6 +1128,29 @@ public extension Rope.Node {
 			return endOffset - startOffset
 		case .empty, .index(_):
 			return 0
+		}
+	}
+	func retrieveNode(atStep i: Offset, base: Int = 0)
+	    -> (Self, Int, Range<Int>) {
+		switch self {
+		case .leaf(_, _), .empty, .index(_):
+			return (self, i, base..<(base + dimensions.steps))
+		case .concat(let ropel, _, _, _, let roper, _):
+			let middle = ropel.dimensions.steps
+			if i < middle {
+				return ropel.retrieveNode(atStep: i, base: base)
+			} else {
+				return roper.retrieveNode(atStep: i - middle,
+				    base: base + middle)
+			}
+		/* If `i` is left of the zone's left boundary... */
+		case .zone(_, _) where i == 0:
+			return (self, i, base..<(base + dimensions.steps))
+		/* If `i` is left of the zone's right boundary... */
+		case .zone(_, _) where i + 1 == dimensions.steps:
+			return (self, i, base..<(base + dimensions.steps))
+		case .zone(_, let rope):
+			return rope.retrieveNode(atStep: i - 1, base: base + 1)
 		}
 	}
 	func retrieveLeaf(atUnit i: Offset, base: Int = 0)
