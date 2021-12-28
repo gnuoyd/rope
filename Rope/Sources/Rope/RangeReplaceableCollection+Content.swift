@@ -5,7 +5,7 @@
 extension Int : UnitOffsetable {
 }
 
-public extension Content where Self : RangeReplaceableCollection {
+public extension Content {
 	var units: Self { return self }
 	static var empty: Self { return Self.init() }
 	var length: Int {
