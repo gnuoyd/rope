@@ -615,7 +615,7 @@ public extension Rope.Node {
 				return head.appending(
 				    try middle.transformingAttributes(
 				        with: fn)).appending(tail)
-			case (let l, .zone(let ctlr, let m), let r):
+			case (let l, (let ctlr, let m)?, let r):
 				Swift.print("\(#function): segmented at zone")
 				let newl = try l.withFreshBoundaries {
 				    (left, right, node) in
@@ -635,12 +635,6 @@ public extension Rope.Node {
 				}
 				return head.appending(newl).appending(
 				    newm).appending(newr).appending(tail)
-			case (_, _?, _):
-				// m wasn't a zone for some reason
-				// TBD change return type of
-				// segmentingAtAnyZone to avoid this
-				// impossible error case
-				throw NodeError.expectedZone
 			}
 		case (let loExt?, let hiExt?) where loExt == hiExt:
 			guard case (let l, .zone(let ctlr, let m), let r) =
@@ -1818,7 +1812,7 @@ public extension Rope.Node {
 			 * so that we can record an undo record that
 			 * re-inserts it.
 			 */
-			case (_, .zone(let ctlr, let m), let r):
+			case (_, (let ctlr, let m)?, let r):
 				/* We have to try to replace using the
 				 * controller so that a read-only zone can
 				 * "veto" the replacement with .empty by
@@ -1844,8 +1838,6 @@ public extension Rope.Node {
 						undoList: nil)
 				}
 				break
-			case (_, _?, _):
-				throw NodeError.expectedZone
 			}
 			undoList?.record { (node, undoList) in
 				try node.replacing(
@@ -1921,17 +1913,17 @@ public extension Rope.Node {
 		}
 	}
 	func segmentingAtAnyZone(leftSibling: Self = .empty)
-	    -> (Self, Self?, Self) {
+	    -> (Self, (Rope.ZoneController, Self)?, Self) {
 		switch self {
 		case .leaf(_, _), .index(_), .empty:
 			return (leftSibling.appending(self), nil, .empty)
-		case .zone(_, _):
-			return (leftSibling, self, .empty)
+		case .zone(let ctlr, let node):
+			return (leftSibling, (ctlr, node), .empty)
 		case .concat(let l, _, _, _, let r, _):
-			if case let (head, zone?, tail) =
+			if case let (head, (ctlr, node)?, tail) =
 			    l.segmentingAtAnyZone() {
 				return (leftSibling.appending(head),
-					zone, tail.appending(r))
+					(ctlr, node), tail.appending(r))
 			} else {
 				return r.segmentingAtAnyZone(
 				    leftSibling: leftSibling.appending(l))
