@@ -1372,8 +1372,7 @@ public extension Rope.Node {
 		case (.concat(let l, _, _, _, .index(let w), _), _) where
 		    w.get() == nil:
 			return l.appending(rope)
-		case (.concat(let l, _, _, _,
-		              .leaf(let pat, let p), _),
+		case (.concat(let l, _, _, _, .leaf(let pat, let p), _),
 		      .leaf(let qat, let q)) where pat ~ qat:
 			return .nodes(l, .leaf(pat, p + q))
 		case (.leaf(let pat, let p), .leaf(let qat, let q)) where
