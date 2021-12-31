@@ -158,7 +158,7 @@ public class Rope<C : Content> : RopeDelegation {
 	public typealias Offset = Int
 	case index(Weak<Label>)
 	case zone(ZoneController, Node)
-	case concat(Node, Offset, UInt, LabelSet, Node, Dimensions)
+	case concat(Node, Dimensions, UInt, LabelSet, Node, Dimensions)
 	case leaf(Attributes, C)
 	case empty
 	}

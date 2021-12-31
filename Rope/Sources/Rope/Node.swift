@@ -334,14 +334,14 @@ public extension Rope.Node {
 			return Rope.Node(controller: ctlr,
 			    node: n.inserting(label, abutting: side,
 			        ofUnit: offset))
-		case .concat(let l, let middle, _, _, let r, _):
-			if offset < middle {
+		case .concat(let l, let mid, _, _, let r, _):
+			if offset < mid.units {
 				return l.inserting(label, abutting: side,
 				    ofUnit: offset).appending(r)
 			}
-			if middle < offset {
+			if mid.units < offset {
 				return l.appending(r.inserting(label,
-				    abutting: side, ofUnit: offset - middle))
+				    abutting: side, ofUnit: offset - mid.units))
 			}
 			switch side {
 			case .left:
@@ -349,7 +349,7 @@ public extension Rope.Node {
 				    ofUnit: offset).appending(r)
 			case .right:
 				return l.appending(r.inserting(label,
-				    abutting: side, ofUnit: offset - middle))
+				    abutting: side, ofUnit: offset - mid.units))
 			}
 		}
 	}
@@ -773,11 +773,10 @@ public extension Rope.Node {
 			return false
 		case .zone(_, let n) where n.contains(target):
 			return true
-		case .concat(let l, let midx, _, _, let r, let w):
+		case .concat(let l, let mid, _, _, let r, let w):
 			do {
 				return try l.any(ival, follows: target) ||
-				    r.labelSet.zoneCount > 0 ||
-				    midx != w.units ||
+				    mid.steps != w.steps ||
 				    (ival == .jot &&
 				     r.rightmostIndexLabel() != nil)
 			} catch {
@@ -819,12 +818,11 @@ public extension Rope.Node {
 			return false
 		case .zone(_, let rope) where rope.contains(target):
 			return true
-		case .concat(let l, let midx, _, _, let r, _):
+		case .concat(let l, let mid, _, _, let r, _):
 			do {
 				return
 				    try r.any(ival, precedes: target) ||
-				    l.labelSet.zoneCount > 0 ||
-				    0 != midx ||
+				    0 != mid.steps ||
 				    (ival == .jot &&
 				     l.leftmostIndexLabel() != nil)
 			} catch {
@@ -884,7 +882,7 @@ public extension Rope.Node {
 		case (.empty, _):
 			self = right
 		default:
-			self = .concat(left, left.endIndex,
+			self = .concat(left, left.dimensions,
 				       1 + max(left.depth, right.depth),
 				       left.labelSet.union(right.labelSet),
 				       right,
@@ -1153,12 +1151,12 @@ public extension Rope.Node {
 		switch self {
 		case .leaf(_, _), .empty, .index(_):
 			return (self, i, base..<base+endIndex)
-		case .concat(let ropel, let idx, _, _, let roper, _):
-			if i < idx {
+		case .concat(let ropel, let mid, _, _, let roper, _):
+			if i < mid.units {
 				return ropel.retrieveLeaf(atUnit: i, base: base)
 			} else {
-				return roper.retrieveLeaf(atUnit: i - idx,
-				    base: base + idx)
+				return roper.retrieveLeaf(atUnit: i - mid.units,
+				    base: base + mid.units)
 			}
 		case .zone(_, let rope):
 			return rope.retrieveLeaf(atUnit: i, base: base)
@@ -1180,11 +1178,11 @@ public extension Rope.Node {
 			switch next {
 			case .leaf(_, _), .empty, .index(_):
 				return path
-			case .concat(let l, let idx, _, _, let r, _):
-				if i < idx {
+			case .concat(let l, let mid, _, _, let r, _):
+				if i < mid.units {
 					next = l
 				} else {
-					i = i - idx
+					i = i - mid.units
 					next = r
 				}
 			case .zone(let ctlr, let content):
@@ -1234,7 +1232,7 @@ public extension Rope.Node {
 			                              in: controllers + [ctlr])
 		case .index(let w) where w.get() == label:
 			return controllers
-		case .concat(let l, let midx, _, let set, let r, _)
+		case .concat(let l, let mid, _, let set, let r, _)
 		    where set.contains(label.id):
 			do {
 				return try l.zonesOpening(at: label,
@@ -1247,8 +1245,7 @@ public extension Rope.Node {
 				 * Rather, they open at an index on the left.
 				 * So leave them out of the list.
 				 */
-				guard 0 == midx && l.labelSet.zoneCount == 0
-				    else {
+				guard 0 == mid.steps else {
 					return try r.zonesOpening(at: label)
 				}
 				return try r.zonesOpening(at: label,
@@ -1292,7 +1289,7 @@ public extension Rope.Node {
 			return try content.unitOffset(of: label, origin: origin)
 		case .index(let w) where w.get() == label:
 			return origin
-		case .concat(let l, let midx, _, _, let r, _):
+		case .concat(let l, let mid, _, _, let r, _):
 			/* TBD accelerate: check for `label` presence in
 			 * `l` and `r`.
 			 */
@@ -1301,7 +1298,7 @@ public extension Rope.Node {
 				    of: label, origin: origin)
 			} catch NodeError.indexNotFound {
 				return try r.unitOffset(of: label,
-				    origin: origin + midx)
+				    origin: origin + mid.units)
 			}
 		default:
 			throw NodeError.indexNotFound
@@ -1316,7 +1313,7 @@ public extension Rope.Node {
 			                              in: controllers + [ctlr])
 		case .index(let w) where w.get() == label:
 			return controllers
-		case .concat(let l, let midx, _, let set, let r, let w)
+		case .concat(let l, let mid, _, let set, let r, let w)
 		    where set.contains(label.id):
 			do {
 				return try r.zonesClosing(at: label,
@@ -1329,8 +1326,7 @@ public extension Rope.Node {
 				 * Rather, they close at an index on the right.
 				 * So leave them out of the list.
 				 */
-				guard midx == w.units &&
-				      r.labelSet.zoneCount == 0 else {
+				guard mid.steps == w.steps else {
 					return try l.zonesClosing(at: label)
 				}
 				return try l.zonesClosing(at: label,
@@ -1346,11 +1342,11 @@ public extension Rope.Node {
 			let idx = C.Index(unitOffset: i, in: s)
 			let c: Element = s[idx]
 			return c
-		case .concat(let ropel, let idx, _, _, let roper, _):
-			if i < idx {
+		case .concat(let ropel, let mid, _, _, let roper, _):
+			if i < mid.units {
 				return ropel.element(at: i)
 			} else {
-				return roper.element(at: i - idx)
+				return roper.element(at: i - mid.units)
 			}
 		case .empty, .index(_):
 			fatalError("In \(#function), no element \(i)")
@@ -1477,10 +1473,10 @@ public extension Rope.Node {
 			let subzone = ctlr.subrope(of: rope, from: from,
 			    tightly: tightly, depth: depth + 1)
 			return subzone.appending(rightSibling)
-		case .concat(let l, let idx, _, _, let r, _):
-			if idx < from || tightly && idx == from {
+		case .concat(let l, let mid, _, _, let r, _):
+			if mid.units < from || tightly && mid.units == from {
 				return r.subrope(
-					from: max(0, from - idx),
+					from: max(0, from - mid.units),
 					tightly: tightly,
 					rightSibling: rightSibling,
 					depth: depth + 1)
@@ -1520,15 +1516,17 @@ public extension Rope.Node {
 			let subzone = ctlr.subrope(of: rope, upTo: boundary,
 			    tightly: tightly, depth: depth + 1)
 			return leftSibling.appending(subzone)
-		case .concat(let l, let idx, _, _, let r, _):
-			if boundary < idx || tightly && boundary == idx {
+		case .concat(let l, let mid, _, _, let r, _):
+			if boundary < mid.units ||
+			   tightly && boundary == mid.units {
 				return l.subrope(leftSibling: leftSibling,
 				    upTo: boundary, tightly: tightly,
 				    depth: depth + 1)
 			}
 			return r.subrope(
 				leftSibling: leftSibling.appending(l),
-				upTo: min(endIndex - idx, boundary - idx),
+				upTo: min(endIndex - mid.units,
+				          boundary - mid.units),
 				tightly: tightly, depth: depth + 1)
 		case let .leaf(attrs, s):
 			let i = C.Index(unitOffset: boundary, in: s)
@@ -2076,15 +2074,16 @@ public extension Rope.Node {
 	func extractUnits(from start: Offset, upTo end: Offset,
 	    filling buffer: inout UnsafeMutablePointer<C.Unit>) {
 		switch self {
-		case .concat(let l, let idx, _, _, let r, _):
-			if start < idx {
+		case .concat(let l, let mid, _, _, let r, _):
+			if start < mid.units {
 				l.extractUnits(from: start,
-				    upTo: min(end, idx),
+				    upTo: min(end, mid.units),
 				    filling: &buffer)
 			}
-			if idx < end {
-				r.extractUnits(from: max(start, idx) - idx,
-				    upTo: end - idx,
+			if mid.units < end {
+				r.extractUnits(
+				    from: max(start, mid.units) - mid.units,
+				    upTo: end - mid.units,
 				    filling: &buffer)
 			}
 		case .leaf(_, let s):
