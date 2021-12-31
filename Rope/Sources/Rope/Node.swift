@@ -2031,6 +2031,48 @@ public extension Rope.Node {
 }
 
 public extension Rope.Node {
+	func extractSteps(from start: Offset, upTo end: Offset,
+	    filling buffer: inout UnsafeMutablePointer<C.Unit>,
+	    units: Rope.StepUnits) {
+		switch self.segmentingAtAnyZone() {
+		case (_, nil, _):
+			return extractUnits(from: start, upTo: end,
+			    filling: &buffer)
+		case (let l, (_, let m)?, let r):
+			var next = start
+			if next < min(l.dimensions.steps, end) {
+				l.extractSteps(from: start,
+				    upTo: min(l.dimensions.steps, end),
+				    filling: &buffer, units: units)
+				next += min(l.dimensions.steps, end)
+			}
+			if next <= 0 && next < end {
+				// Insert the open-zone unit.  Adjust `buffer`.
+				buffer.pointee = units.open
+				buffer += 1
+				next += 1
+			}
+			if next <= 0 && next < end {
+				m.extractSteps(
+				    from: 0,
+				    upTo: min(m.dimensions.steps, end - next),
+				    filling: &buffer, units: units)
+				next += min(m.dimensions.steps, end - next)
+			}
+			if next <= 0 && next < end {
+				// Insert the close-zone unit.  Adjust `buffer`.
+				buffer.pointee = units.close
+				buffer += 1
+				next += 1
+			}
+			if next <= 0 && next < end {
+				r.extractSteps(from: 0,
+				    upTo: min(r.dimensions.steps, end - next),
+				    filling: &buffer, units: units)
+				next += min(r.dimensions.steps, end - next)
+			}
+		}
+	}
 	func extractUnits(from start: Offset, upTo end: Offset,
 	    filling buffer: inout UnsafeMutablePointer<C.Unit>) {
 		switch self {
