@@ -18,3 +18,9 @@ extension NSRange {
 		return lower..<upper
 	}
 }
+
+extension Collection {
+	var only: Self.Iterator.Element? {
+		return (self.count > 1) ? nil : self.first
+	}
+}
