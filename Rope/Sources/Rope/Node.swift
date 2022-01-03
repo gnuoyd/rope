@@ -2045,34 +2045,7 @@ public extension Rope.Node {
 				    filling: &buffer, units: units)
 			}
 		case .leaf(_, let s):
-			guard case true? =
-			    (s.units.withContiguousStorageIfAvailable {
-				guard let base = $0.baseAddress else {
-					return false
-				}
-				let length = end - start
-				buffer.initialize(from: base + start,
-				    count: length)
-				buffer += length
-				return true
-			} as Bool?) else {
-				let units = s.units
-				guard let sidx = units.index(units.startIndex,
-				        offsetBy: start,
-				        limitedBy: units.endIndex),
-				    let eidx = units.index(units.startIndex,
-				        offsetBy: end,
-					limitedBy: units.endIndex)
-				    else {
-					fatalError("In \(#function), " +
-					    "no units range \(start)..<\(end)")
-				}
-				for u in units[sidx..<eidx] {
-					buffer.initialize(to: u)
-					buffer += 1
-				}
-				return
-			}
+			s.extract(from: start, upTo: end, filling: &buffer)
 		case .zone(_, let content):
 			var next = 0
 			if start <= next {
@@ -2121,34 +2094,7 @@ public extension Rope.Node {
 				    filling: &buffer)
 			}
 		case .leaf(_, let s):
-			guard case true? =
-			    (s.units.withContiguousStorageIfAvailable {
-				guard let base = $0.baseAddress else {
-					return false
-				}
-				let length = end - start
-				buffer.initialize(from: base + start,
-				    count: length)
-				buffer += length
-				return true
-			} as Bool?) else {
-				let units = s.units
-				guard let sidx = units.index(units.startIndex,
-				        offsetBy: start,
-				        limitedBy: units.endIndex),
-				    let eidx = units.index(units.startIndex,
-				        offsetBy: end,
-					limitedBy: units.endIndex)
-				    else {
-					fatalError("In \(#function), " +
-					    "no units range \(start)..<\(end)")
-				}
-				for u in units[sidx..<eidx] {
-					buffer.initialize(to: u)
-					buffer += 1
-				}
-				return
-			}
+			s.extract(from: start, upTo: end, filling: &buffer)
 		case .zone(_, let content):
 			return content.extractUnits(from: start, upTo: end,
 			    filling: &buffer)

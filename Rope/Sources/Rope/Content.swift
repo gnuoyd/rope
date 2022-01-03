@@ -64,3 +64,36 @@ extension Content {
 		        Self.init(dropFirst(1)))
 	}
 }
+
+public extension Content {
+	func extract(from start: Int, upTo end: Int,
+	    filling buffer: inout UnsafeMutablePointer<Self.Unit>) {
+		guard case true? =
+		    (units.withContiguousStorageIfAvailable {
+			guard let base = $0.baseAddress else {
+				return false
+			}
+			let length = end - start
+			buffer.initialize(from: base + start,
+			    count: length)
+			buffer += length
+			return true
+		} as Bool?) else {
+			guard let sidx = index(units.startIndex,
+				offsetBy: start,
+				limitedBy: units.endIndex),
+			    let eidx = index(units.startIndex,
+				offsetBy: end,
+				limitedBy: units.endIndex)
+			    else {
+				fatalError("In \(#function), " +
+				    "no unit range \(start)..<\(end)")
+			}
+			for u in units[sidx..<eidx] {
+				buffer.initialize(to: u)
+				buffer += 1
+			}
+			return
+		}
+	}
+}
