@@ -174,6 +174,35 @@ class NestedZoneBase : XCTestCase {
 				            .text("ghi")))))
 }
 
+class StepContent : NestedZoneBase {
+	/*
+	func extractSteps(from start: Offset, upTo end: Offset,
+	    filling buffer: inout UnsafeMutablePointer<C.Unit>,
+	    units: Rope.BoundaryUnits) {
+			guard case true? =
+			    (s.units.withContiguousStorageIfAvailable {
+				let length = end - start
+				buffer.initialize(from: base + start,
+				    count: length)
+				buffer += length
+				return true
+	*/
+	func testStepContent() {
+		var steps = Array<RSS.Content.Unit>(repeating: "x".utf16.first!, count: 15)
+		let units = RSS.BoundaryUnits(open: "⟨".utf16.only!, close: "⟩".utf16.only!)
+		steps.withContiguousMutableStorageIfAvailable {
+		    (_ buf: inout UnsafeMutableBufferPointer<RSS.Content.Unit>) in
+			guard var base = buf.baseAddress else {
+				XCTFail("could not get base address of steps")
+				return
+			}
+			rope.node.extractSteps(from: 0, upTo: 15, filling: &base,
+			                       units: units)
+		}
+		XCTAssert(steps == "⟨abc⟨def⟨ghi⟩⟩⟩".utf16.map { $0 })
+	}
+}
+
 class BoundaryIndexComparisons : XCTestCase {
 	let c = [RWZC(), RWZC(), RWZC()]
 	let l = Array<Label>((0..<3).map { _ in Label() })

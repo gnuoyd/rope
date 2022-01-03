@@ -529,7 +529,7 @@ extension Rope.Node {
 			node = n
 		}
 		func attributes(at i: Int,
-		    defaults attrs: Rope.StepAttributes)
+		    defaults attrs: Rope.BoundaryAttributes)
 		    -> (Attributes, Range<Int>) {
 			return node.attributes(atStep: i, defaults: attrs)
 		}
@@ -550,7 +550,7 @@ public extension Rope.Node {
 	case indicesCrossZones
 	case indicesOutOfOrder
 	}
-	func attributes(atStep i: Int, defaults attrs: Rope.StepAttributes)
+	func attributes(atStep i: Int, defaults attrs: Rope.BoundaryAttributes)
 	    -> (Attributes, Range<Int>) {
 		let (n, residue, range) = retrieveNode(atStep: i)
 		switch n {
@@ -2030,44 +2030,79 @@ public extension Rope.Node {
 public extension Rope.Node {
 	func extractSteps(from start: Offset, upTo end: Offset,
 	    filling buffer: inout UnsafeMutablePointer<C.Unit>,
-	    units: Rope.StepUnits) {
-		switch self.segmentingAtAnyZone() {
-		case (_, nil, _):
-			return extractUnits(from: start, upTo: end,
-			    filling: &buffer)
-		case (let l, (_, let m)?, let r):
-			var next = start
-			if next < min(l.dimensions.steps, end) {
+	    units: Rope.BoundaryUnits) {
+		switch self {
+		case .concat(let l, let mid, _, _, let r, _):
+			if start < mid.steps {
 				l.extractSteps(from: start,
-				    upTo: min(l.dimensions.steps, end),
+				    upTo: min(end, mid.steps),
 				    filling: &buffer, units: units)
-				next += min(l.dimensions.steps, end)
 			}
-			if next <= 0 && next < end {
+			if mid.steps < end {
+				r.extractSteps(
+				    from: max(start, mid.steps) - mid.steps,
+				    upTo: end - mid.steps,
+				    filling: &buffer, units: units)
+			}
+		case .leaf(_, let s):
+			guard case true? =
+			    (s.units.withContiguousStorageIfAvailable {
+				guard let base = $0.baseAddress else {
+					return false
+				}
+				let length = end - start
+				buffer.initialize(from: base + start,
+				    count: length)
+				buffer += length
+				return true
+			} as Bool?) else {
+				let units = s.units
+				guard let sidx = units.index(units.startIndex,
+				        offsetBy: start,
+				        limitedBy: units.endIndex),
+				    let eidx = units.index(units.startIndex,
+				        offsetBy: end,
+					limitedBy: units.endIndex)
+				    else {
+					fatalError("In \(#function), " +
+					    "no units range \(start)..<\(end)")
+				}
+				for u in units[sidx..<eidx] {
+					buffer.initialize(to: u)
+					buffer += 1
+				}
+				return
+			}
+		case .zone(_, let content):
+			var next = 0
+			if start <= next {
 				// Insert the open-zone unit.  Adjust `buffer`.
 				buffer.pointee = units.open
 				buffer += 1
-				next += 1
 			}
-			if next <= 0 && next < end {
-				m.extractSteps(
+			next += 1
+			if next == end {
+				return
+			}
+			if start <= next + content.dimensions.steps {
+				content.extractSteps(
 				    from: 0,
-				    upTo: min(m.dimensions.steps, end - next),
+				    upTo: min(content.dimensions.steps,
+				              end - next),
 				    filling: &buffer, units: units)
-				next += min(m.dimensions.steps, end - next)
 			}
-			if next <= 0 && next < end {
+			next += content.dimensions.steps
+			if next == end {
+				return
+			}
+			if start <= next {
 				// Insert the close-zone unit.  Adjust `buffer`.
 				buffer.pointee = units.close
 				buffer += 1
-				next += 1
 			}
-			if next <= 0 && next < end {
-				r.extractSteps(from: 0,
-				    upTo: min(r.dimensions.steps, end - next),
-				    filling: &buffer, units: units)
-				next += min(r.dimensions.steps, end - next)
-			}
+			next += 1
+		case .empty, .index(_):
+			return
 		}
 	}
 	func extractUnits(from start: Offset, upTo end: Offset,
