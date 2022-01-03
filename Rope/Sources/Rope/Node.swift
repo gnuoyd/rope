@@ -571,7 +571,7 @@ public extension Rope.Node {
 	func attributes(atUnit i: Int) -> (Attributes, Range<Int>) {
 		let (node, residue, range) = retrieveLeaf(atUnit: i)
 		guard case .leaf(let attrs, _) = node,
-		    0 <= residue, residue < node.endIndex else {
+		    0 <= residue, residue < node.dimensions.units else {
 			fatalError("Index out of bounds")
 		}
 		return (attrs, range)
@@ -1089,9 +1089,6 @@ public extension Rope.Node {
 			return l.content + r.content
 		}
 	}
-	var startIndex: Int {
-		return 0
-	}
 	var dimensions: Dimensions {
 		switch self {
 		case Self.concat(_, _, _, _, _, let dims):
@@ -1107,20 +1104,6 @@ public extension Rope.Node {
 			return Dimensions.zero
 		case .index(_):
 			return Dimensions(indices: 1)
-		}
-	}
-	var endIndex: Int {
-		switch self {
-		case Self.concat(_, _, _, _, _, let w):
-			return w.units
-		case .zone(_, let rope):
-			return rope.endIndex
-		case .leaf(_, let s):
-			let endOffset = s.endIndex.unitOffset(in: s)
-			let startOffset = s.startIndex.unitOffset(in: s)
-			return endOffset - startOffset
-		case .empty, .index(_):
-			return 0
 		}
 	}
 	func retrieveNode(atStep i: Int, base: Int = 0)
@@ -1150,7 +1133,7 @@ public extension Rope.Node {
 	    -> (Self, Int, Range<Int>) {
 		switch self {
 		case .leaf(_, _), .empty, .index(_):
-			return (self, i, base..<base+endIndex)
+			return (self, i, base..<base+dimensions.units)
 		case .concat(let ropel, let mid, _, _, let roper, _):
 			if i < mid.units {
 				return ropel.retrieveLeaf(atUnit: i, base: base)
@@ -1504,8 +1487,7 @@ public extension Rope.Node {
 	 */
 	func subrope(leftSibling: Self = .empty, upTo boundary: Int,
 	    tightly: Bool = false, depth: Int = 0) -> Self {
-		let endIndex = self.endIndex
-		assert(boundary <= endIndex)
+		assert(boundary <= dimensions.units)
 		switch self {
 		case .empty, .index(_):
 			return tightly ? leftSibling
@@ -1514,7 +1496,7 @@ public extension Rope.Node {
 			let subzone = ctlr.subrope(of: rope, upTo: boundary,
 			    tightly: tightly, depth: depth + 1)
 			return leftSibling.appending(subzone)
-		case .concat(let l, let mid, _, _, let r, _):
+		case .concat(let l, let mid, _, _, let r, let width):
 			if boundary < mid.units ||
 			   tightly && boundary == mid.units {
 				return l.subrope(leftSibling: leftSibling,
@@ -1523,7 +1505,7 @@ public extension Rope.Node {
 			}
 			return r.subrope(
 				leftSibling: leftSibling.appending(l),
-				upTo: min(endIndex - mid.units,
+				upTo: min(width.units - mid.units,
 				          boundary - mid.units),
 				tightly: tightly, depth: depth + 1)
 		case let .leaf(attrs, s):
