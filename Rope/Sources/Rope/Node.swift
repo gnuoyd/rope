@@ -312,7 +312,7 @@ public extension Rope.Node {
 		}
 	}
 	func inserting(_ label: Label, abutting side: Side,
-	    ofUnit offset: Offset) -> Rope.Node {
+	    ofUnit offset: Int) -> Rope.Node {
 		switch self {
 		case .index(_), .empty:
 			assert(offset == 0)
@@ -1089,7 +1089,7 @@ public extension Rope.Node {
 			return l.content + r.content
 		}
 	}
-	var startIndex: Offset {
+	var startIndex: Int {
 		return 0
 	}
 	var dimensions: Dimensions {
@@ -1109,7 +1109,7 @@ public extension Rope.Node {
 			return Dimensions(indices: 1)
 		}
 	}
-	var endIndex: Offset {
+	var endIndex: Int {
 		switch self {
 		case Self.concat(_, _, _, _, _, let w):
 			return w.units
@@ -1123,7 +1123,7 @@ public extension Rope.Node {
 			return 0
 		}
 	}
-	func retrieveNode(atStep i: Offset, base: Int = 0)
+	func retrieveNode(atStep i: Int, base: Int = 0)
 	    -> (Self, Int, Range<Int>) {
 		switch self {
 		case .leaf(_, _), .empty, .index(_):
@@ -1146,7 +1146,7 @@ public extension Rope.Node {
 			return rope.retrieveNode(atStep: i - 1, base: base + 1)
 		}
 	}
-	func retrieveLeaf(atUnit i: Offset, base: Int = 0)
+	func retrieveLeaf(atUnit i: Int, base: Int = 0)
 	    -> (Self, Int, Range<Int>) {
 		switch self {
 		case .leaf(_, _), .empty, .index(_):
@@ -1162,7 +1162,7 @@ public extension Rope.Node {
 			return rope.retrieveLeaf(atUnit: i, base: base)
 		}
 	}
-	func unit(at i: Offset) -> C.UnitView.Element {
+	func unit(at i: Int) -> C.UnitView.Element {
 		let (node, residue, _) = retrieveLeaf(atUnit: i)
 		guard case .leaf(_, let s) = node else {
 			fatalError("In \(#function), no unit \(i)")
@@ -1170,7 +1170,7 @@ public extension Rope.Node {
 		let sidx = C.Index(unitOffset: residue, in: s)
 		return s.units[sidx]
 	}
-	func zonesEnclosing(_ i0: Offset) -> [Rope.ZoneController] {
+	func zonesEnclosing(_ i0: Int) -> [Rope.ZoneController] {
 		var path: [Rope.ZoneController] = []
 		var i = i0
 		var next = self
@@ -1282,8 +1282,7 @@ public extension Rope.Node {
 			throw NodeError.indexNotFound
 		}
 	}
-	func unitOffset(of label: Label,
-	            origin: Offset = 0) throws -> Offset {
+	func unitOffset(of label: Label, origin: Int = 0) throws -> Int {
 		switch self {
 		case .zone(_, let content):
 			return try content.unitOffset(of: label, origin: origin)
@@ -1336,7 +1335,7 @@ public extension Rope.Node {
 			throw NodeError.indexNotFound
 		}
 	}
-	func element(at i: Offset) -> Element {
+	func element(at i: Int) -> Element {
 		switch self {
 		case .leaf(_, let s):
 			let idx = C.Index(unitOffset: i, in: s)
@@ -1460,7 +1459,7 @@ public extension Rope.Node {
 	 * `depth` is just an (unused) diagnostic variable that increases
 	 * at every level of subrope(from:rightSibling:depth:) recursion.
 	 */
-	func subrope(from: Offset, tightly: Bool = false,
+	func subrope(from: Int, tightly: Bool = false,
 	    rightSibling: Self = .empty, depth: Int = 0) -> Self {
 		assert(0 <= from)
 		switch self {
@@ -1503,7 +1502,7 @@ public extension Rope.Node {
 	 * `depth` is just an (unused) diagnostic variable that increases
 	 * at every level of subrope(from:rightSibling:depth:) recursion.
 	 */
-	func subrope(leftSibling: Self = .empty, upTo boundary: Offset,
+	func subrope(leftSibling: Self = .empty, upTo boundary: Int,
 	    tightly: Bool = false, depth: Int = 0) -> Self {
 		let endIndex = self.endIndex
 		assert(boundary <= endIndex)
@@ -1536,7 +1535,7 @@ public extension Rope.Node {
 			    .leaf(attrs, Self.Content(s.prefix(upTo: i))))
 		}
 	}
-	func subrope(from l: Offset, upTo r: Offset) -> Self {
+	func subrope(from l: Int, upTo r: Int) -> Self {
 		return subrope(upTo: r).subrope(from: l)
 	}
 	func subrope(after boundary: Rope.Index, rightSibling: Self = .empty,
@@ -2028,7 +2027,7 @@ public extension Rope.Node {
 }
 
 public extension Rope.Node {
-	func extractSteps(from start: Offset, upTo end: Offset,
+	func extractSteps(from start: Int, upTo end: Int,
 	    filling buffer: inout UnsafeMutablePointer<C.Unit>,
 	    units: Rope.BoundaryUnits) {
 		switch self {
@@ -2078,7 +2077,7 @@ public extension Rope.Node {
 			return
 		}
 	}
-	func extractUnits(from start: Offset, upTo end: Offset,
+	func extractUnits(from start: Int, upTo end: Int,
 	    filling buffer: inout UnsafeMutablePointer<C.Unit>) {
 		switch self {
 		case .concat(let l, let mid, _, _, let r, _):
