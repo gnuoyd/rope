@@ -175,19 +175,7 @@ class NestedZoneBase : XCTestCase {
 }
 
 class StepContent : NestedZoneBase {
-	/*
-	func extractSteps(from start: Offset, upTo end: Offset,
-	    filling buffer: inout UnsafeMutablePointer<C.Unit>,
-	    units: Rope.BoundaryUnits) {
-			guard case true? =
-			    (s.units.withContiguousStorageIfAvailable {
-				let length = end - start
-				buffer.initialize(from: base + start,
-				    count: length)
-				buffer += length
-				return true
-	*/
-	func testStepContent() {
+	static func testSubsteps(_ rope: RSS, _ start: Int, _ end: Int) {
 		var steps = Array<RSS.Content.Unit>(repeating: "x".utf16.first!, count: 15)
 		let units = RSS.BoundaryUnits(open: "⟨".utf16.only!, close: "⟩".utf16.only!)
 		steps.withContiguousMutableStorageIfAvailable {
@@ -196,10 +184,20 @@ class StepContent : NestedZoneBase {
 				XCTFail("could not get base address of steps")
 				return
 			}
-			rope.node.extractSteps(from: 0, upTo: 15, filling: &base,
-			                       units: units)
+			rope.node.extractSteps(from: start, upTo: end,
+			    filling: &base, units: units)
 		}
-		XCTAssert(steps == "⟨abc⟨def⟨ghi⟩⟩⟩".utf16.map { $0 })
+		let expected = "⟨abc⟨def⟨ghi⟩⟩⟩".utf16.map { $0 }[start..<end]
+		XCTAssert(steps[..<(end - start)] == expected,
+		    "\(steps[..<(end - start)]) != \(expected), start \(start), end \(end)")
+	}
+	func testAllStepRanges() {
+		for (start, end) in (0...15) ⨯ (0...15) {
+			if start > end {
+				continue
+			}
+			StepContent.testSubsteps(rope, start, end)
+		}
 	}
 }
 

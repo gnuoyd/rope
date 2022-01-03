@@ -2086,12 +2086,12 @@ public extension Rope.Node {
 			}
 			if start <= next + content.dimensions.steps {
 				content.extractSteps(
-				    from: 0,
+				    from: start - min(next, start),
 				    upTo: min(content.dimensions.steps,
-				              end - next),
+				              end - min(next, start)),
 				    filling: &buffer, units: units)
 			}
-			next += content.dimensions.steps
+			next += min(content.dimensions.steps, end - next)
 			if next == end {
 				return
 			}
