@@ -637,19 +637,13 @@ public extension Rope.Node {
 				    newm).appending(newr).appending(tail)
 			}
 		case (let loExt?, let hiExt?) where loExt == hiExt:
-			guard case (let l, .zone(let ctlr, let m), let r) =
-			    try segmenting(atZone: loExt) else {
-				throw NodeError.expectedZone
-			}
+			let (l, (ctlr, m), r) = try segmenting(atZone: loExt)
 			let newm = try ctlr.transformingAttributes(
 			    after: lowerBound, upTo: upperBound, in: m,
 			    with: fn)
 			return l.appending(newm).appending(r)
 		case (let loExt?, _):
-			guard case (let l, .zone(let ctlr, let m), let r) =
-			    try segmenting(atZone: loExt) else {
-				throw NodeError.expectedZone
-			}
+			let (l, (ctlr, m), r) = try segmenting(atZone: loExt)
 			let newm = try m.withFreshRightBoundary {
 			    (upper, node) in
 				try ctlr.transformingAttributes(
@@ -663,10 +657,7 @@ public extension Rope.Node {
 			}
 			return l.appending(newm).appending(newr)
 		case (nil, let hiExt?):
-			guard case (let l, .zone(let ctlr, let m), let r) =
-			    try segmenting(atZone: hiExt) else {
-				throw NodeError.expectedZone
-			}
+			let (l, (ctlr, m), r) = try segmenting(atZone: hiExt)
 			let newl = try l.withFreshRightBoundary {
 			    (upper, node) in
 			        try node.transformingAttributes(
@@ -1723,10 +1714,7 @@ public extension Rope.Node {
 			}
 			return .nodes(head, .zone(ctlr, middle), tail)
 		case (let loExt?, let hiExt?) where loExt == hiExt:
-			guard case (let l, .zone(let ctlr, let m), let r) =
-			    try segmenting(atZone: loExt) else {
-				throw NodeError.expectedZone
-			}
+			let (l, (ctlr, m), r) = try segmenting(atZone: loExt)
 			let mControlled = try ctlr.setController(ctlr,
 			    after: lowerBound, upTo: upperBound, in: m,
 			    undoList: undoList)
@@ -1825,19 +1813,13 @@ public extension Rope.Node {
 			}
 			return .nodes(head, replacement, tail)
 		case (let loExt?, let hiExt?) where loExt == hiExt:
-			guard case (let l, .zone(let ctlr, let m), let r) =
-			    try segmenting(atZone: loExt) else {
-				throw NodeError.expectedZone
-			}
+			let (l, (ctlr, m), r) = try segmenting(atZone: loExt)
 			let mReplaced = try ctlr.replacing(after: lowerBound,
 			    upTo: upperBound, in: m,
 			    with: replacement, undoList: undoList)
 			return l.appending(mReplaced).appending(r)
 		case (let loExt?, _):
-			guard case (let l, .zone(let ctlr, let m), let r) =
-			    try segmenting(atZone: loExt) else {
-				throw NodeError.expectedZone
-			}
+			let (l, (ctlr, m), r) = try segmenting(atZone: loExt)
 			let mReplaced: Rope.Node = try m.withFreshRightBoundary{
 			    (upper, node) in
 			        return try ctlr.replacing(
@@ -1852,10 +1834,7 @@ public extension Rope.Node {
 			}
 			return l.appending(mReplaced).appending(rTrimmed)
 		case (nil, let hiExt?):
-			guard case (let l, .zone(let ctlr, let m), let r) =
-			    try segmenting(atZone: hiExt) else {
-				throw NodeError.expectedZone
-			}
+			let (l, (ctlr, m), r) = try segmenting(atZone: hiExt)
 			let lReplaced: Rope.Node = try l.withFreshRightBoundary{
 			    (upper, node) in
 			        return try node.replacing(
@@ -1872,10 +1851,11 @@ public extension Rope.Node {
 		}
 	}
 	func segmenting(atZone target: Rope.ZoneController,
-	    leftSibling: Self = .empty) throws -> (Self, Self, Self) {
+	    leftSibling: Self = .empty) throws
+	    -> (Self, (Rope.ZoneController, Self), Self) {
 		switch self {
-		case .zone(target, _):
-			return (leftSibling, self, .empty)
+		case .zone(target, let inner):
+			return (leftSibling, (target, inner), .empty)
 		case .concat(let l, _, _, _, let r, _):
 			if case let (head, zone, tail)? =
 			    try? l.segmenting(atZone: target) {

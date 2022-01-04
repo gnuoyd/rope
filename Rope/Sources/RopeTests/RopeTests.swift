@@ -755,67 +755,67 @@ class SegmentingAtZone : XCTestCase {
 		XCTAssertThrowsError(try zoneInZone.segmenting(atZone: c[2]))
 	}
 	func testSegmentingZone() {
-		guard let (l, m, r) =
+		guard let (l, (ctlr, inner), r) =
 		    try? zoneInZone.segmenting(atZone: c[0]) else {
 			XCTFail("no such zone controller")
 			return
 		}
 		XCTAssert(l == .empty)
-		XCTAssert(m == zoneInZone)
+		XCTAssert(.zone(ctlr, inner) == zoneInZone)
 		XCTAssert(r == .empty)
 	}
 	func testSegmentingZoneOnLeft() {
-		guard let (l, m, r) =
+		guard let (l, (ctlr, inner), r) =
 		    try? zoneOnLeft.segmenting(atZone: c[1]) else {
 			XCTFail("no such zone controller")
 			return
 		}
 		XCTAssert(l == .empty)
-		XCTAssert(m == innerZone)
+		XCTAssert(.zone(ctlr, inner) == innerZone)
 		XCTAssert(r == .text("jkl"))
 	}
 	func testSegmentingZoneOnRight() {
-		guard let (l, m, r) =
+		guard let (l, (ctlr, inner), r) =
 		    try? zoneOnRight.segmenting(atZone: c[1])
 		else {
 			XCTFail("no such zone controller")
 			return
 		}
 		XCTAssert(l == .text("abc"))
-		XCTAssert(m == innerZone)
+		XCTAssert(.zone(ctlr, inner) == innerZone)
 		XCTAssert(r == .empty)
 	}
 	func testSegmentingZoneInCenter() {
-		guard let (l, m, r) =
+		guard let (l, (ctlr, inner), r) =
 		    try? zoneInCenter.segmenting(atZone: c[1])
 		else {
 			XCTFail("no such zone controller")
 			return
 		}
 		XCTAssert(l == .text("abc"))
-		XCTAssert(m == innerZone)
+		XCTAssert(.zone(ctlr, inner) == innerZone)
 		XCTAssert(r == .text("jkl"))
 	}
 	func testSegmentingMultipleZonesInCenter1() {
-		guard let (l, m, r) =
+		guard let (l, (ctlr, inner), r) =
 		    try? multipleZonesInCenter.segmenting(atZone: c[1])
 		else {
 			XCTFail("no such zone controller")
 			return
 		}
 		XCTAssert(l == .text("abc"))
-		XCTAssert(m == innerZone)
+		XCTAssert(.zone(ctlr, inner) == innerZone)
 		XCTAssert(r == .nodes(otherZone, .text("jkl")))
 	}
 	func testSegmentingMultipleZonesInCenter2() {
-		guard let (l, m, r) =
+		guard let (l, (ctlr, inner), r) =
 		    try? multipleZonesInCenter.segmenting(atZone: c[3])
 		else {
 			XCTFail("no such zone controller")
 			return
 		}
 		XCTAssert(l == .nodes(.text("abc"), innerZone))
-		XCTAssert(m == otherZone)
+		XCTAssert(.zone(ctlr, inner) == otherZone)
 		XCTAssert(r == .text("jkl"))
 	}
 }
