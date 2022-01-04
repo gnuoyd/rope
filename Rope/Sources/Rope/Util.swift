@@ -24,3 +24,8 @@ extension Collection {
 		return (self.count > 1) ? nil : self.first
 	}
 }
+
+public func commonPrefix<S>(_ s1: S, _ s2: S)
+    -> [S.Element] where S : Sequence, S.Element : Equatable {
+	return zip(s1, s2).prefix { (e1, e2) in e1 == e2 }.map { (e, _) in e }
+}

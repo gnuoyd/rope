@@ -492,11 +492,6 @@ extension Rope {
 	}
 }
 
-public func commonPrefix<S>(_ s1: S, _ s2: S)
-    -> [S.Element] where S : Sequence, S.Element : Equatable {
-	return zip(s1, s2).prefix { (e1, e2) in e1 == e2 }.map { (e, _) in e }
-}
-
 extension Rope {
 	public func tightenedSelection(_ selection: Range<Index>)
 	    throws -> (range: Range<Index>,
