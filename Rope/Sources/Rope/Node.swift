@@ -542,7 +542,6 @@ extension Rope.Node {
 public extension Rope.Node {
 	enum NodeError : Error {
 	case unexpectedZone
-	case expectedZone
 	case readonlyZone
 	case invalidZoneContent
 	case indexNotFound
