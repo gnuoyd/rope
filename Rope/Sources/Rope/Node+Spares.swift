@@ -1,4 +1,12 @@
 public extension Rope.Node {
+	func unit(at i: Int) -> C.UnitView.Element {
+		let (node, residue, _) = retrieveLeaf(atUnit: i)
+		guard case .leaf(_, let s) = node else {
+			fatalError("In \(#function), no unit \(i)")
+		}
+		let sidx = C.Index(unitOffset: residue, in: s)
+		return s.units[sidx]
+	}
 	func extractContent(from start: Offset, upTo end: Offset)
 	    -> C.SubSequence {
 		switch self {

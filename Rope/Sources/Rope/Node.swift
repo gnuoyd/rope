@@ -1135,14 +1135,6 @@ public extension Rope.Node {
 			return rope.retrieveLeaf(atUnit: i, base: base)
 		}
 	}
-	func unit(at i: Int) -> C.UnitView.Element {
-		let (node, residue, _) = retrieveLeaf(atUnit: i)
-		guard case .leaf(_, let s) = node else {
-			fatalError("In \(#function), no unit \(i)")
-		}
-		let sidx = C.Index(unitOffset: residue, in: s)
-		return s.units[sidx]
-	}
 	func zonesEnclosing(_ i0: Int) -> [Rope.ZoneController] {
 		var path: [Rope.ZoneController] = []
 		var i = i0
