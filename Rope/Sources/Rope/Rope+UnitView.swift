@@ -1,34 +1,26 @@
 extension Rope {
-        public struct UnitView {
+        public struct UnitView : UnitRopeView {
+		public typealias Cx = Rope.Content
+
 		let rope: Rope
+
 		init(rope r: Rope) {
 			rope = r
 		}
-                public subscript(i: Int) -> Rope.Node.Unit {
-                        get {
-                                return rope.node.unit(at: i)
-                        }
-                }
 		public var length: Int {
 			return rope.node.dimensions.units
-		}
-		public subscript(_ r: Range<Int>) -> Content {
-			get {
-				let ir = Range(r, within: rope.units)
-				return rope.node[ir]
-			}
-		}
-		public subscript<I>(_ r: Range<Int>)
-		    -> I where Content.SubSequence == I {
-			get {
-				return self[r][...]
-			}
 		}
 		public func attributes(at i: Int) -> (Attributes, Range<Int>) {
 			return rope.node.attributes(atUnit: i)
 		}
+		public subscript(_ r: Range<Int>) -> Rope.Content {
+			get {
+				let ir = Range(r, within: self)
+				return rope.node[ir]
+			}
+		}
 		public func extract(_ range: Range<Int>,
-		    filling buffer: inout UnsafeMutablePointer<C.Unit>) {
+		    filling buffer: inout UnsafeMutablePointer<Unit>) {
 			return rope.node.extractUnits(from: range.lowerBound,
 			    upTo: range.upperBound, filling: &buffer)
 		}
