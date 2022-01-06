@@ -2,7 +2,7 @@
 // Copyright (c) 2019, 2020, 2021 David Young.  All rights reserved.
 //
 
-extension Int : UnitOffsetable {
+extension Int : UnitOffsetableIndex {
 }
 
 public extension Content {
