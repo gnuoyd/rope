@@ -256,6 +256,16 @@ public class Rope<C : Content> : RopeDelegation {
 			top = newValue
 		}
 	}
+	public func indicatingChangesModifyTop(_ f: (Node) -> Node) {
+		let oldOffsets =
+		    try! (startIndex..<endIndex).relative(to: units)
+		top = f(top)
+		let newOffsets =
+		    try! (startIndex..<endIndex).relative(to: units)
+		let throwaway = ChangeList<Rope>()
+		unitsDelegate.indicateChanges(new: newOffsets,
+		    old: oldOffsets, undoList: throwaway)
+	}
 	public func label(_ h1: Label, precedes h2: Label,
 	    by ival: Rope.Node.Interval) throws -> Bool {
 		return try top.label(h1, precedes: h2, by: ival)
