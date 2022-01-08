@@ -81,7 +81,6 @@ public class RopeTextStorage: NSTextStorage {
 			}
 		}
 	}
-
 }
 
 extension RopeTextStorage : RopeDelegate {
