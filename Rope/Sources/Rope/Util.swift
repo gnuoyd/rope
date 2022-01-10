@@ -29,3 +29,17 @@ public func commonPrefix<S>(_ s1: S, _ s2: S)
     -> [S.Element] where S : Sequence, S.Element : Equatable {
 	return zip(s1, s2).prefix { (e1, e2) in e1 == e2 }.map { (e, _) in e }
 }
+
+public func *(_ s: String, _ times: Int) -> String {
+	if times < 0 {
+		return String(s.reversed()) * -times
+	}
+	if times == 0 {
+		return ""
+	}
+	if times.isMultiple(of: 2) {
+		let t = s * (times / 2)
+		return t + t
+	}
+	return s + s * (times - 1)
+}
