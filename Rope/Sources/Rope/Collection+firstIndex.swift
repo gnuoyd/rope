@@ -2,7 +2,8 @@
 // Copyright (c) 2019, 2020, 2021 David Young.  All rights reserved.
 //
 extension RangeReplaceableCollection {
-    func firstIndex<C : Collection>(of target: C) -> Index? where C.Element == Element, Element : Equatable {
+    func firstIndex<C : Collection>(of target: C) -> Index?
+        where C.Element == Element, Element : Equatable {
 		guard let first = target.first else {
 			// every Collection starts with the empty Collection
 			return startIndex
