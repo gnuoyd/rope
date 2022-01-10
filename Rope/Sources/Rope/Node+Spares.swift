@@ -1,3 +1,6 @@
+//
+// Copyright (c) 2019, 2020, 2021 David Young.  All rights reserved.
+//
 public extension Rope.Node {
 	func unit(at i: Int) -> C.UnitView.Element {
 		let (node, residue, _) = retrieveLeaf(atUnit: i)

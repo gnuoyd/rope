@@ -1,3 +1,6 @@
+//
+// Copyright (c) 2019, 2020, 2021 David Young.  All rights reserved.
+//
 extension Rope {
         public struct NestedView : BidirectionalCollection {
 		let view: IndexView

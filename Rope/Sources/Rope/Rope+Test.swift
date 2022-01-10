@@ -1,3 +1,7 @@
+//
+// Copyright (c) 2019, 2020, 2021 David Young.  All rights reserved.
+//
+
 /* Test points */
 extension Rope {
 	subscript(r: Range<Index>) -> Element {

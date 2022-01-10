@@ -1,3 +1,6 @@
+//
+// Copyright (c) 2019, 2020, 2021 David Young.  All rights reserved.
+//
 extension Rope {
         public struct IndexView : BidirectionalCollection {
 		let rope: Rope
