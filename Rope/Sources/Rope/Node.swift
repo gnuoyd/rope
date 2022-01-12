@@ -1101,13 +1101,12 @@ public extension Rope.Node {
 		switch self {
 		case .leaf(_, _), .empty, .index(_):
 			return (self, i, base..<(base + dimensions.steps))
-		case .concat(let ropel, _, _, _, let roper, _):
-			let middle = ropel.dimensions.steps
-			if i < middle {
+		case .concat(let ropel, let mid, _, _, let roper, _):
+			if i < mid.steps {
 				return ropel.retrieveNode(atStep: i, base: base)
 			} else {
-				return roper.retrieveNode(atStep: i - middle,
-				    base: base + middle)
+				return roper.retrieveNode(atStep: i - mid.steps,
+				    base: base + mid.steps)
 			}
 		/* If `i` is left of the zone's left boundary... */
 		case .zone(_, _) where i == 0:
