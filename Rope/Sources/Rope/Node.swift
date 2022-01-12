@@ -1122,7 +1122,7 @@ public extension Rope.Node {
 	    -> (Self, Int, Range<Int>) {
 		switch self {
 		case .leaf(_, _), .empty, .index(_):
-			return (self, i, base..<base+dimensions.units)
+			return (self, i, base..<(base + dimensions.units))
 		case .concat(let ropel, let mid, _, _, let roper, _):
 			if i < mid.units {
 				return ropel.retrieveLeaf(atUnit: i, base: base)
