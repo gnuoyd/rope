@@ -514,7 +514,7 @@ extension Rope.Node {
 			node = n
 		}
 		func attributes(at i: Int) -> (Attributes, Range<Int>) {
-			return node.attributes(atUnit: i)
+			return node.attributes(at: i, on: \.units)
 		}
 	}
 	public var units: UnitView {
@@ -551,7 +551,7 @@ public extension Rope.Node {
 	}
 	func attributes(atStep i: Int, defaults attrs: Rope.BoundaryAttributes)
 	    -> (Attributes, Range<Int>) {
-		let (n, residue, range) = retrieveNode(atStep: i)
+		let (n, residue, range) = retrieveNode(at: i, on: \.steps)
 		switch n {
 		case .zone(_, _) where residue == 0:
 			return (attrs.open,
@@ -567,10 +567,12 @@ public extension Rope.Node {
 		}
 		fatalError("Index out of bounds")
 	}
-	func attributes(atUnit i: Int) -> (Attributes, Range<Int>) {
-		let (node, residue, range) = retrieveLeaf(atUnit: i)
+	func attributes(at i: Int, on dimension: KeyPath<Dimensions, Int>)
+	    -> (Attributes, Range<Int>) {
+		let (node, residue, range) = retrieveNode(at: i, on: dimension)
 		guard case .leaf(let attrs, _) = node,
-		    0 <= residue, residue < node.dimensions.units else {
+		    0 <= residue,
+		    residue < node.dimensions[keyPath: dimension] else {
 			fatalError("Index out of bounds")
 		}
 		return (attrs, range)
@@ -1096,42 +1098,38 @@ public extension Rope.Node {
 			return Dimensions(indices: 1)
 		}
 	}
-	func retrieveNode(atStep i: Int, base: Int = 0)
-	    -> (Self, Int, Range<Int>) {
+	func retrieveNode(at i: Int, on dimension: KeyPath<Dimensions, Int>,
+	    base: Int = 0) -> (Self, Int, Range<Int>) {
+		let boundary = Dimensions(boundaries: 1)
 		switch self {
 		case .leaf(_, _), .empty, .index(_):
-			return (self, i, base..<(base + dimensions.steps))
+			return (self, i,
+			        base..<(base + dimensions[keyPath: dimension]))
 		case .concat(let ropel, let mid, _, _, let roper, _):
-			if i < mid.steps {
-				return ropel.retrieveNode(atStep: i, base: base)
+			if i < mid[keyPath: dimension] {
+				return ropel.retrieveNode(at: i,
+				    on: dimension, base: base)
 			} else {
-				return roper.retrieveNode(atStep: i - mid.steps,
-				    base: base + mid.steps)
+				return roper.retrieveNode(
+				    at: i - mid[keyPath: dimension],
+				    on: dimension,
+				    base: base + mid[keyPath: dimension])
 			}
-		/* If `i` is left of the zone's left boundary... */
-		case .zone(_, _) where i == 0:
-			return (self, i, base..<(base + dimensions.steps))
-		/* If `i` is left of the zone's right boundary... */
-		case .zone(_, _) where i + 1 == dimensions.steps:
-			return (self, i, base..<(base + dimensions.steps))
-		case .zone(_, let rope):
-			return rope.retrieveNode(atStep: i - 1, base: base + 1)
-		}
-	}
-	func retrieveLeaf(atUnit i: Int, base: Int = 0)
-	    -> (Self, Int, Range<Int>) {
-		switch self {
-		case .leaf(_, _), .empty, .index(_):
-			return (self, i, base..<(base + dimensions.units))
-		case .concat(let ropel, let mid, _, _, let roper, _):
-			if i < mid.units {
-				return ropel.retrieveLeaf(atUnit: i, base: base)
-			} else {
-				return roper.retrieveLeaf(atUnit: i - mid.units,
-				    base: base + mid.units)
-			}
-		case .zone(_, let rope):
-			return rope.retrieveLeaf(atUnit: i, base: base)
+		/* If `i` is left of the zone's interior... */
+		case .zone(_, _) where i < boundary[keyPath: dimension]:
+			return (self, i,
+			        base..<(base + dimensions[keyPath: dimension]))
+		/* If `i` is in the zone's interior... */
+		case .zone(_, let n)
+		    where i < (boundary + n.dimensions)[keyPath: dimension]:
+			return n.retrieveNode(
+			    at: i - boundary[keyPath: dimension],
+			    on: dimension,
+			    base: base + boundary[keyPath: dimension])
+		/* If `i` is right of the zone's interior... */
+		case .zone(_, _):
+			return (self, i,
+			        base..<(base + dimensions[keyPath: dimension]))
 		}
 	}
 	func zonesEnclosing(_ i0: Int) -> [Rope.ZoneController] {

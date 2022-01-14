@@ -1716,22 +1716,22 @@ class NodeAttributes : XCTestCase {
 	let ctlr = RWZC()
 	lazy var contained: RSS = Rope(with: .zone(under: ctlr, n))
 	func testFrontAttributes() {
-		let (attrs, range) = n.attributes(atUnit: 0)
+		let (attrs, range) = n.attributes(at: 0, on: \.units)
 		XCTAssert(Self.frontAttrs ~ attrs)
 		XCTAssert(range == 0..<3)
 	}
 	func testMiddleAttributes() {
-		let (attrs, range) = n.attributes(atUnit: 3)
+		let (attrs, range) = n.attributes(at: 3, on: \.units)
 		XCTAssert(Self.middleAttrs ~ attrs)
 		XCTAssert(range == 3..<8)
 	}
 	func testBackAttributes() {
-		let (attrs, range) = n.attributes(atUnit: 8)
+		let (attrs, range) = n.attributes(at: 8, on: \.units)
 		XCTAssert(Self.backAttrs ~ attrs)
 		XCTAssert(range == 8..<12)
 	}
 	func testLastAttributes() {
-		let (attrs, range) = n.attributes(atUnit: 11)
+		let (attrs, range) = n.attributes(at: 11, on: \.units)
 		XCTAssert(Self.backAttrs ~ attrs)
 		XCTAssert(range == 8..<12)
 	}
@@ -1740,10 +1740,12 @@ class NodeAttributes : XCTestCase {
 		XCTAssertNoThrow { [rope] in
 			let newn = try rope.node.settingAttributes(
 			    NodeAttributes.newAttrs, range: ir)
-			let (attrs, frontRange) = newn.attributes(atUnit: 0)
+			let (attrs, frontRange) =
+			    newn.attributes(at: 0, on: \.units)
 			XCTAssert(Self.newAttrs ~ attrs)
 			XCTAssert(frontRange == 0..<3)
-			let (_, middleRange) = newn.attributes(atUnit: 3)
+			let (_, middleRange) =
+			    newn.attributes(at: 3, on: \.units)
 			XCTAssert(middleRange == 3..<8)
 		}
 	}
@@ -1753,23 +1755,28 @@ class NodeAttributes : XCTestCase {
 			let newn = try oldr.node.settingAttributes(
 			    NodeAttributes.newAttrs, range: ir)
 
-			let (frontAttrs, frontRange) = newn.attributes(atUnit: 0)
+			let (frontAttrs, frontRange) =
+			    newn.attributes(at: 0, on: \.units)
 			XCTAssert(frontRange == 0..<2)
 			XCTAssert(Self.frontAttrs ~ frontAttrs)
 
-			let (midAttrs1, midRange1) = newn.attributes(atUnit: 2)
+			let (midAttrs1, midRange1) =
+			    newn.attributes(at: 2, on: \.units)
 			XCTAssert(midRange1 == 2..<3)
 			XCTAssert(Self.newAttrs ~ midAttrs1)
 
-			let (midAttrs2, midRange2) = newn.attributes(atUnit: 3)
+			let (midAttrs2, midRange2) =
+			    newn.attributes(at: 3, on: \.units)
 			XCTAssert(midRange2 == 3..<8)
 			XCTAssert(Self.newAttrs ~ midAttrs2)
 
-			let (midAttrs3, midRange3) = newn.attributes(atUnit: 8)
+			let (midAttrs3, midRange3) =
+			    newn.attributes(at: 8, on: \.units)
 			XCTAssert(midRange3 == 8..<9)
 			XCTAssert(Self.newAttrs ~ midAttrs3)
 
-			let (backAttrs, backRange) = newn.attributes(atUnit: 9)
+			let (backAttrs, backRange) =
+			    newn.attributes(at: 9, on: \.units)
 			XCTAssert(backRange == 9..<12)
 			XCTAssert(Self.backAttrs ~ backAttrs)
 		}
@@ -1785,7 +1792,7 @@ class NodeAttributes : XCTestCase {
 		XCTAssertNoThrow { [self] in
 			let newn = try rope.node.settingAttributes(
 			    NodeAttributes.newAttrs, range: ir)
-			let (attrs, range) = newn.attributes(atUnit: 8)
+			let (attrs, range) = newn.attributes(at: 8, on: \.units)
 			XCTAssert(Self.newAttrs ~ attrs)
 			XCTAssert(range == 8..<12,
 			    "actual range \(range) " +
@@ -1798,10 +1805,12 @@ class NodeAttributes : XCTestCase {
 		XCTAssertNoThrow { [rope] in
 			let newn = try rope.node.settingAttributes(
 			    NodeAttributes.newAttrs, range: ir)
-			let (attrs, range) = newn.attributes(atUnit: 11)
+			let (attrs, range) =
+			    newn.attributes(at: 11, on: \.units)
 			XCTAssert(Self.newAttrs ~ attrs)
 			XCTAssert(range == 11..<12)
-			let (_, abuttingRange) = newn.attributes(atUnit: 8)
+			let (_, abuttingRange) =
+			    newn.attributes(at: 8, on: \.units)
 			XCTAssert(abuttingRange == 8..<11)
 		}
 	}

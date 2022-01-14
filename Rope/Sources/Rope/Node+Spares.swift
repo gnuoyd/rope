@@ -3,7 +3,7 @@
 //
 public extension Rope.Node {
 	func unit(at i: Int) -> C.UnitView.Element {
-		let (node, residue, _) = retrieveLeaf(atUnit: i)
+		let (node, residue, _) = retrieveNode(at: i, on: \.units)
 		guard case .leaf(_, let s) = node else {
 			fatalError("In \(#function), no unit \(i)")
 		}

@@ -14,7 +14,7 @@ extension Rope {
 			return rope.node.dimensions.units
 		}
 		public func attributes(at i: Int) -> (Attributes, Range<Int>) {
-			return rope.node.attributes(atUnit: i)
+			return rope.node.attributes(at: i, on: \.units)
 		}
 		public subscript(_ r: Range<Int>) -> Rope.Content {
 			get {
