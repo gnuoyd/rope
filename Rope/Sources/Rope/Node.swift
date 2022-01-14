@@ -531,7 +531,8 @@ extension Rope.Node {
 		func attributes(at i: Int,
 		    defaults attrs: Rope.BoundaryAttributes)
 		    -> (Attributes, Range<Int>) {
-			return node.attributes(atStep: i, defaults: attrs)
+			return node.attributes(at: i, on: \.steps,
+			    defaults: attrs)
 		}
 	}
 	public var steps: StepView {
@@ -549,33 +550,24 @@ public extension Rope.Node {
 	case indicesCrossZones
 	case indicesOutOfOrder
 	}
-	func attributes(atStep i: Int, defaults attrs: Rope.BoundaryAttributes)
+	func attributes(at i: Int, on dimension: KeyPath<Dimensions, Int>,
+	    defaults attrs: Rope.BoundaryAttributes? = nil)
 	    -> (Attributes, Range<Int>) {
-		let (n, residue, range) = retrieveNode(at: i, on: \.steps)
+		let boundary = Dimensions(boundaries: 1)
+		let (n, residue, range) = retrieveNode(at: i, on: dimension)
 		switch n {
-		case .zone(_, _) where residue == 0:
-			return (attrs.open,
-			        range.lowerBound..<(range.lowerBound + 1))
+		case .zone(_, _) where residue < boundary[keyPath: dimension]:
+			return (attrs!.open,
+			        range.lowerBound..<(range.lowerBound + boundary[keyPath: dimension]))
 		case .zone(_, _):
-			return (attrs.close,
-			        (range.upperBound - 1)..<range.upperBound)
+			return (attrs!.close,
+			        (range.upperBound - boundary[keyPath: dimension])..<range.upperBound)
 		case .leaf(let attrs, _) where
-		    0 <= residue && residue < n.dimensions.steps:
+		    0 <= residue && residue < n.dimensions[keyPath: dimension]:
 			return (attrs, range)
 		default:
-			break
-		}
-		fatalError("Index out of bounds")
-	}
-	func attributes(at i: Int, on dimension: KeyPath<Dimensions, Int>)
-	    -> (Attributes, Range<Int>) {
-		let (node, residue, range) = retrieveNode(at: i, on: dimension)
-		guard case .leaf(let attrs, _) = node,
-		    0 <= residue,
-		    residue < node.dimensions[keyPath: dimension] else {
 			fatalError("Index out of bounds")
 		}
-		return (attrs, range)
 	}
 	/* A naive version of `transformingAttributes(after:upTo:with:)` splits
 	 * zones.  This version finds affected zones, splits before

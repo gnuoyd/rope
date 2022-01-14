@@ -23,7 +23,7 @@ extension Rope {
 			return rope.node.dimensions.steps
 		}
 		public func attributes(at i: Int) -> (Attributes, Range<Int>) {
-			return rope.node.attributes(atStep: i,
+			return rope.node.attributes(at: i, on: \.steps,
 			    defaults: properties.attributes)
 		}
 		public subscript(_ r: Range<Int>) -> Rope.Content {
