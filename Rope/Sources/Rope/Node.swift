@@ -557,10 +557,10 @@ public extension Rope.Node {
 		let (n, residue, range) = retrieveNode(at: i, on: dimension)
 		switch n {
 		case .zone(_, _) where residue < boundary[keyPath: dimension]:
-			return (attrs!.open,
+			return (attrs?.open ?? [:],
 			        range.lowerBound..<(range.lowerBound + boundary[keyPath: dimension]))
 		case .zone(_, _):
-			return (attrs!.close,
+			return (attrs?.close ?? [:],
 			        (range.upperBound - boundary[keyPath: dimension])..<range.upperBound)
 		case .leaf(let attrs, _) where
 		    0 <= residue && residue < n.dimensions[keyPath: dimension]:
