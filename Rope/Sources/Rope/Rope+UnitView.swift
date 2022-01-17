@@ -2,7 +2,7 @@
 // Copyright (c) 2020, 2021 David Young.  All rights reserved.
 //
 extension Rope {
-        public struct UnitView : UnitRopeView {
+        public struct UnitView : RopeUnitView {
 		public typealias Cx = Rope.Content
 
 		let rope: Rope

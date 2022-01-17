@@ -2,7 +2,7 @@
 // Copyright (c) 2020, 2021 David Young.  All rights reserved.
 //
 extension Rope {
-        public struct StepView : UnitRopeView {
+        public struct StepView : RopeUnitView {
 		public typealias Cx = Rope.Content
 		let rope: Rope
 		let properties: Rope.BoundaryProperties

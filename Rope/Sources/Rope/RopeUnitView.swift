@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2019, 2020, 2021 David Young.  All rights reserved.
 //
-public protocol UnitRopeView {
+public protocol RopeUnitView {
 	associatedtype Cx : Content
 	var length: Int { get }
 	subscript(_ r: Range<Int>) -> Cx { get }
@@ -10,7 +10,7 @@ public protocol UnitRopeView {
 	func attributes(at i: Int) -> (Attributes, Range<Int>)
 }
 
-extension UnitRopeView {
+extension RopeUnitView {
 	public typealias Unit = Cx.Unit
 	public subscript(_ i: Int) -> Unit {
 		get {
