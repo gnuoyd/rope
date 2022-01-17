@@ -5,16 +5,17 @@ import AppKit
 import Rope
 
 class RopeString : NSString {
-	public typealias Backing = Rope<ContiguousArray<UTF16.CodeUnit>>
-	typealias Offset = Backing.Node.Offset
-	typealias Content = Backing.Node.Content
+	typealias Backing = Rope<ContiguousArray<UTF16.CodeUnit>>
 	let backing: Backing
+	let units: Backing.UnitView
 	init(with backing: Backing) {
 		self.backing = backing
+		self.units = backing.units
 		super.init()
 	}
 	override init() {
-		self.backing = Rope()
+		self.backing = Backing()
+		self.units = backing.units
 		super.init()
 	}
 	required init?(coder aDecoder: NSCoder) {
@@ -25,17 +26,17 @@ class RopeString : NSString {
 		fatalError()
 	}
 	public override var length: Int {
-		return backing.units.length
+		return units.length
 	}
 	override func character(at i: Int) -> unichar {
-		let c = backing.units[i]
+		let c = units[i]
 		// Swift.print("character(at: \(i)) -> \(c)")
 		return c
 	}
 	override func getCharacters(_ buffer_in: UnsafeMutablePointer<unichar>,
 	    range: NSRange) {
 		var buffer = buffer_in
-		backing.units.extract(range.range, filling: &buffer)
+		units.extract(range.range, filling: &buffer)
 	}
 	override func copy(with zone: NSZone? = nil) -> Any {
 		return self
