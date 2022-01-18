@@ -291,15 +291,14 @@ public extension Rope.Node {
 			return Rope.Node(controller: ctlr,
 			    node: n.inserting(label, abutting: side,
 			        ofStep: offset - 1))
-		case .concat(let l, _, _, _, let r, _):
-			let middle = l.dimensions.steps
-			if offset < middle {
+		case .concat(let l, let mid, _, _, let r, _):
+			if offset < mid.steps {
 				return l.inserting(label, abutting: side,
 				    ofStep: offset).appending(r)
 			}
-			if middle < offset {
+			if mid.steps < offset {
 				return l.appending(r.inserting(label,
-				    abutting: side, ofStep: offset - middle))
+				    abutting: side, ofStep: offset - mid.steps))
 			}
 			switch side {
 			case .left:
@@ -307,7 +306,7 @@ public extension Rope.Node {
 				    ofStep: offset).appending(r)
 			case .right:
 				return l.appending(r.inserting(label,
-				    abutting: side, ofStep: offset - middle))
+				    abutting: side, ofStep: offset - mid.steps))
 			}
 		}
 	}
