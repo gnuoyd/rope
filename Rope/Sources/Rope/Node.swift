@@ -472,39 +472,6 @@ public extension Rope.Node {
 	}
 }
 
-extension Rope.Node {
-	public struct UnitView {
-		let node: Rope.Node
-		init(node n: Rope.Node) {
-			node = n
-		}
-		func attributes(at i: Int) -> (Attributes, Range<Int>) {
-			return node.attributes(at: i, on: \.units)
-		}
-	}
-	public var units: UnitView {
-		return UnitView(node: self)
-	}
-}
-
-extension Rope.Node {
-        public struct StepView {
-		let node: Rope.Node
-		init(node n: Rope.Node) {
-			node = n
-		}
-		func attributes(at i: Int,
-		    defaults attrs: Rope.BoundaryAttributes)
-		    -> (Attributes, Range<Int>) {
-			return node.attributes(at: i, on: \.steps,
-			    defaults: attrs)
-		}
-	}
-	public var steps: StepView {
-                return StepView(node: self)
-	}
-}
-
 public extension Rope.Node {
 	enum NodeError : Error {
 	case unexpectedZone
