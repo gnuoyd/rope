@@ -184,8 +184,8 @@ class StepContent : NestedZoneBase {
 				XCTFail("could not get base address of steps")
 				return
 			}
-			rope.node.extractSteps(from: start, upTo: end,
-			    filling: &base, units: units)
+			rope.node.extract(from: start, upTo: end, on: \.steps,
+			    filling: &base, defaults: units)
 		}
 		let expected = "⟨abc⟨def⟨ghi⟩⟩⟩".utf16.map { $0 }[start..<end]
 		XCTAssert(steps[..<(end - start)] == expected,

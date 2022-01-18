@@ -9,24 +9,21 @@ extension Rope {
 		public let axis: KeyPath<Rope.Node.Dimensions, Int>
 		public let properties: Rope<Cx>.BoundaryProperties
 
-		init(rope r: Rope, properties p: Rope.BoundaryProperties) {
-			axis = \.units
-			properties = p
+		init(of r: Rope, axis a: KeyPath<Rope.Node.Dimensions, Int>,
+		     properties p: Rope.BoundaryProperties) {
 			rope = r
-		}
-		public subscript(_ r: Range<Int>) -> Rope.Content {
-			get {
-				let ir = Range(r, within: self)
-				return rope.node[ir]
-			}
+			axis = a
+			properties = p
 		}
 		public func extract(_ range: Range<Int>,
 		    filling buffer: inout UnsafeMutablePointer<Unit>) {
-			return rope.node.extractUnits(from: range.lowerBound,
-			    upTo: range.upperBound, filling: &buffer)
+			return rope.node.extract(from: range.lowerBound,
+			    upTo: range.upperBound, on: axis, filling: &buffer,
+			    defaults: properties.units)
 		}
 	}
 	public var units: UnitView {
-                return UnitView(rope: self, properties: boundaryProperties)
+                return UnitView(of: self, axis: \.units,
+		                properties: boundaryProperties)
 	}
 }

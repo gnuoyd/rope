@@ -1885,78 +1885,62 @@ public extension Rope.Node {
 }
 
 public extension Rope.Node {
-	func extractSteps(from start: Int, upTo end: Int,
+	func extract(from start: Int, upTo end: Int,
+	    on axis: KeyPath<Rope.Node.Dimensions, Int>,
 	    filling buffer: inout UnsafeMutablePointer<C.Unit>,
-	    units: Rope.BoundaryUnits) {
-		switch self {
-		case .concat(let l, let mid, _, _, let r, _):
-			if start < mid.steps {
-				l.extractSteps(from: start,
-				    upTo: min(end, mid.steps),
-				    filling: &buffer, units: units)
-			}
-			if mid.steps < end {
-				r.extractSteps(
-				    from: max(start, mid.steps) - mid.steps,
-				    upTo: end - mid.steps,
-				    filling: &buffer, units: units)
-			}
-		case .leaf(_, let s):
-			s.extract(from: start, upTo: end, filling: &buffer)
-		case .zone(_, let content):
-			var next = 0
-			if start <= next {
-				// Insert the open-zone unit.  Adjust `buffer`.
-				buffer.pointee = units.open
-				buffer += 1
-			}
-			next += 1
-			if next == end {
-				return
-			}
-			if start <= next + content.dimensions.steps {
-				content.extractSteps(
-				    from: start - min(next, start),
-				    upTo: min(content.dimensions.steps,
-				              end - min(next, start)),
-				    filling: &buffer, units: units)
-			}
-			next += min(content.dimensions.steps, end - next)
-			if next == end {
-				return
-			}
-			if start <= next {
-				// Insert the close-zone unit.  Adjust `buffer`.
-				buffer.pointee = units.close
-				buffer += 1
-			}
-			next += 1
-		case .empty, .index(_):
+	    defaults units: Rope.BoundaryUnits) {
+		let bdry = Dimensions(boundaries: 1)
+
+		if start == end {
 			return
 		}
-	}
-	func extractUnits(from start: Int, upTo end: Int,
-	    filling buffer: inout UnsafeMutablePointer<C.Unit>) {
+
 		switch self {
 		case .concat(let l, let mid, _, _, let r, _):
-			if start < mid.units {
-				l.extractUnits(from: start,
-				    upTo: min(end, mid.units),
-				    filling: &buffer)
+			let middle = mid[keyPath: axis]
+			if start < middle {
+				l.extract(from: start,
+				    upTo: min(end, middle), on: axis,
+				    filling: &buffer, defaults: units)
 			}
-			if mid.units < end {
-				r.extractUnits(
-				    from: max(start, mid.units) - mid.units,
-				    upTo: end - mid.units,
-				    filling: &buffer)
+			if middle < end {
+				r.extract(
+				    from: max(start, middle) - middle,
+				    upTo: end - middle, on: axis,
+				    filling: &buffer, defaults: units)
 			}
 		case .leaf(_, let s):
 			s.extract(from: start, upTo: end, filling: &buffer)
-		case .zone(_, let content):
-			return content.extractUnits(from: start, upTo: end,
-			    filling: &buffer)
 		case .empty, .index(_):
 			return
+		case .zone(_, _) where start < bdry[keyPath: axis]:
+			// Insert the open-zone unit.  Adjust `buffer`.
+			buffer.pointee = units.open
+			buffer += 1
+			if end <= bdry[keyPath: axis] {
+				return
+			}
+			return extract(from: bdry[keyPath: axis], upTo: end,
+			    on: axis, filling: &buffer, defaults: units)
+		case .zone(_, let n)
+		    where start < (bdry + n.dimensions)[keyPath: axis]:
+			n.extract(
+			    from: start - bdry[keyPath: axis],
+			    upTo: min(n.dimensions[keyPath: axis],
+			              end - bdry[keyPath: axis]),
+			    on: axis,
+			    filling: &buffer, defaults: units)
+			if end <= (bdry + n.dimensions)[keyPath: axis] {
+				return
+			}
+			return extract(
+			    from: (bdry + n.dimensions)[keyPath: axis],
+			    upTo: end,
+			    on: axis, filling: &buffer, defaults: units)
+		case .zone(_, _):
+			// Insert the close-zone unit.  Adjust `buffer`.
+			buffer.pointee = units.close
+			buffer += 1
 		}
 	}
 }

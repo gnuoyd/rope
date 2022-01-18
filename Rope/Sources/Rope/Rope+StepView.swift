@@ -14,9 +14,9 @@ extension Rope {
 		}
 		public func extract(_ range: Range<Int>,
 		    filling buffer: inout UnsafeMutablePointer<Cx.Unit>) {
-			return rope.node.extractSteps(from: range.lowerBound,
-			    upTo: range.upperBound, filling: &buffer,
-			    units: properties.units)
+			return rope.node.extract(from: range.lowerBound,
+			    upTo: range.upperBound, on: axis, filling: &buffer,
+			    defaults: properties.units)
 		}
 	}
 	public var steps: StepView {
