@@ -2,19 +2,17 @@
 // Copyright (c) 2020, 2021 David Young.  All rights reserved.
 //
 extension Rope {
-        public struct UnitView : RopeUnitView {
+        public struct UnitView : RopeAxisView {
 		public typealias Cx = Rope.Content
 
-		let rope: Rope
+		public let rope: Rope
+		public let axis: KeyPath<Rope.Node.Dimensions, Int>
+		public let properties: Rope<Cx>.BoundaryProperties
 
-		init(rope r: Rope) {
+		init(rope r: Rope, properties p: Rope.BoundaryProperties) {
+			axis = \.units
+			properties = p
 			rope = r
-		}
-		public var length: Int {
-			return rope.node.dimensions.units
-		}
-		public func attributes(at i: Int) -> (Attributes, Range<Int>) {
-			return rope.node.attributes(at: i, on: \.units)
 		}
 		public subscript(_ r: Range<Int>) -> Rope.Content {
 			get {
@@ -29,6 +27,6 @@ extension Rope {
 		}
 	}
 	public var units: UnitView {
-                return UnitView(rope: self)
+                return UnitView(rope: self, properties: boundaryProperties)
 	}
 }

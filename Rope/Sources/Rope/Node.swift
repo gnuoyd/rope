@@ -264,7 +264,9 @@ public extension Rope.Node {
 		}
 	}
 	func inserting(_ label: Label, abutting side: Side,
-	    ofStep offset: Int) -> Rope.Node {
+	    of offset: Int, on dimension: KeyPath<Dimensions, Int>)
+	    -> Rope.Node {
+		let boundary = Dimensions(boundaries: 1)
 		switch self {
 		case .index(_), .empty:
 			assert(offset == 0)
@@ -282,73 +284,37 @@ public extension Rope.Node {
 			    .appending(.index(label: label))
 			    .appending(Rope.Node(content: C.init(r),
 			        attributes: attrs))
-		case .zone(_, _) where offset == 0:
+		case .zone(_, _) where offset < boundary[keyPath: dimension]:
 			return Self.index(label: label).appending(self)
-		case .zone(_, _) where offset == dimensions.steps:
+		case .zone(let ctlr, let n)
+		    where offset < (boundary + n.dimensions)[keyPath:dimension]:
+			assert(offset >= boundary[keyPath: dimension])
+			return Rope.Node(controller: ctlr,
+			    node: n.inserting(label, abutting: side,
+			        of: offset - boundary[keyPath: dimension],
+				on: dimension))
+		case .zone(_, _):
 			return self.appending(Self.index(label: label))
-		case .zone(let ctlr, let n):
-			assert(offset >= 1)
-			return Rope.Node(controller: ctlr,
-			    node: n.inserting(label, abutting: side,
-			        ofStep: offset - 1))
 		case .concat(let l, let mid, _, _, let r, _):
-			if offset < mid.steps {
+			if offset < mid[keyPath: dimension] {
 				return l.inserting(label, abutting: side,
-				    ofStep: offset).appending(r)
+				    of: offset, on: dimension).appending(r)
 			}
-			if mid.steps < offset {
+			if mid[keyPath: dimension] < offset {
 				return l.appending(r.inserting(label,
-				    abutting: side, ofStep: offset - mid.steps))
+				    abutting: side,
+				    of: offset - mid[keyPath: dimension],
+				    on: dimension))
 			}
 			switch side {
 			case .left:
 				return l.inserting(label, abutting: side,
-				    ofStep: offset).appending(r)
+				    of: offset, on: dimension).appending(r)
 			case .right:
 				return l.appending(r.inserting(label,
-				    abutting: side, ofStep: offset - mid.steps))
-			}
-		}
-	}
-	func inserting(_ label: Label, abutting side: Side,
-	    ofUnit offset: Int) -> Rope.Node {
-		switch self {
-		case .index(_), .empty:
-			assert(offset == 0)
-			switch side {
-			case .left:
-				return Self.index(label: label).appending(self)
-			case .right:
-				return self.appending(.index(label: label))
-			}
-		case .leaf(let attrs, let content):
-			let idx = C.Index(unitOffset: offset, in: content)
-			let l = content.prefix(upTo: idx)
-			let r = content.suffix(from: idx)
-			return Rope.Node(content: C.init(l), attributes: attrs)
-			    .appending(.index(label: label))
-			    .appending(Rope.Node(content: C.init(r),
-			        attributes: attrs))
-		case .zone(let ctlr, let n):
-			return Rope.Node(controller: ctlr,
-			    node: n.inserting(label, abutting: side,
-			        ofUnit: offset))
-		case .concat(let l, let mid, _, _, let r, _):
-			if offset < mid.units {
-				return l.inserting(label, abutting: side,
-				    ofUnit: offset).appending(r)
-			}
-			if mid.units < offset {
-				return l.appending(r.inserting(label,
-				    abutting: side, ofUnit: offset - mid.units))
-			}
-			switch side {
-			case .left:
-				return l.inserting(label, abutting: side,
-				    ofUnit: offset).appending(r)
-			case .right:
-				return l.appending(r.inserting(label,
-				    abutting: side, ofUnit: offset - mid.units))
+				    abutting: side,
+				    of: offset - mid[keyPath: dimension],
+				    on: dimension))
 			}
 		}
 	}

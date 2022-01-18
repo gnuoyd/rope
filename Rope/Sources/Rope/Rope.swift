@@ -8,35 +8,19 @@ case onInterior
 }
 
 extension Range {
-	public init<C : Content>(_ r: NSRange, within view: Rope<C>.UnitView)
-	    where Bound == Rope<C>.Index {
+	public init<V : RopeAxisView>(_ r: NSRange,
+	    within view: V) where Bound == Rope<V.Cx>.Index {
 		self.init(r.range, within: view)
 	}
-	public init<C : Content>(_ r: Range<Int>,
-	    within steps: Rope<C>.StepView) where Bound == Rope<C>.Index {
-		let lower = Rope.Index(abutting: r.lowerBound, on: .right,
-		    within: steps)
-		let upper = Rope<C>.Index(abutting: r.upperBound, on: .left,
-		    within: steps)
+	public init<V : RopeAxisView>(_ r: Range<Int>, within view: V)
+	    where Bound == Rope<V.Cx>.Index {
+		let lower = Rope<V.Cx>.Index(abutting: r.lowerBound, on: .right,
+		    within: view)
+		let upper = Rope<V.Cx>.Index(abutting: r.upperBound, on: .left,
+		    within: view)
 		if r.lowerBound != r.upperBound {
 			self = lower..<upper
-		} else if try! steps.rope.node.label(lower.label,
-		                                     precedes: upper.label,
-						     by: .jot) {
-			self = lower..<upper
-		} else {
-			self = upper..<lower
-		}
-	}
-	public init<C : Content>(_ r: Range<Int>,
-	    within units: Rope<C>.UnitView) where Bound == Rope<C>.Index {
-		let lower = Rope.Index(abutting: r.lowerBound, on: .right,
-		    within: units)
-		let upper = Rope.Index(abutting: r.upperBound, on: .left,
-		    within: units)
-		if r.lowerBound != r.upperBound {
-			self = lower..<upper
-		} else if try! units.rope.node.label(lower.label,
+		} else if try! view.rope.node.label(lower.label,
 		                                     precedes: upper.label,
 						     by: .jot) {
 			self = lower..<upper
@@ -181,7 +165,19 @@ public class Rope<C : Content> : RopeDelegation {
 			    attributesDidChange: self.ropeAttributesDidChange)
 		}
 	}
-	var boundaryProperties: BoundaryProperties? = nil
+	var _boundaryProperties: BoundaryProperties? = nil
+	var boundaryProperties: BoundaryProperties {
+		get {
+			return _boundaryProperties ?? BoundaryProperties(
+			    attributes: BoundaryAttributes(open: [:],
+			                                   close: [:]),
+			    units: BoundaryUnits(open: Content.Unit.default,
+			                         close: Content.Unit.default))
+		}
+		set {
+			_boundaryProperties = newValue
+		}
+	}
 	private var mutations: UInt = 0
 	private var rebalanceInterval: UInt = 32
 	internal var _startLabel: Label
