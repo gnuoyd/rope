@@ -482,20 +482,22 @@ public extension Rope.Node {
 	case indicesCrossZones
 	case indicesOutOfOrder
 	}
-	func attributes(at i: Int, on dimension: KeyPath<Dimensions, Int>,
+	func attributes(at i: Int, on axis: KeyPath<Dimensions, Int>,
 	    defaults attrs: Rope.BoundaryAttributes? = nil)
 	    -> (Attributes, Range<Int>) {
 		let boundary = Dimensions(boundaries: 1)
-		let (n, residue, range) = retrieveNode(at: i, on: dimension)
+		let (n, residue, range) = retrieveNode(at: i, on: axis)
 		switch n {
-		case .zone(_, _) where residue < boundary[keyPath: dimension]:
+		case .zone(_, _) where residue < boundary[keyPath: axis]:
 			return (attrs?.open ?? [:],
-			        range.lowerBound..<(range.lowerBound + boundary[keyPath: dimension]))
+			        range.lowerBound..<(range.lowerBound +
+				                    boundary[keyPath: axis]))
 		case .zone(_, _):
 			return (attrs?.close ?? [:],
-			        (range.upperBound - boundary[keyPath: dimension])..<range.upperBound)
+			        (range.upperBound -
+				 boundary[keyPath: axis])..<range.upperBound)
 		case .leaf(let attrs, _) where
-		    0 <= residue && residue < n.dimensions[keyPath: dimension]:
+		    0 <= residue && residue < n.dimensions[keyPath: axis]:
 			return (attrs, range)
 		default:
 			fatalError("Index out of bounds")
