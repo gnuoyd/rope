@@ -7,7 +7,7 @@ import Rope
 class RopeString : NSString {
 	typealias Backing = Rope<ContiguousArray<UTF16.CodeUnit>>
 	let backing: Backing
-	let units: Backing.UnitView
+	let units: Backing.RopeAxisView
 	init(with backing: Backing) {
 		self.backing = backing
 		self.units = backing.units

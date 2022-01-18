@@ -8,15 +8,15 @@ case onInterior
 }
 
 extension Range {
-	public init<V : RopeAxisView>(_ r: NSRange,
-	    within view: V) where Bound == Rope<V.Cx>.Index {
+	public init<C : Content>(_ r: NSRange,
+	    within view: Rope<C>.RopeAxisView) where Bound == Rope<C>.Index {
 		self.init(r.range, within: view)
 	}
-	public init<V : RopeAxisView>(_ r: Range<Int>, within view: V)
-	    where Bound == Rope<V.Cx>.Index {
-		let lower = Rope<V.Cx>.Index(abutting: r.lowerBound, on: .right,
+	public init<C : Content>(_ r: Range<Int>,
+	    within view: Rope<C>.RopeAxisView) where Bound == Rope<C>.Index {
+		let lower = Rope<C>.Index(abutting: r.lowerBound, on: .right,
 		    within: view)
-		let upper = Rope<V.Cx>.Index(abutting: r.upperBound, on: .left,
+		let upper = Rope<C>.Index(abutting: r.upperBound, on: .left,
 		    within: view)
 		if r.lowerBound != r.upperBound {
 			self = lower..<upper
@@ -35,13 +35,9 @@ extension Range {
 		let upper = try rope.offset(of: upperBound, on: dimension)
 		return lower..<upper
 	}
-	public func relative<C : Content>(to view: Rope<C>.UnitView)
+	public func relative<C : Content>(to view: Rope<C>.RopeAxisView)
 	    throws -> Range<Int> where Bound == Rope<C>.Index {
-		return try relative(to: view.rope, on: \.units)
-	}
-	public func relative<C : Content>(to view: Rope<C>.StepView)
-	    throws -> Range<Int> where Bound == Rope<C>.Index {
-		return try relative(to: view.rope, on: \.steps)
+		return try relative(to: view.rope, on: view.axis)
 	}
 }
 

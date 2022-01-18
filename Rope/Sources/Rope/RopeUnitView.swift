@@ -1,23 +1,25 @@
 //
 // Copyright (c) 2019, 2020, 2021 David Young.  All rights reserved.
 //
-public protocol RopeAxisView {
-	associatedtype Cx : Content
-	var axis: KeyPath<Rope<Cx>.Node.Dimensions, Int> { get }
-	var length: Int { get }
-	var properties: Rope<Cx>.BoundaryProperties { get }
-	var rope: Rope<Cx> { get }
-	subscript(_ r: Range<Int>) -> Cx { get }
-	func extract(_ range: Range<Int>,
-	    filling buffer: inout UnsafeMutablePointer<Cx.Unit>)
-	func attributes(at i: Int) -> (Attributes, Range<Int>)
+extension Rope {
+	public struct RopeAxisView {
+		public let rope: Rope
+		public let axis: KeyPath<Rope.Node.Dimensions, Int>
+		public let properties: Rope.BoundaryProperties
+
+		init(of r: Rope, axis a: KeyPath<Rope.Node.Dimensions, Int>,
+		     properties p: Rope.BoundaryProperties) {
+			rope = r
+			axis = a
+			properties = p
+		}
+	}
 }
 
-extension RopeAxisView {
-	public typealias Unit = Cx.Unit
-	public subscript(_ i: Int) -> Unit {
+extension Rope.RopeAxisView {
+	public subscript(_ i: Int) -> Rope.Content.Unit {
 		get {
-			var result: Unit = Unit.default
+			var result: Rope.Content.Unit = Rope.Content.Unit.default
 			withUnsafeMutablePointer(to: &result) { _buf in
 				var buf = _buf
 				extract(i..<(i+1), filling: &buf)
@@ -25,7 +27,7 @@ extension RopeAxisView {
 			return result
 		}
 	}
-	public subscript(_ r: Range<Int>) -> Rope<Cx>.Content {
+	public subscript(_ r: Range<Int>) -> Rope.Content {
 		get {
 			let ir = Range(r, within: self)
 			return rope.node[ir]
@@ -46,5 +48,11 @@ extension RopeAxisView {
 	public func attributes(at i: Int) -> (Attributes, Range<Int>) {
 		return rope.node.attributes(at: i, on: axis,
 		    defaults: properties.attributes)
+	}
+	public func extract(_ range: Range<Int>,
+	    filling buffer: inout UnsafeMutablePointer<Rope.Content.Unit>) {
+		return rope.node.extract(from: range.lowerBound,
+		    upTo: range.upperBound, on: axis, filling: &buffer,
+		    defaults: properties.units)
 	}
 }
