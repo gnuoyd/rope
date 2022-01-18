@@ -44,17 +44,20 @@ extension Range {
 			self = upper..<lower
 		}
 	}
+	public func relative<C : Content>(to rope: Rope<C>,
+	    on dimension: KeyPath<Rope<C>.Node.Dimensions, Int>)
+	    throws -> Range<Int> where Bound == Rope<C>.Index {
+		let lower = try rope.offset(of: lowerBound, on: dimension)
+		let upper = try rope.offset(of: upperBound, on: dimension)
+		return lower..<upper
+	}
 	public func relative<C : Content>(to view: Rope<C>.UnitView)
 	    throws -> Range<Int> where Bound == Rope<C>.Index {
-		let lower = try view.rope.offset(of: lowerBound, on: \.units)
-		let upper = try view.rope.offset(of: upperBound, on: \.units)
-		return lower..<upper
+		return try relative(to: view.rope, on: \.units)
 	}
 	public func relative<C : Content>(to view: Rope<C>.StepView)
 	    throws -> Range<Int> where Bound == Rope<C>.Index {
-		let lower = try view.rope.offset(of: lowerBound, on: \.steps)
-		let upper = try view.rope.offset(of: upperBound, on: \.steps)
-		return lower..<upper
+		return try relative(to: view.rope, on: \.steps)
 	}
 }
 
