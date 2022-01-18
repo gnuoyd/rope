@@ -14,6 +14,14 @@ extension Rope {
 			properties = p
 		}
 	}
+	public var steps: RopeAxisView {
+                return RopeAxisView(of: self, axis: \.steps,
+		    properties: boundaryProperties)
+	}
+	public var units: RopeAxisView {
+                return RopeAxisView(of: self, axis: \.units,
+		    properties: boundaryProperties)
+	}
 }
 
 extension Rope.RopeAxisView {
