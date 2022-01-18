@@ -1214,32 +1214,13 @@ public extension Rope.Node {
 	    throws -> [Rope.ZoneController] {
 		return try zonesClosing(at: i.label, in: controllers)
 	}
-	func stepOffset(of label: Label, origin: Int = 0) throws -> Int {
+	func offset(of label: Label, on dimension: KeyPath<Dimensions, Int>,
+	    origin: Int = 0) throws -> Int {
+		let boundary = Dimensions(boundaries: 1)
 		switch self {
 		case .zone(_, let content):
-			return try content.stepOffset(of: label,
-			    origin: origin + 1)
-		case .index(let w) where w.get() == label:
-			return origin
-		case .concat(let l, _, _, _, let r, _):
-			/* TBD accelerate: check for `label` presence in
-			 * `l` and `r`.
-			 */
-			do {
-				return try l.stepOffset(
-				    of: label, origin: origin)
-			} catch NodeError.indexNotFound {
-				return try r.stepOffset(of: label,
-				    origin: origin + l.dimensions.steps)
-			}
-		default:
-			throw NodeError.indexNotFound
-		}
-	}
-	func unitOffset(of label: Label, origin: Int = 0) throws -> Int {
-		switch self {
-		case .zone(_, let content):
-			return try content.unitOffset(of: label, origin: origin)
+			return try content.offset(of: label, on: dimension,
+			    origin: origin + boundary[keyPath: dimension])
 		case .index(let w) where w.get() == label:
 			return origin
 		case .concat(let l, let mid, _, _, let r, _):
@@ -1247,11 +1228,12 @@ public extension Rope.Node {
 			 * `l` and `r`.
 			 */
 			do {
-				return try l.unitOffset(
-				    of: label, origin: origin)
+				return try l.offset(
+				    of: label, on: dimension, origin: origin)
 			} catch NodeError.indexNotFound {
-				return try r.unitOffset(of: label,
-				    origin: origin + mid.units)
+				return try r.offset(
+				    of: label, on: dimension,
+				    origin: origin + mid[keyPath: dimension])
 			}
 		default:
 			throw NodeError.indexNotFound

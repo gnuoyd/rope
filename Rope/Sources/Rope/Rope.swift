@@ -46,14 +46,14 @@ extension Range {
 	}
 	public func relative<C : Content>(to view: Rope<C>.UnitView)
 	    throws -> Range<Int> where Bound == Rope<C>.Index {
-		let lower = try view.rope.unitOffset(of: lowerBound)
-		let upper = try view.rope.unitOffset(of: upperBound)
+		let lower = try view.rope.offset(of: lowerBound, on: \.units)
+		let upper = try view.rope.offset(of: upperBound, on: \.units)
 		return lower..<upper
 	}
 	public func relative<C : Content>(to view: Rope<C>.StepView)
 	    throws -> Range<Int> where Bound == Rope<C>.Index {
-		let lower = try view.rope.stepOffset(of: lowerBound)
-		let upper = try view.rope.stepOffset(of: upperBound)
+		let lower = try view.rope.offset(of: lowerBound, on: \.steps)
+		let upper = try view.rope.offset(of: upperBound, on: \.steps)
 		return lower..<upper
 	}
 }
@@ -390,17 +390,12 @@ public class Rope<C : Content> : RopeDelegation {
 		unitsDelegate.indicateAttributeChanges(on: range,
 		    undoList: nil as ChangeList<Rope>?)
 	}
-	public func stepOffset(of index: Index) throws -> Int {
+	public func offset(of index: Index,
+	    on dimension: KeyPath<Rope.Node.Dimensions, Int>) throws -> Int {
 		guard case .interior(_, let label) = index else {
 			throw RopeNoSuchElement.onInterior
 		}
-		return try top.stepOffset(of: label)
-	}
-	public func unitOffset(of index: Index) throws -> Int {
-		guard case .interior(_, let label) = index else {
-			throw RopeNoSuchElement.onInterior
-		}
-		return try top.unitOffset(of: label)
+		return try top.offset(of: label, on: dimension)
 	}
 }
 

@@ -1310,8 +1310,10 @@ class ConvertIndicesToUTF16Offsets : XCTestCase {
 		    "expectations.count \(expectations.count) != r.indices.count \(r.indices.count + 1)")
 		for (index, expectation) in zip(r.indices + [r.endIndex],
 			                        expectations) {
-			XCTAssert(try expectation == r.unitOffset(of: index),
-			    "\(expectation) != r.unitOffset(of: \(index))")
+			XCTAssert(try expectation == r.offset(of: index,
+			                                      on: \.units),
+			    "\(expectation) != " +
+			    "r.offset(of: \(index), on: \\.units)")
 		}
 	}
 }
