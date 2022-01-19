@@ -20,7 +20,15 @@ boundary: the distance from the interior of a zone to its exterior, or
 step: the distance of one boundary or across one UTF-16 code unit is one
     step
 
+unit: the distance across one UTF-16 code unit is one unit
+
 jot: the distance of one step or across one index is a jot
+
+dimensions: a bundle of a subrope's measurements in units, jots,
+    steps, and boundaries are its dimensions
+
+axis: an axis names one measurement in a subrope's dimensions; I may
+    rename "axis" to "scale".
 
 index: a labeled entity embedded in a rope, or a `struct Rope.Index`
   identifying such an entity by its label.
