@@ -4,15 +4,16 @@
 import AppKit
 import Rope
 
-public class RopeTextStorage: NSTextStorage {
+public class GenericRopeTextStorage<P : BackingViewPath> : NSTextStorage {
+	public typealias Path = P
 	public typealias Content = ContiguousArray<UTF16.CodeUnit>
 	public typealias Backing = Rope<Content>
 	public typealias Offset = Backing.Node.Offset
 	let backing: Backing
-	let _string: RopeString
+	let _string: GenericRopeString<P>
 	public init(with backing: Backing) {
 		self.backing = backing
-		_string = RopeString(with: backing)
+		_string = GenericRopeString<P>(with: backing)
 		super.init()
 		backing.unitsDelegate = AnyRopeDelegate<Content>(
 		    didChange: self.ropeDidChange,
@@ -20,7 +21,7 @@ public class RopeTextStorage: NSTextStorage {
 	}
 	public override init() {
 		self.backing = Rope()
-		_string = RopeString(with: backing)
+		_string = GenericRopeString<P>(with: backing)
 		super.init()
 		backing.unitsDelegate = AnyRopeDelegate<Content>(
 		    didChange: self.ropeDidChange,
@@ -40,14 +41,14 @@ public class RopeTextStorage: NSTextStorage {
 	override public func attributes(at location: Int,
 	    effectiveRange _range: NSRangePointer?)
 	    -> [NSAttributedString.Key : Any] {
-		let (attrs, r) = backing.units.attributes(at: location)
+		let (attrs, r) =
+		    backing[keyPath: Path.path].attributes(at: location)
 		if let range = _range {
 			range.initialize(to: r.nsRange)
 		}
 /*
 		Swift.print("\(attrs.count) attributes on " +
-		    "[\(r.lowerBound.unitOffset), " +
-		    "\(r.upperBound.unitOffset)], \(attrs)")
+		    "[\(r.lowerBound), \(r.upperBound)], \(attrs)")
 */
 		return attrs;
 	}
@@ -65,7 +66,8 @@ public class RopeTextStorage: NSTextStorage {
 	    with str: String) {
 		performEditing() {
 			let undoList = ChangeList<Backing>()
-			let ir = Range(range, within: backing.units)
+			let ir = Range(range,
+                           within: backing[keyPath: Path.path])
 			try! backing.replace(ir, with: Content(str.utf16[...]),
 			    undoList: undoList)
 		}
@@ -73,7 +75,7 @@ public class RopeTextStorage: NSTextStorage {
 	override public func setAttributes(
 	    _ optAttrs: [NSAttributedString.Key : Any]?, range r: NSRange) {
 		performEditing() {
-			let range = Range(r, within: backing.units)
+			let range = Range(r, within: backing[keyPath: Path.path])
 			if let attrs = optAttrs {
 				backing.setAttributes(attrs, range: range)
 			} else {
@@ -81,16 +83,13 @@ public class RopeTextStorage: NSTextStorage {
 			}
 		}
 	}
-}
-
-extension RopeTextStorage : RopeDelegate {
 	public func ropeDidChange(on range: Range<Int>, changeInLength: Int){
 		Swift.print("\(#function)(on: \(range), " +
-		    "changeInLength: \(changeInLength))")
+			    "changeInLength: \(changeInLength))")
 		let actions = NSTextStorageEditActions.editedCharacters.union(
-		    .editedAttributes)
+			.editedAttributes)
 		edited(actions, range: range.nsRange,
-		    changeInLength: changeInLength)
+		       changeInLength: changeInLength)
 		return
 	}
 	public func ropeAttributesDidChange(on range: Range<Int>) {
@@ -100,3 +99,9 @@ extension RopeTextStorage : RopeDelegate {
 		return
 	}
 }
+
+extension RopeTextStorage : RopeDelegate {
+}
+
+public typealias RopeTextStorage = GenericRopeTextStorage<UnitsPath>
+public typealias ExtendedRopeTextStorage = GenericRopeTextStorage<StepsPath>
