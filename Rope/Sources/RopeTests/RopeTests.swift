@@ -50,6 +50,7 @@ extension Rope {
 		override func transformingAttributes(
 		    after lowerBound: Label, upTo upperBound: Label,
 		    in content: Rope.Node,
+		    andBoundaries boundaries: BoundarySet = .neither,
 		    with fn: (Attributes) -> Attributes) throws -> Rope.Node {
 			throw Rope.Node.NodeError.readonlyZone
 		}

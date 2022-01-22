@@ -7,6 +7,14 @@ enum RopeNoSuchElement : Error {
 case onInterior
 }
 
+struct BoundarySet : OptionSet {
+	let rawValue: Int
+	static let left = BoundarySet(rawValue: 1 << 0)
+	static let right = BoundarySet(rawValue: 1 << 1)
+	static let both: BoundarySet = [.left, .right]
+	static let neither: BoundarySet = []
+}
+
 extension Range {
 	public init<C : Content>(_ r: NSRange,
 	    within view: Rope<C>.RopeAxisView) where Bound == Rope<C>.Index {
@@ -113,6 +121,7 @@ public class Rope<C : Content> {
 		}
 		func transformingAttributes(after lowerBound: Label,
 		    upTo upperBound: Label, in content: Rope.Node,
+		    andBoundaries boundaries: BoundarySet = .neither,
 		    with fn: (Attributes) -> Attributes) throws -> Rope.Node {
 			let xformed = try content.transformingAttributes(
 			    after: lowerBound, upTo: upperBound, with: fn)
