@@ -10,11 +10,6 @@ public protocol RopeDelegate {
 	func ropeAttributesDidChange(on: Range<Int>)
 }
 
-public protocol RopeDelegation {
-	var unitsDelegate : RopeDelegate { get set }
-//	var stepsDelegate : RopeDelegate { get set }
-}
-
 public struct AnyRopeDelegate<C : Content> : RopeDelegate {
 	public typealias DidChange = (Range<Int>, Int) -> ()
 	public typealias AttributesDidChange = (Range<Int>) -> ()

@@ -54,7 +54,7 @@ extension Range {
  *
  * "Scoot" an index left or right by a label.
  */
-public class Rope<C : Content> : RopeDelegation {
+public class Rope<C : Content> {
 	public enum Climb {
 	case `in`
 	case out
