@@ -4,8 +4,14 @@
 import AppKit
 import Rope
 
+extension Collection {
+	var only: Self.Iterator.Element? {
+		return (self.count > 1) ? nil : self.first
+	}
+}
+
 public class GenericRopeTextStorage<P : BackingViewPath> : NSTextStorage {
-	public typealias Path = P
+	public typealias AxisPath = P
 	public typealias Content = ContiguousArray<UTF16.CodeUnit>
 	public typealias Backing = Rope<Content>
 	public typealias Offset = Backing.Node.Offset
@@ -15,15 +21,16 @@ public class GenericRopeTextStorage<P : BackingViewPath> : NSTextStorage {
 		self.backing = backing
 		_string = GenericRopeString<P>(with: backing)
 		super.init()
-		backing.unitsDelegate = AnyRopeDelegate<Content>(
+		backing.axisDelegates[P.path] = AnyRopeDelegate<Content>(
 		    didChange: self.ropeDidChange,
 		    attributesDidChange: self.ropeAttributesDidChange)
 	}
 	public override init() {
 		self.backing = Rope()
+		self.backing.boundaryProperties = Backing.BoundaryProperties(attributes: Backing.BoundaryAttributes(open: [:], close: [:]), units: Backing.BoundaryUnits(open: "⟨".utf16.only!, close: "⟩".utf16.only!))
 		_string = GenericRopeString<P>(with: backing)
 		super.init()
-		backing.unitsDelegate = AnyRopeDelegate<Content>(
+		backing.axisDelegates[P.path] = AnyRopeDelegate<Content>(
 		    didChange: self.ropeDidChange,
 		    attributesDidChange: self.ropeAttributesDidChange)
 	}
@@ -42,7 +49,7 @@ public class GenericRopeTextStorage<P : BackingViewPath> : NSTextStorage {
 	    effectiveRange _range: NSRangePointer?)
 	    -> [NSAttributedString.Key : Any] {
 		let (attrs, r) =
-		    backing[keyPath: Path.path].attributes(at: location)
+		    backing[keyPath: AxisPath.path].attributes(at: location)
 		if let range = _range {
 			range.initialize(to: r.nsRange)
 		}
@@ -67,7 +74,7 @@ public class GenericRopeTextStorage<P : BackingViewPath> : NSTextStorage {
 		performEditing() {
 			let undoList = ChangeList<Backing>()
 			let ir = Range(range,
-                           within: backing[keyPath: Path.path])
+                           within: backing[keyPath: AxisPath.path])
 			try! backing.replace(ir, with: Content(str.utf16[...]),
 			    undoList: undoList)
 		}
@@ -75,7 +82,7 @@ public class GenericRopeTextStorage<P : BackingViewPath> : NSTextStorage {
 	override public func setAttributes(
 	    _ optAttrs: [NSAttributedString.Key : Any]?, range r: NSRange) {
 		performEditing() {
-			let range = Range(r, within: backing[keyPath: Path.path])
+			let range = Range(r, within: backing[keyPath: AxisPath.path])
 			if let attrs = optAttrs {
 				backing.setAttributes(attrs, range: range)
 			} else {
@@ -83,7 +90,7 @@ public class GenericRopeTextStorage<P : BackingViewPath> : NSTextStorage {
 			}
 		}
 	}
-	public func ropeDidChange(on range: Range<Int>, changeInLength: Int){
+	public func ropeDidChange(on range: Range<Int>, changeInLength: Int) {
 		Swift.print("\(#function)(on: \(range), " +
 			    "changeInLength: \(changeInLength))")
 		let actions = NSTextStorageEditActions.editedCharacters.union(
@@ -104,4 +111,4 @@ extension RopeTextStorage : RopeDelegate {
 }
 
 public typealias RopeTextStorage = GenericRopeTextStorage<UnitsPath>
-public typealias ExtendedRopeTextStorage = GenericRopeTextStorage<StepsPath>
+public typealias ExpandedRopeTextStorage = GenericRopeTextStorage<StepsPath>

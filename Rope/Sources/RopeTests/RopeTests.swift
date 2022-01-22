@@ -2547,7 +2547,7 @@ class ZoneReplacementsBase : XCTestCase {
 			var change: (range: Range<Int>,
 			             changeInLength: Int) =
 			    (range: 0..<0, changeInLength: Int.min)
-			rope.unitsDelegate =
+			rope.axisDelegates[\.units] =
 			    AnyRopeDelegate<RSS.Content>(
 			        didChange: {
 				    (range, delta) in

@@ -131,14 +131,27 @@ public class Rope<C : Content> {
 	public struct BoundaryUnits {
 		let open: Content.Unit
 		let close: Content.Unit
+		public init(open o: Content.Unit, close c: Content.Unit) {
+			self.open = o
+			self.close = c
+		}
 	}
 	public struct BoundaryAttributes {
 		let open: Attributes
 		let close: Attributes
+		public init(open o: Attributes, close c: Attributes) {
+			self.open = o
+			self.close = c
+		}
 	}
 	public struct BoundaryProperties {
 		let attributes: BoundaryAttributes
 		let units: BoundaryUnits
+		public init(attributes a: BoundaryAttributes,
+		            units u: BoundaryUnits) {
+			self.attributes = a
+			self.units = u
+		}
 	}
 
 	/* Any number of indices can appear between two character positions,
@@ -156,22 +169,80 @@ public class Rope<C : Content> {
 	}
 	typealias OffsetPair = (lower: Offset, upper: Offset)
 
-	private var _delegate: AnyRopeDelegate<C>? = nil
-	public var unitsDelegate: RopeDelegate {
-		set {
-			_delegate = AnyRopeDelegate(
-			    didChange: newValue.ropeDidChange,
-			    attributesDidChange:
-			        newValue.ropeAttributesDidChange)
+	public struct AxisDelegates {
+		let rope: Rope<C>
+		var delegate:
+		    [KeyPath<Rope<C>, RopeAxisView> : AnyRopeDelegate<C>] = [:]
+		public subscript(_ path: KeyPath<Rope<C>, RopeAxisView>)
+		    -> RopeDelegate {
+			get {
+				return delegate[path] ??
+				    AnyRopeDelegate(
+				        didChange: rope.ropeDidChange,
+					attributesDidChange:
+					    rope.ropeAttributesDidChange)
+			}
+			set (d) {
+				delegate[path] = AnyRopeDelegate(
+				    didChange: d.ropeDidChange,
+				    attributesDidChange:
+				       d.ropeAttributesDidChange)
+			}
 		}
+		func axisRanges(for range: Range<Rope.Index>) throws
+		    -> [KeyPath<Rope, RopeAxisView> : Range<Int>] {
+			var axisRange:
+			    [KeyPath<Rope, RopeAxisView> : Range<Int>] = [:]
+			for axis in delegate.keys {
+				axisRange[axis] =
+				    try range.relative(to: rope[keyPath: axis])
+			}
+			return axisRange
+		}
+		func indicateChanges<T>(
+		    new: [KeyPath<Rope, RopeAxisView> : Range<Int>],
+		    old: [KeyPath<Rope, RopeAxisView> : Range<Int>],
+		    undoList: ChangeList<Rope<T>>) {
+			for (axis, rNew) in new {
+				guard let rOld = old[axis],
+				      let d = delegate[axis] else {
+					continue
+				}
+				d.indicateChanges(new: rNew, old: rOld,
+					    undoList: undoList)
+			}
+		}
+		func indicateAttributeChanges<T>(
+		    on affected: [KeyPath<Rope, RopeAxisView> : Range<Int>],
+		    undoList: ChangeList<Rope<T>>? = nil) {
+			for (axis, range) in affected {
+				guard let d = delegate[axis] else {
+					continue
+				}
+				d.indicateAttributeChanges(on: range,
+				    undoList: undoList)
+			}
+		}
+		init(of r: Rope<C>) {
+			rope = r
+		}
+	}
+	private var _axisDelegates: AxisDelegates? = nil
+	public var axisDelegates: AxisDelegates {
 		get {
-			return _delegate ?? AnyRopeDelegate(
-			    didChange: self.ropeDidChange,
-			    attributesDidChange: self.ropeAttributesDidChange)
+			guard let d = _axisDelegates else {
+				let d = AxisDelegates(of: self)
+				_axisDelegates = d
+				return d
+			}
+			return d
+		}
+		set (d) {
+			_axisDelegates = d
 		}
 	}
 	var _boundaryProperties: BoundaryProperties? = nil
-	var boundaryProperties: BoundaryProperties {
+	public var boundaryProperties: BoundaryProperties {
 		get {
 			return _boundaryProperties ?? BoundaryProperties(
 			    attributes: BoundaryAttributes(open: [:],
@@ -262,12 +333,12 @@ public class Rope<C : Content> {
 	}
 	public func indicatingChangesModifyTop(_ f: (Node) -> Node) {
 		let oldOffsets =
-		    try! (startIndex..<endIndex).relative(to: units)
+		    try! axisDelegates.axisRanges(for: startIndex..<endIndex)
 		top = f(top)
 		let newOffsets =
-		    try! (startIndex..<endIndex).relative(to: units)
+		    try! axisDelegates.axisRanges(for: startIndex..<endIndex)
 		let throwaway = ChangeList<Rope>()
-		unitsDelegate.indicateChanges(new: newOffsets,
+		axisDelegates.indicateChanges(new: newOffsets,
 		    old: oldOffsets, undoList: throwaway)
 	}
 	public func label(_ h1: Label, precedes h2: Label,
@@ -336,30 +407,31 @@ public class Rope<C : Content> {
 		 * was edited with its offsets and any change in length.
 		 */
 		let changes = ChangeList<Rope.Node>()
-		let oldOffsets = try r.relative(to: units)
+		let oldOffsets = try axisDelegates.axisRanges(for: r)
 		top = try top.replacing(
 		    after: r.lowerBound, upTo: r.upperBound,
 		    with: replacement, undoList: changes)
-		let newOffsets = try r.relative(to: units)
+		let newOffsets = try axisDelegates.axisRanges(for: r)
 		undoList.record { (rope, undoList) in
 			try rope.applyChanges(changes, undoList: undoList)
 			return rope
 		}
-		unitsDelegate.indicateChanges(new: newOffsets, old: oldOffsets,
+		axisDelegates.indicateChanges(new: newOffsets, old: oldOffsets,
 		    undoList: undoList)
 	}
 	public func setController(_ ctlr: ZoneController,
 	    on r: Range<Index>, undoList: ChangeList<Rope>) throws {
 		let changes = ChangeList<Rope.Node>()
-		let offsets = try r.relative(to: units)
+		let oldOffsets = try axisDelegates.axisRanges(for: r)
 		top = try top.setController(ctlr,
 		    after: r.lowerBound.label, upTo: r.upperBound.label,
 		    undoList: changes)
+		let newOffsets = try axisDelegates.axisRanges(for: r)
 		undoList.record { (rope, undoList) in
 			try rope.applyChanges(changes, undoList: undoList)
 			return rope
 		}
-		unitsDelegate.indicateChanges(new: offsets, old: offsets,
+		axisDelegates.indicateChanges(new: oldOffsets, old: newOffsets,
 		    undoList: undoList)
 	}
 	func applyChanges(_ changes: ChangeList<Rope.Node>,
@@ -377,10 +449,11 @@ public class Rope<C : Content> {
 			return
 		}
 		top = newtop
-		guard let range = try? r.relative(to: units) else {
+		guard let axisRanges = try? axisDelegates.axisRanges(for: r)
+		    else {
 			return
 		}
-		unitsDelegate.indicateAttributeChanges(on: range,
+		axisDelegates.indicateAttributeChanges(on: axisRanges,
 		    undoList: nil as ChangeList<Rope>?)
 	}
 	public func clearAttributes(on r: Range<Index>) {
@@ -388,10 +461,11 @@ public class Rope<C : Content> {
 			return
 		}
 		top = newtop
-		guard let range = try? r.relative(to: units) else {
+		guard let axisRanges = try? axisDelegates.axisRanges(for: r)
+		    else {
 			return
 		}
-		unitsDelegate.indicateAttributeChanges(on: range,
+		axisDelegates.indicateAttributeChanges(on: axisRanges,
 		    undoList: nil as ChangeList<Rope>?)
 	}
 	public func offset(of index: Index,
