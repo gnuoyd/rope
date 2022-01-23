@@ -1452,10 +1452,8 @@ public extension Rope.Node {
 	}
 	func subrope(after l: Rope.Index, upTo r: Rope.Index, depth: Int = 0)
 	    -> Self? {
-		guard let suffix = subrope(after: l, depth: depth) else {
-			return nil
-		}
-		return suffix.subrope(upTo: r, depth: depth)
+		let suffix = subrope(after: l, depth: depth)
+		return suffix?.subrope(upTo: r, depth: depth)
 	}
 	subscript(range: Range<Rope.Index>) -> Content {
 		return subrope(after: range.lowerBound,
