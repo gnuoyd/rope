@@ -982,7 +982,7 @@ class WholeRangeUsingRopeIndices: XCTestCase {
 	    .nodes(.zone(under: ctlr, .text("abc")),
 		   .text("def")))
 	func testLookupByRange() {
-		XCTAssert(r[r.startIndex..<r.endIndex] ~ r.node)
+		XCTAssert(r.nests[r.startIndex..<r.endIndex] ~ r.node)
 	}
 }
 
@@ -1196,7 +1196,7 @@ class ThreeUnitRangesUsingRopeIndices: XCTestCase {
 		var prev = r.startIndex
 		for (idx, expected) in zip(r.indices.dropFirst(3),
 			                   expectations) {
-			let found = r[prev..<idx]
+			let found = r.nests[prev..<idx]
 			prev = r.index(after: prev)
 			XCTAssert(found ~ expected,
 			          "found \(found) expected \(expected)")
@@ -1206,7 +1206,7 @@ class ThreeUnitRangesUsingRopeIndices: XCTestCase {
 		var prev = r.endIndex
 		for (idx, expected) in zip(r.indices.reversed().dropFirst(2),
 			                   expectations.reversed()) {
-			let found = r[idx..<prev]
+			let found = r.nests[idx..<prev]
 			prev = r.index(before: prev)
 			XCTAssert(found ~ expected,
 			          "found \(found) expected \(expected)")
@@ -1231,7 +1231,7 @@ class TwoUnitRangesUsingRopeIndices: XCTestCase {
 		var prev = r.startIndex
 		for (idx, expected) in zip(r.indices.dropFirst(2),
 			                   expectations) {
-			let found = r[prev..<idx]
+			let found = r.nests[prev..<idx]
 			prev = r.index(after: prev)
 			XCTAssert(found ~ expected,
 			          "found \(found) expected \(expected)")
@@ -1241,7 +1241,7 @@ class TwoUnitRangesUsingRopeIndices: XCTestCase {
 		var prev = r.endIndex
 		for (idx, expected) in zip(r.indices.reversed().dropFirst(1),
 			                   expectations.reversed()) {
-			let found = r[idx..<prev]
+			let found = r.nests[idx..<prev]
 			prev = r.index(before: prev)
 			XCTAssert(found ~ expected,
 			          "found \(found) expected \(expected)")
@@ -1266,7 +1266,7 @@ class UnitRangesUsingRopeIndices: XCTestCase {
 	func testLookupByRangesForward() {
 		var prev = r.startIndex
 		for (idx, expected) in zip(r.indices, expectations) {
-			let found = r[prev..<idx]
+			let found = r.nests[prev..<idx]
 			prev = idx
 			XCTAssert(found ~ expected,
 			          "found \(found) expected \(expected)")
@@ -1276,7 +1276,7 @@ class UnitRangesUsingRopeIndices: XCTestCase {
 		var prev = r.endIndex
 		for (idx, expected) in zip(r.indices.reversed(),
                                            expectations.reversed()) {
-			let found = r[idx..<prev]
+			let found = r.nests[idx..<prev]
 			prev = idx
 			XCTAssert(found ~ expected,
 			          "found \(found) expected \(expected)")

@@ -26,6 +26,19 @@ extension Rope {
 			}
 			return node
 		}
+		subscript(r: Range<Index>) -> Element {
+			get {
+				if r.isEmpty {
+					return .empty
+				}
+				guard let e = view.rope.node.subrope(
+				    after: r.lowerBound,
+				    upTo: r.upperBound) else {
+					fatalError("No such range")
+				}
+				return e
+			}
+		}
 		public func index(after i: Index) -> Index {
 			return view.index(after: i)
 		}
