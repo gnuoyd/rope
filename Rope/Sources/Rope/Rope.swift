@@ -75,19 +75,6 @@ public class Rope<C : Content> {
 	}
 	public class ZoneController : Label {
 		public override var id: Id { return .zone(_id) }
-		func subrope(of content: Rope.Node, from: Rope.Node.Offset,
-		    tightly: Bool, depth: Int = 0) -> Rope.Node {
-			let subcontent = content.subrope(from: from,
-			    depth: depth)
-			return .zone(self, subcontent)
-		}
-		func subrope(of content: Rope.Node,
-		    upTo boundary: Rope.Node.Offset, tightly: Bool,
-		    depth: Int = 0) -> Rope.Node {
-			let subcontent = content.subrope(upTo: boundary,
-			    depth: depth)
-			return .zone(self, subcontent)
-		}
 		func subrope(of content: Rope.Node, after boundary: Rope.Index,
 		    depth: Int = 0) -> Rope.Node? {
 			guard let subcontent = content.subrope(after: boundary,
