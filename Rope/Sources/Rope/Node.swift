@@ -1696,42 +1696,6 @@ public extension Rope.Node {
 			}
 		}
 	}
-	func indexingFirstZone(label: Label, leftSibling: Self = .empty)
-	    -> Self? {
-		switch self {
-		case .leaf(_, _), .index(_), .empty:
-			return nil
-		case .zone(_, _):
-			return leftSibling.appending(
-			    .index(label: label)).appending(self)
-		case .concat(let l, _, _, _, let r, _):
-			if let inserted = l.indexingFirstZone(
-			    label: label, leftSibling: leftSibling) {
-				return inserted.appending(r)
-			}
-			return r.indexingFirstZone(label: label,
-			    leftSibling: leftSibling.appending(l))
-		}
-	}
-	func indexingFirstZone(after index: Rope.Index,
-	    label: Label) throws -> Self? {
-		/* If zones enclose `index`, then we are about to split
-		 * a zone.  That mustn't happen.  Instead, the operation
-		 * that the caller would like to perform
-		 * (delete, insert, replace, ...) should be forwarded to the
-		 * first enclosing zone.  Return nil to prevent a split
-		 * from occurring.
-		 */
-		guard try zonesEnclosing(index).isEmpty else {
-			return nil
-		}
-		guard let l = subrope(upTo: index),
-		      let r = subrope(after: index) else {
-			return nil
-		}
-		return r.indexingFirstZone(label: label,
-			leftSibling: l.appending(.index(label: index.label)))
-	}
 	func transformingZone(withLabel target: Label,
 	    with f: (_: Rope.ZoneController, _: Self) -> Self) -> Self? {
 		switch self {
