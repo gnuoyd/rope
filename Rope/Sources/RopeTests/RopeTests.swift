@@ -1179,7 +1179,7 @@ class EmptyishRopeIndices : XCTestCase {
 	}
 }
 
-class ThreeUnitRangesUsingRopeIndices: XCTestCase {
+class RangesThreeRopeIndicesWide: XCTestCase {
 	let ctlr = RWZC()
 	lazy var expectations: [NSS] = [
 	    .zone(under: ctlr, .text("ab")),
@@ -1214,7 +1214,7 @@ class ThreeUnitRangesUsingRopeIndices: XCTestCase {
 	}
 }
 
-class TwoUnitRangesUsingRopeIndices: XCTestCase {
+class RangesTwoRopeIndicesWide: XCTestCase {
 	let ctlr = RWZC()
 	lazy var expectations: [NSS] = [
 	    .zone(under: ctlr, .text("a")),
@@ -1249,7 +1249,7 @@ class TwoUnitRangesUsingRopeIndices: XCTestCase {
 	}
 }
 
-class UnitRangesUsingRopeIndices: XCTestCase {
+class RangesOneRopeIndexWide: XCTestCase {
 	let ctlr = RWZC()
 	lazy var expectations: [NSS] = [
 	    .empty,
@@ -1284,7 +1284,7 @@ class UnitRangesUsingRopeIndices: XCTestCase {
 	}
 }
 
-class ConvertIndicesToUTF16Offsets : XCTestCase {
+class ConvertRopeIndicesToUnitOffsets : XCTestCase {
 	let ctlr = [RWZC(), RWZC()]
 	lazy var r: RSS  = Rope(with:
 	    .zone(under: ctlr[0], .text("abc")),
