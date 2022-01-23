@@ -35,12 +35,6 @@ extension Rope.RopeAxisView {
 			return result
 		}
 	}
-	public subscript(_ r: Range<Int>) -> Rope.Content {
-		get {
-			let ir = Range(r, within: self)
-			return rope.node[ir]
-		}
-	}
 	/* If/when Content boundaries replace Unit boundaries,
 	 * the length may be rope.node.dimensions.units +
 	 * rope.node.dimensions.boundaries / 2 *

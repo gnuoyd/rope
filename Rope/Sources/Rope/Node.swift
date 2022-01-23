@@ -1455,10 +1455,6 @@ public extension Rope.Node {
 		let suffix = subrope(after: l, depth: depth)
 		return suffix?.subrope(upTo: r, depth: depth)
 	}
-	subscript(range: Range<Rope.Index>) -> Content {
-		return subrope(after: range.lowerBound,
-		               upTo: range.upperBound)?.content ?? Content.empty
-	}
 	func replacing(after lowerBound: Rope.Index,
 	    upTo upperBound: Rope.Index, with replacement: Content,
 	    undoList: ChangeList<Self>?) throws -> Self {

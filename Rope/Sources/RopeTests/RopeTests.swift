@@ -1669,27 +1669,31 @@ class NodeSubropes : XCTestCase {
 	}
 
 	func testLeadingSubnode() {
-		let section = rope.units[0..<3]
+		let ir = Range(0..<3, within: rope.units)
+		let section = rope.nests[ir].content
 		XCTAssert(section == "abc")
 	}
-
 	func testCrossingFirstTwoSubnodes() {
-		let section = rope.units[0..<5]
+		let ir = Range(0..<5, within: rope.units)
+		let section = rope.nests[ir].content
 		XCTAssert(section == "abcde")
 	}
 
 	func testSecondSubnode() {
-		let section = rope.units[3..<8]
+		let ir = Range(3..<8, within: rope.units)
+		let section = rope.nests[ir].content
 		XCTAssert(section == "defgh")
 	}
 
 	func testTrailingTwoSubnodes() {
-		let section = rope.units[3..<12]
+		let ir = Range(3..<12, within: rope.units)
+		let section = rope.nests[ir].content
 		XCTAssert(section == "defghijkl")
 	}
 
 	func testCrossingLastTwoSubnodes() {
-		let section = rope.units[4..<9]
+		let ir = Range(4..<9, within: rope.units)
+		let section = rope.nests[ir].content
 		XCTAssert(section == "efghi")
 	}
 }
