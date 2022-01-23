@@ -1288,7 +1288,7 @@ class ConvertRopeIndicesToUnitOffsets : XCTestCase {
 	let ctlr = [RWZC(), RWZC()]
 	lazy var r: RSS  = Rope(with:
 	    .zone(under: ctlr[0], .text("abc")),
-		                    .text("def"),
+	    .text("def"),
 	    .zone(under: ctlr[1], .text("ghi")))
 	let expectations: [Int] = [
 		0, // .(abc)def(ghi)
