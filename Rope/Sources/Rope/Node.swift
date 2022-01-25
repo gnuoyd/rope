@@ -83,9 +83,12 @@ extension Rope.Node where C.Element : Equatable {
 			case (let l, .index(_)), (let l, .empty):
 				lresidue = l
 				rresidue = nil
-			case (.zone(let lctlr, let l),
-			      .zone(let rctlr, let r)):
+			case (.zone((let lctlr, let lprops), let l),
+			      .zone((let rctlr, let rprops), let r)):
 				if lctlr !== rctlr {
+					return false
+				}
+				if lprops != rprops {
 					return false
 				}
 				if l !~ r {
@@ -131,9 +134,9 @@ extension Rope.Node : Equatable {
 		switch (l, r) {
 		case (.index(let lwl), .index(let rwl)):
 			return lwl.get() == rwl.get()
-		case (.zone(let lc, let ln),
-		      .zone(let rc, let rn)):
-			return lc == rc && ln == rn
+		case (.zone((let lc, let lp), let ln),
+		      .zone((let rc, let rp), let rn)):
+			return lc == rc && lp == rp && ln == rn
 		case (.concat(let ln1, _, _, _, let ln2, _),
 		      .concat(let rn1, _, _, _, let rn2, _)):
 			return ln1 == rn1 && ln2 == rn2
@@ -197,13 +200,13 @@ public extension Rope.Node {
 		case (.empty, _), (.index(_), _):
 			return .inchOut
 		/* A step into a zone is a full step. */
-		case (.zone(let ctlr, let n), .rightStep):
+		case (.zone((let ctlr, let props), let n), .rightStep):
 			// *(...) -> (*...)
-			return .step(.zone(under: ctlr, .index(label: j),
-			                            n))
-		case (.zone(let ctlr, let n), .leftStep):
+			return .step(.zone(under: ctlr, properties: props,
+			    .index(label: j), n))
+		case (.zone((let ctlr, let props), let n), .leftStep):
 			// (...)* -> (...*)
-			return .step(.zone(under: ctlr, n,
+			return .step(.zone(under: ctlr, properties: props, n,
 			                            .index(label: j)))
 		case (.leaf(let attrs, let content), .rightStep):
 			switch content.firstAndRest {
@@ -286,10 +289,10 @@ public extension Rope.Node {
 			        attributes: attrs))
 		case .zone(_, _) where offset < boundary[keyPath: dimension]:
 			return Self.index(label: label).appending(self)
-		case .zone(let ctlr, let n)
+		case .zone((let ctlr, let props), let n)
 		    where offset < (boundary + n.dimensions)[keyPath:dimension]:
 			assert(offset >= boundary[keyPath: dimension])
-			return Rope.Node(controller: ctlr,
+			return Rope.Node(controller: ctlr, properties: props,
 			    node: n.inserting(label, abutting: side,
 			        of: offset - boundary[keyPath: dimension],
 				on: dimension))
@@ -325,18 +328,19 @@ public extension Rope.Node {
 			return .inchOut
 		case (.index(_), _), (.leaf(_, _), _), (.empty, _):
 			return .absent
-		case (.zone(let ctlr, let n), _):
+		case (.zone((let ctlr, let props), let n), _):
 			switch (n.inserting(j, one: step, after: i), step) {
 			case (.inchOut, _):
 				return .stepOut
 			case (.stepOut, .rightStep):
 				return .step(.zone(under: ctlr,
-				    n, .index(label: j)))
+				    properties: props, n, .index(label: j)))
 			case (.stepOut, .leftStep):
 				return .step(.zone(under: ctlr,
-				    .index(label: j), n))
+				    properties: props, .index(label: j), n))
 			case (.step(let newn), _):
-				return .step(.zone(ctlr, newn))
+				return .step(.zone(under: ctlr,
+				    properties: props, newn))
 			case (.absent, _):
 				return .absent
 			}
@@ -443,12 +447,12 @@ public extension Rope.Node {
 		case .empty, .index(_), .leaf(_, _):
 			/* No match: the element is not on this span. */
 			return .absent
-		case .zone(let ctlr, let n):
+		case .zone(let z, let n):
 			switch n.element(at: i) {
 			case .inchOut:
-				return .step(.zone(ctlr, .empty))
+				return .step(.zone(z, .empty))
 			case .step(let newn):
-				return .step(.zone(ctlr, newn))
+				return .step(.zone(z, newn))
 			case .absent:
 				return .absent
 			}
@@ -542,18 +546,20 @@ public extension Rope.Node {
 				return head.appending(
 				    try middle.transformingAttributes(
 				        with: fn)).appending(tail)
-			case (let l, (let ctlr, let m)?, let r):
+			case (let l, (let ctlr, let props, let m)?, let r):
 				Swift.print("\(#function): segmented at zone")
 				let newl = try l.withFreshBoundaries {
 				    (left, right, node) in
 				        try node.transformingAttributes(
 					    after: left, upTo: right, with: fn)
 				}
+				// TBD Transform the attributes on the
+				// left & right boundaries, too.
 				let newm = try m.withFreshBoundaries {
 				    (left, right, node) in
 				        try ctlr.transformingAttributes(
-					    after: left, upTo: right,
-					    in: node, with: fn)
+					    after: left, upTo: right, in: node,
+					    properties: props, with: fn)
 				}
 				let newr = try r.withFreshBoundaries {
 				    (left, right, node) in
@@ -564,18 +570,22 @@ public extension Rope.Node {
 				    newm).appending(newr).appending(tail)
 			}
 		case (let loExt?, let hiExt?) where loExt == hiExt:
-			let (l, (ctlr, m), r) = try segmenting(atZone: loExt)
+			let (l, (ctlr, props, m), r) =
+			    try segmenting(atZone: loExt)
 			let newm = try ctlr.transformingAttributes(
 			    after: lowerBound, upTo: upperBound, in: m,
-			    with: fn)
+			    properties: props, with: fn)
 			return l.appending(newm).appending(r)
 		case (let loExt?, _):
-			let (l, (ctlr, m), r) = try segmenting(atZone: loExt)
+			// TBD Transform the attributes on loExt's right
+			// boundary.
+			let (l, (ctlr, props, m), r) =
+			    try segmenting(atZone: loExt)
 			let newm = try m.withFreshRightBoundary {
 			    (upper, node) in
 				try ctlr.transformingAttributes(
 				    after: lowerBound, upTo: upper, in: node,
-				    with: fn)
+				    properties: props, with: fn)
 			}
 			let newr = try r.withFreshLeftBoundary {
 			    (lower, node) in
@@ -584,7 +594,10 @@ public extension Rope.Node {
 			}
 			return l.appending(newm).appending(newr)
 		case (nil, let hiExt?):
-			let (l, (ctlr, m), r) = try segmenting(atZone: hiExt)
+			// TBD Transform the attributes on hiExt's left
+			// boundary.
+			let (l, (ctlr, props, m), r) =
+			    try segmenting(atZone: hiExt)
 			let newl = try l.withFreshRightBoundary {
 			    (upper, node) in
 			        try node.transformingAttributes(
@@ -594,7 +607,7 @@ public extension Rope.Node {
 			    (lower, node) in
 			        try ctlr.transformingAttributes(
 				    after: lower, upTo: upperBound, in: node,
-				    with: fn)
+				    properties: props, with: fn)
 			}
 			return newl.appending(newm).appending(r)
 		}
@@ -663,7 +676,7 @@ public extension Rope.Node {
 				return []
 			}
 			return [label.id]
-		case .zone(let ctlr, let rope):
+		case .zone((let ctlr, _), let rope):
 			return rope.labelSet.union([ctlr.id])
 		case .concat(_, _, _, let set, _, _):
 			return set
@@ -783,8 +796,9 @@ public extension Rope.Node {
 }
 
 public extension Rope.Node {
-	init(controller ctlr: Rope.ZoneController, node n: Self) {
-		self = .zone(ctlr, n)
+	init(controller ctlr: Rope.ZoneController,
+	    properties props: Rope.ZoneProperties, node n: Self) {
+		self = .zone((ctlr, props), n)
 	}
 	init(label: Label) {
 		self = .index(Weak(label))
@@ -885,12 +899,16 @@ extension Rope.Node : CustomDebugStringConvertible {
 
 public extension Rope.Node {
 	static func zone(under controller: Rope.ZoneController,
+	    properties props: Rope.ZoneProperties = Rope.ZoneProperties(),
 	    _ content: Self...) -> Self {
-		return Self(controller: controller, node: tree(from: content))
+		return Self(controller: controller, properties: props,
+		    node: tree(from: content))
 	}
 	static func zone(under controller: Rope.ZoneController,
+	    properties props: Rope.ZoneProperties,
 	    with content: [Self]) -> Self {
-		return Self(controller: controller, node: tree(from: content))
+		return Self(controller: controller, properties: props,
+		    node: tree(from: content))
 	}
 	static func tree(from content: [Self]) -> Self {
 		content.reduce(.empty) { (l: Self, r: Self) in
@@ -1058,6 +1076,7 @@ public extension Rope.Node {
 			        base..<(base + dimensions[keyPath: dimension]))
 		}
 	}
+	/* XXX Use zonesEnclosing(_: Rope.Index)? */
 	func zonesEnclosing(_ i0: Int) -> [Rope.ZoneController] {
 		var path: [Rope.ZoneController] = []
 		var i = i0
@@ -1073,7 +1092,7 @@ public extension Rope.Node {
 					i = i - mid.units
 					next = r
 				}
-			case .zone(let ctlr, let content):
+			case .zone((let ctlr, _), let content):
 				path.append(ctlr)
 				next = content
 			}
@@ -1099,7 +1118,7 @@ public extension Rope.Node {
 			       return try r.zonesEnclosing(label,
 			           under: controllers)
 			}
-		case .zone(let ctlr, let content):
+		case .zone((let ctlr, _), let content):
 			return try content.zonesEnclosing(label,
 			    under: controllers + [ctlr])
 		default:
@@ -1115,7 +1134,7 @@ public extension Rope.Node {
 	                    in controllers: [Rope.ZoneController] = [])
 	    throws -> [Rope.ZoneController] {
 		switch self {
-		case .zone(let ctlr, let content):
+		case .zone((let ctlr, _), let content):
 			return try content.zonesOpening(at: label,
 			                              in: controllers + [ctlr])
 		case .index(let w) where w.get() == label:
@@ -1177,7 +1196,7 @@ public extension Rope.Node {
 	                    in controllers: [Rope.ZoneController] = [])
 	    throws -> [Rope.ZoneController] {
 		switch self {
-		case .zone(let ctlr, let content):
+		case .zone((let ctlr, _), let content):
 			return try content.zonesClosing(at: label,
 			                              in: controllers + [ctlr])
 		case .index(let w) where w.get() == label:
@@ -1259,9 +1278,9 @@ public extension Rope.Node {
 		switch self {
 		case .empty, .leaf(_, _):
 			return self
-		case .zone(let ctlr, let n):
+		case .zone(let z, let n):
 			let nn = n.cleaned()
-			return .zone(ctlr, nn ?? .empty)
+			return .zone(z, nn ?? .empty)
 		case .index(let w) where w.get() == nil:
 			return nil
 		case .index(_):
@@ -1281,8 +1300,8 @@ public extension Rope.Node {
 		switch self {
 		case .empty, .index(_), .leaf(_, _):
 			return self
-		case .zone(let ctlr, let rope):
-			return .zone(ctlr, rope.rebalanced())
+		case .zone(let z, let rope):
+			return .zone(z, rope.rebalanced())
 		default:
 			break
 		}
@@ -1322,9 +1341,10 @@ public extension Rope.Node {
 	func subrope(after boundary: Rope.Index, rightSibling: Self = .empty,
 	    depth: Int = 0) -> Self? {
 		switch self {
-		case .zone(let ctlr, let content):
+		case .zone((let ctlr, let props), let content):
 			guard let subzone = ctlr.subrope(of: content,
-			    after: boundary, depth: depth) else {
+			    after: boundary, properties: props,
+			    depth: depth) else {
 				return rightSibling.subrope(after: boundary,
 				    depth: depth)
 			}
@@ -1405,9 +1425,10 @@ public extension Rope.Node {
 			    "upTo \(boundary)", terminator: ": ")
 		*/
 		switch self {
-		case .zone(let ctlr, let content):
+		case .zone((let ctlr, let props), let content):
 			guard let subzone = ctlr.subrope(of: content,
-			    upTo: boundary, depth: depth + 1) else {
+			    upTo: boundary, properties: props,
+			    depth: depth + 1) else {
 				return leftSibling.subrope(upTo: boundary,
 				                           depth: depth + 1)
 			}
@@ -1434,9 +1455,9 @@ public extension Rope.Node {
 	}
 	func compactMap(_ filter: (Self) -> Self?) -> Self? {
 		switch self {
-		case .zone(let ctlr, let content):
+		case .zone((let ctlr, let props), let content):
 			let filtered = content.compactMap(filter) ?? .empty
-			return Self(controller: ctlr, node: filtered)
+			return .zone(under: ctlr, properties: props, filtered)
 		case .concat(let l, _, _, _, let r, _):
 			switch (l.compactMap(filter), r.compactMap(filter)) {
 			case (nil, nil):
@@ -1469,7 +1490,7 @@ public extension Rope.Node {
 	 * which case it forwards to that existing zone, or else that
 	 * neither boundary is inside a zone.
 	 */
-	func setController(_ ctlr: Rope.ZoneController,
+	func setController(_ z: (Rope.ZoneController, Rope.ZoneProperties),
 	    after lowerBound: Label, upTo upperBound: Label,
 	    undoList: ChangeList<Self>?) throws -> Self {
 		switch (try zonesEnclosing(lowerBound).first,
@@ -1496,7 +1517,7 @@ public extension Rope.Node {
 				return try rest.withFreshLeftBoundary {
 				    (upper, node) in
 				        return try Self.nodes(head,
-					    node).setController(ctlr,
+					    node).setController(z,
 					        after: lowerBound,
 						upTo: upper,
 						undoList: undoList)
@@ -1514,12 +1535,13 @@ public extension Rope.Node {
 				    with: middle,
 				    undoList: undoList)
 			}
-			return .nodes(head, .zone(ctlr, middle), tail)
+			return .nodes(head, .zone(z, middle), tail)
 		case (let loExt?, let hiExt?) where loExt == hiExt:
-			let (l, (ctlr, m), r) = try segmenting(atZone: loExt)
-			let mControlled = try ctlr.setController(ctlr,
+			let (l, (ctlr, props, m), r) =
+			    try segmenting(atZone: loExt)
+			let mControlled = try ctlr.setController(z,
 			    after: lowerBound, upTo: upperBound, in: m,
-			    undoList: undoList)
+			    properties: props, undoList: undoList)
 			return l.appending(mControlled).appending(r)
 		default:
 			throw NodeError.indicesCrossZones
@@ -1580,7 +1602,7 @@ public extension Rope.Node {
 			 * so that we can record an undo record that
 			 * re-inserts it.
 			 */
-			case (_, (let ctlr, let m)?, let r):
+			case (_, (let ctlr, let props, let m)?, let r):
 				/* We have to try to replace using the
 				 * controller so that a read-only zone can
 				 * "veto" the replacement with .empty by
@@ -1590,8 +1612,8 @@ public extension Rope.Node {
 				    (lower, upper, node) in
 					try ctlr.replacing(
 					    after: lower, upTo: upper,
-					    in: node, with: .empty,
-					    undoList: nil)
+					    in: node, properties: props,
+					    with: .empty, undoList: nil)
 				}
 				/* We have to try to replace on `r` just
 				 * just in case it contains a read-only zone
@@ -1602,8 +1624,7 @@ public extension Rope.Node {
 					(lower, upper, node) in
 					    try node.replacing(
 					        after: lower, upTo: upper,
-						with: .empty,
-						undoList: nil)
+						with: .empty, undoList: nil)
 				}
 				break
 			}
@@ -1615,18 +1636,21 @@ public extension Rope.Node {
 			}
 			return .nodes(head, replacement, tail)
 		case (let loExt?, let hiExt?) where loExt == hiExt:
-			let (l, (ctlr, m), r) = try segmenting(atZone: loExt)
+			let (l, (ctlr, props, m), r) =
+			    try segmenting(atZone: loExt)
 			let mReplaced = try ctlr.replacing(after: lowerBound,
-			    upTo: upperBound, in: m,
+			    upTo: upperBound, in: m, properties: props,
 			    with: replacement, undoList: undoList)
 			return l.appending(mReplaced).appending(r)
 		case (let loExt?, _):
-			let (l, (ctlr, m), r) = try segmenting(atZone: loExt)
+			let (l, (ctlr, props, m), r) =
+			    try segmenting(atZone: loExt)
 			let mReplaced: Rope.Node = try m.withFreshRightBoundary{
 			    (upper, node) in
 			        return try ctlr.replacing(
 				    after: lowerBound, upTo: upper, in: node,
-				    with: replacement, undoList: undoList)
+				    properties: props, with: replacement,
+				    undoList: undoList)
 			}
 			let rTrimmed: Rope.Node = try r.withFreshLeftBoundary {
 			    (lower, node) in
@@ -1636,7 +1660,8 @@ public extension Rope.Node {
 			}
 			return l.appending(mReplaced).appending(rTrimmed)
 		case (nil, let hiExt?):
-			let (l, (ctlr, m), r) = try segmenting(atZone: hiExt)
+			let (l, (ctlr, props, m), r) =
+			    try segmenting(atZone: hiExt)
 			let lReplaced: Rope.Node = try l.withFreshRightBoundary{
 			    (upper, node) in
 			        return try node.replacing(
@@ -1647,22 +1672,23 @@ public extension Rope.Node {
 			    (lower, node) in
 			        return try ctlr.replacing(
 				    after: lower, upTo: upperBound,
-				    in: node, with: .empty, undoList: undoList)
+				    in: node, properties: props,
+				    with: .empty, undoList: undoList)
 			}
 			return lReplaced.appending(mTrimmed).appending(r)
 		}
 	}
 	func segmenting(atZone target: Rope.ZoneController,
 	    leftSibling: Self = .empty) throws
-	    -> (Self, (Rope.ZoneController, Self), Self) {
+	    -> (Self, (Rope.ZoneController, Rope.ZoneProperties, Self), Self) {
 		switch self {
-		case .zone(target, let inner):
-			return (leftSibling, (target, inner), .empty)
+		case .zone((target, let props), let inner):
+			return (leftSibling, (target, props, inner), .empty)
 		case .concat(let l, _, _, _, let r, _):
-			if case let (head, zone, tail)? =
+			if case let (head, z, tail)? =
 			    try? l.segmenting(atZone: target) {
 				return (leftSibling.appending(head),
-					zone, tail.appending(r))
+					z, tail.appending(r))
 			} else {
 				return try r.segmenting(atZone: target,
 				    leftSibling: leftSibling.appending(l))
@@ -1673,17 +1699,17 @@ public extension Rope.Node {
 		}
 	}
 	func segmentingAtAnyZone(leftSibling: Self = .empty)
-	    -> (Self, (Rope.ZoneController, Self)?, Self) {
+	    -> (Self, (Rope.ZoneController, Rope.ZoneProperties, Self)?, Self) {
 		switch self {
 		case .leaf(_, _), .index(_), .empty:
 			return (leftSibling.appending(self), nil, .empty)
-		case .zone(let ctlr, let node):
-			return (leftSibling, (ctlr, node), .empty)
+		case .zone((let ctlr, let props), let node):
+			return (leftSibling, (ctlr, props, node), .empty)
 		case .concat(let l, _, _, _, let r, _):
-			if case let (head, (ctlr, node)?, tail) =
+			if case let (head, (ctlr, props, node)?, tail) =
 			    l.segmentingAtAnyZone() {
 				return (leftSibling.appending(head),
-					(ctlr, node), tail.appending(r))
+					(ctlr, props, node), tail.appending(r))
 			} else {
 				return r.segmentingAtAnyZone(
 				    leftSibling: leftSibling.appending(l))
@@ -1691,18 +1717,20 @@ public extension Rope.Node {
 		}
 	}
 	func transformingZone(withLabel target: Label,
-	    with f: (_: Rope.ZoneController, _: Self) -> Self) -> Self? {
+	    with f: (_: Rope.ZoneController, _: Rope.ZoneProperties, _: Self)
+	                -> Self) -> Self? {
 		switch self {
 		case .empty, .index(_), .leaf(_, _):
 			return nil
-		case .zone(let ctlr, let content) where ctlr == target:
-			return f(ctlr, content)
-		case .zone(let ctlr, let n):
+		case .zone((let ctlr, let props), let content)
+		    where ctlr == target:
+			return f(ctlr, props, content)
+		case .zone((let ctlr, let props), let n):
 			guard let newn = n.transformingZone(withLabel: target,
 			    with: f) else {
 				return nil
 			}
-			return .zone(under: ctlr, newn)
+			return .zone(under: ctlr, properties: props, newn)
 		case .concat(let l, _, _, let set, let r, _):
 			guard set.contains(target.id) else {
 				return nil
@@ -1720,28 +1748,30 @@ public extension Rope.Node {
 	}
 	func insertingFirstIndex(_ label: Label, inZone target: Label) ->Self? {
 		return transformingZone(withLabel: target) {
-		    (ctlr, content) in
-		        .zone(under: ctlr, .index(label: label), content)
+		    (ctlr, props, content) in
+		        .zone(under: ctlr, properties: props,
+			      .index(label: label), content)
 		}
 	}
 	func insertingLastIndex(_ label: Label, inZone target: Label) -> Self? {
 		return transformingZone(withLabel: target) {
-		    (ctlr, content) in
-			.zone(under: ctlr, content, .index(label: label))
+		    (ctlr, props, content) in
+			.zone(under: ctlr, properties: props,
+			    content, .index(label: label))
 		}
 	}
 	func insertingIndex(_ label: Label, afterZone target: Label) -> Self? {
 		return transformingZone(withLabel: target) {
-		    (ctlr, content) in
-			.nodes(.zone(under: ctlr, content),
+		    (ctlr, props, content) in
+			.nodes(.zone(under: ctlr, properties: props, content),
 			       .index(label: label))
 		}
 	}
 	func insertingIndex(_ label: Label, beforeZone target: Label) -> Self? {
 		return transformingZone(withLabel: target) {
-		    (ctlr, content) in
+		    (ctlr, props, content) in
 			.nodes(.index(label: label),
-			       .zone(under: ctlr, content))
+			       .zone(under: ctlr, properties: props, content))
 		}
 	}
 	func label(_ h1: Label, aliases h2: Label) throws -> Bool {

@@ -76,43 +76,49 @@ public class Rope<C : Content> {
 	public class ZoneController : Label {
 		public override var id: Id { return .zone(_id) }
 		func subrope(of content: Rope.Node, after boundary: Rope.Index,
+		    properties props: ZoneProperties,
 		    depth: Int = 0) -> Rope.Node? {
 			guard let subcontent = content.subrope(after: boundary,
 			    depth: depth) else {
 				return nil
 			}
-			return .zone(self, subcontent)
+			return .zone((self, props), subcontent)
 		}
 		func subrope(of content: Rope.Node, upTo boundary: Rope.Index,
+		    properties props: ZoneProperties,
 		    depth: Int = 0) -> Rope.Node? {
 			guard let subcontent = content.subrope(upTo: boundary,
 			    depth: depth) else {
 				return nil
 			}
-			return .zone(self, subcontent)
+			return .zone((self, props), subcontent)
 		}
-		func setController(_ ctlr: ZoneController,
+		func setController(
+		    _ z: (ctlr: ZoneController, props: ZoneProperties),
 		    after lowerBound: Label, upTo upperBound: Label,
-		    in content: Rope.Node,
+		    in content: Rope.Node, properties props: ZoneProperties,
 		    undoList: ChangeList<Rope.Node>?) throws -> Rope.Node {
-			return .zone(self, try content.setController(ctlr,
-			    after: lowerBound, upTo: upperBound,
-			    undoList: undoList))
+			return .zone((self, props),
+			    try content.setController(z,
+			        after: lowerBound, upTo: upperBound,
+				undoList: undoList))
 		}
 		func replacing(after lowerBound: Label, upTo upperBound: Label,
-		    in content: Rope.Node, with replacement: Rope.Node,
+		    in content: Rope.Node, properties props: ZoneProperties,
+		    with replacement: Rope.Node,
 		    undoList: ChangeList<Rope.Node>?) throws -> Rope.Node {
-			return .zone(self, try content.replacing(
+			return .zone((self, props), try content.replacing(
 			    after: lowerBound, upTo: upperBound,
 			    with: replacement, undoList: undoList))
 		}
 		func transformingAttributes(after lowerBound: Label,
 		    upTo upperBound: Label, in content: Rope.Node,
+		    properties props: ZoneProperties,
 		    andBoundaries boundaries: BoundarySet = .neither,
 		    with fn: (Attributes) -> Attributes) throws -> Rope.Node {
 			let xformed = try content.transformingAttributes(
 			    after: lowerBound, upTo: upperBound, with: fn)
-			return .zone(self, xformed)
+			return .zone((self, props), xformed)
 		}
 	}
 	public struct BoundaryUnits {
@@ -141,6 +147,13 @@ public class Rope<C : Content> {
 		}
 	}
 
+	public struct ZoneProperties : Equatable {
+		public static func ==(_ l: Self, _ r: Self) -> Bool {
+			return true
+		}
+		public init() {
+		}
+	}
 	/* Any number of indices can appear between two character positions,
 	 * between zone boundaries, at the start and at the end of a Rope.
 	 */
@@ -149,7 +162,7 @@ public class Rope<C : Content> {
 	public typealias Element = C.Element
 	public typealias Offset = Int
 	case index(Weak<Label>)
-	case zone(ZoneController, Node)
+	case zone((ZoneController, ZoneProperties), Node)
 	case concat(Node, Dimensions, UInt, LabelSet, Node, Dimensions)
 	case leaf(Attributes, C)
 	case empty
@@ -410,7 +423,7 @@ public class Rope<C : Content> {
 	    on r: Range<Index>, undoList: ChangeList<Rope>) throws {
 		let changes = ChangeList<Rope.Node>()
 		let oldOffsets = try axisDelegates.axisRanges(for: r)
-		top = try top.setController(ctlr,
+		top = try top.setController((ctlr, ZoneProperties()),
 		    after: r.lowerBound.label, upTo: r.upperBound.label,
 		    undoList: changes)
 		let newOffsets = try axisDelegates.axisRanges(for: r)

@@ -50,6 +50,7 @@ extension Rope {
 		override func transformingAttributes(
 		    after lowerBound: Label, upTo upperBound: Label,
 		    in content: Rope.Node,
+		    properties props: Rope.ZoneProperties,
 		    andBoundaries boundaries: BoundarySet = .neither,
 		    with fn: (Attributes) -> Attributes) throws -> Rope.Node {
 			throw Rope.Node.NodeError.readonlyZone
@@ -57,13 +58,16 @@ extension Rope {
 		override func replacing(
 		    after lowerBound: Label, upTo upperBound: Label,
 		    in content: Rope.Node,
+		    properties props: ZoneProperties,
 		    with replacement: Rope.Node,
 		    undoList: ChangeList<Rope.Node>?) throws -> Rope.Node {
 			throw Rope.Node.NodeError.readonlyZone
 		}
-		override func setController(_ ctlr: ZoneController,
+		override func setController(
+		    _ z: (ZoneController, ZoneProperties),
 		    after lowerBound: Label, upTo upperBound: Label,
 		    in content: Rope.Node,
+		    properties props: ZoneProperties,
 		    undoList: ChangeList<Rope.Node>?) throws -> Rope.Node {
 			throw Rope.Node.NodeError.readonlyZone
 		}
@@ -351,7 +355,8 @@ class ConstructEmbeddedSelections : XCTestCase {
 			let innerRange = Range(inner, within: pqrstu.units)
 			let after: NSS =
 			    .nodes(.text(outerParts.head),
-				   .zone(c[0], .text(outerParts.middle)),
+				   .zone((c[0], Rope.ZoneProperties()),
+				         .text(outerParts.middle)),
 				   .text(outerParts.tail))
 			// pqr*stu*
 			guard let (range, narrow, wide) =
@@ -756,67 +761,67 @@ class SegmentingAtZone : XCTestCase {
 		XCTAssertThrowsError(try zoneInZone.segmenting(atZone: c[2]))
 	}
 	func testSegmentingZone() {
-		guard let (l, (ctlr, inner), r) =
+		guard let (l, (ctlr, props, inner), r) =
 		    try? zoneInZone.segmenting(atZone: c[0]) else {
 			XCTFail("no such zone controller")
 			return
 		}
 		XCTAssert(l == .empty)
-		XCTAssert(.zone(ctlr, inner) == zoneInZone)
+		XCTAssert(.zone((ctlr, props), inner) == zoneInZone)
 		XCTAssert(r == .empty)
 	}
 	func testSegmentingZoneOnLeft() {
-		guard let (l, (ctlr, inner), r) =
+		guard let (l, (ctlr, props, inner), r) =
 		    try? zoneOnLeft.segmenting(atZone: c[1]) else {
 			XCTFail("no such zone controller")
 			return
 		}
 		XCTAssert(l == .empty)
-		XCTAssert(.zone(ctlr, inner) == innerZone)
+		XCTAssert(.zone((ctlr, props), inner) == innerZone)
 		XCTAssert(r == .text("jkl"))
 	}
 	func testSegmentingZoneOnRight() {
-		guard let (l, (ctlr, inner), r) =
+		guard let (l, (ctlr, props, inner), r) =
 		    try? zoneOnRight.segmenting(atZone: c[1])
 		else {
 			XCTFail("no such zone controller")
 			return
 		}
 		XCTAssert(l == .text("abc"))
-		XCTAssert(.zone(ctlr, inner) == innerZone)
+		XCTAssert(.zone((ctlr, props), inner) == innerZone)
 		XCTAssert(r == .empty)
 	}
 	func testSegmentingZoneInCenter() {
-		guard let (l, (ctlr, inner), r) =
+		guard let (l, (ctlr, props, inner), r) =
 		    try? zoneInCenter.segmenting(atZone: c[1])
 		else {
 			XCTFail("no such zone controller")
 			return
 		}
 		XCTAssert(l == .text("abc"))
-		XCTAssert(.zone(ctlr, inner) == innerZone)
+		XCTAssert(.zone((ctlr, props), inner) == innerZone)
 		XCTAssert(r == .text("jkl"))
 	}
 	func testSegmentingMultipleZonesInCenter1() {
-		guard let (l, (ctlr, inner), r) =
+		guard let (l, (ctlr, props, inner), r) =
 		    try? multipleZonesInCenter.segmenting(atZone: c[1])
 		else {
 			XCTFail("no such zone controller")
 			return
 		}
 		XCTAssert(l == .text("abc"))
-		XCTAssert(.zone(ctlr, inner) == innerZone)
+		XCTAssert(.zone((ctlr, props), inner) == innerZone)
 		XCTAssert(r == .nodes(otherZone, .text("jkl")))
 	}
 	func testSegmentingMultipleZonesInCenter2() {
-		guard let (l, (ctlr, inner), r) =
+		guard let (l, (ctlr, props, inner), r) =
 		    try? multipleZonesInCenter.segmenting(atZone: c[3])
 		else {
 			XCTFail("no such zone controller")
 			return
 		}
 		XCTAssert(l == .nodes(.text("abc"), innerZone))
-		XCTAssert(.zone(ctlr, inner) == otherZone)
+		XCTAssert(.zone((ctlr, props), inner) == otherZone)
 		XCTAssert(r == .text("jkl"))
 	}
 }
