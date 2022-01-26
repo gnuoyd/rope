@@ -37,10 +37,10 @@ extension Range {
 		}
 	}
 	public func relative<C : Content>(to rope: Rope<C>,
-	    on dimension: KeyPath<Rope<C>.Node.Dimensions, Int>)
+	    on axis: KeyPath<Rope<C>.Node.Dimensions, Int>)
 	    throws -> Range<Int> where Bound == Rope<C>.Index {
-		let lower = try rope.offset(of: lowerBound, on: dimension)
-		let upper = try rope.offset(of: upperBound, on: dimension)
+		let lower = try rope.offset(of: lowerBound, on: axis)
+		let upper = try rope.offset(of: upperBound, on: axis)
 		return lower..<upper
 	}
 	public func relative<C : Content>(to view: Rope<C>.RopeAxisView)
@@ -469,11 +469,11 @@ public class Rope<C : Content> {
 		    undoList: nil as ChangeList<Rope>?)
 	}
 	public func offset(of index: Index,
-	    on dimension: KeyPath<Rope.Node.Dimensions, Int>) throws -> Int {
+	    on axis: KeyPath<Rope.Node.Dimensions, Int>) throws -> Int {
 		guard case .interior(_, let label) = index else {
 			throw RopeNoSuchElement.onInterior
 		}
-		return try top.offset(of: label, on: dimension)
+		return try top.offset(of: label, on: axis)
 	}
 }
 

@@ -267,7 +267,7 @@ public extension Rope.Node {
 		}
 	}
 	func inserting(_ label: Label, abutting side: Side,
-	    of offset: Int, on dimension: KeyPath<Dimensions, Int>)
+	    of offset: Int, on axis: KeyPath<Dimensions, Int>)
 	    -> Rope.Node {
 		let boundary = Dimensions(boundaries: 1)
 		switch self {
@@ -287,37 +287,37 @@ public extension Rope.Node {
 			    .appending(.index(label: label))
 			    .appending(Rope.Node(content: C.init(r),
 			        attributes: attrs))
-		case .zone(_, _) where offset < boundary[keyPath: dimension]:
+		case .zone(_, _) where offset < boundary[keyPath: axis]:
 			return Self.index(label: label).appending(self)
 		case .zone((let ctlr, let props), let n)
-		    where offset < (boundary + n.dimensions)[keyPath:dimension]:
-			assert(offset >= boundary[keyPath: dimension])
+		    where offset < (boundary + n.dimensions)[keyPath: axis]:
+			assert(offset >= boundary[keyPath: axis])
 			return Rope.Node(controller: ctlr, properties: props,
 			    node: n.inserting(label, abutting: side,
-			        of: offset - boundary[keyPath: dimension],
-				on: dimension))
+			        of: offset - boundary[keyPath: axis],
+				on: axis))
 		case .zone(_, _):
 			return self.appending(Self.index(label: label))
 		case .concat(let l, let mid, _, _, let r, _):
-			if offset < mid[keyPath: dimension] {
+			if offset < mid[keyPath: axis] {
 				return l.inserting(label, abutting: side,
-				    of: offset, on: dimension).appending(r)
+				    of: offset, on: axis).appending(r)
 			}
-			if mid[keyPath: dimension] < offset {
+			if mid[keyPath: axis] < offset {
 				return l.appending(r.inserting(label,
 				    abutting: side,
-				    of: offset - mid[keyPath: dimension],
-				    on: dimension))
+				    of: offset - mid[keyPath: axis],
+				    on: axis))
 			}
 			switch side {
 			case .left:
 				return l.inserting(label, abutting: side,
-				    of: offset, on: dimension).appending(r)
+				    of: offset, on: axis).appending(r)
 			case .right:
 				return l.appending(r.inserting(label,
 				    abutting: side,
-				    of: offset - mid[keyPath: dimension],
-				    on: dimension))
+				    of: offset - mid[keyPath: axis],
+				    on: axis))
 			}
 		}
 	}
@@ -1042,38 +1042,38 @@ public extension Rope.Node {
 			return Dimensions(indices: 1)
 		}
 	}
-	func retrieveNode(at i: Int, on dimension: KeyPath<Dimensions, Int>,
+	func retrieveNode(at i: Int, on axis: KeyPath<Dimensions, Int>,
 	    base: Int = 0) -> (Self, Int, Range<Int>) {
 		let boundary = Dimensions(boundaries: 1)
 		switch self {
 		case .leaf(_, _), .empty, .index(_):
 			return (self, i,
-			        base..<(base + dimensions[keyPath: dimension]))
+			        base..<(base + dimensions[keyPath: axis]))
 		case .concat(let ropel, let mid, _, _, let roper, _):
-			if i < mid[keyPath: dimension] {
+			if i < mid[keyPath: axis] {
 				return ropel.retrieveNode(at: i,
-				    on: dimension, base: base)
+				    on: axis, base: base)
 			} else {
 				return roper.retrieveNode(
-				    at: i - mid[keyPath: dimension],
-				    on: dimension,
-				    base: base + mid[keyPath: dimension])
+				    at: i - mid[keyPath: axis],
+				    on: axis,
+				    base: base + mid[keyPath: axis])
 			}
 		/* If `i` is left of the zone's interior... */
-		case .zone(_, _) where i < boundary[keyPath: dimension]:
+		case .zone(_, _) where i < boundary[keyPath: axis]:
 			return (self, i,
-			        base..<(base + dimensions[keyPath: dimension]))
+			        base..<(base + dimensions[keyPath: axis]))
 		/* If `i` is in the zone's interior... */
 		case .zone(_, let n)
-		    where i < (boundary + n.dimensions)[keyPath: dimension]:
+		    where i < (boundary + n.dimensions)[keyPath: axis]:
 			return n.retrieveNode(
-			    at: i - boundary[keyPath: dimension],
-			    on: dimension,
-			    base: base + boundary[keyPath: dimension])
+			    at: i - boundary[keyPath: axis],
+			    on: axis,
+			    base: base + boundary[keyPath: axis])
 		/* If `i` is right of the zone's interior... */
 		case .zone(_, _):
 			return (self, i,
-			        base..<(base + dimensions[keyPath: dimension]))
+			        base..<(base + dimensions[keyPath: axis]))
 		}
 	}
 	/* XXX Use zonesEnclosing(_: Rope.Index)? */
@@ -1167,13 +1167,13 @@ public extension Rope.Node {
 	    throws -> [Rope.ZoneController] {
 		return try zonesClosing(at: i.label, in: controllers)
 	}
-	func offset(of label: Label, on dimension: KeyPath<Dimensions, Int>,
+	func offset(of label: Label, on axis: KeyPath<Dimensions, Int>,
 	    origin: Int = 0) throws -> Int {
 		let boundary = Dimensions(boundaries: 1)
 		switch self {
 		case .zone(_, let content):
-			return try content.offset(of: label, on: dimension,
-			    origin: origin + boundary[keyPath: dimension])
+			return try content.offset(of: label, on: axis,
+			    origin: origin + boundary[keyPath: axis])
 		case .index(let w) where w.get() == label:
 			return origin
 		case .concat(let l, let mid, _, _, let r, _):
@@ -1182,11 +1182,11 @@ public extension Rope.Node {
 			 */
 			do {
 				return try l.offset(
-				    of: label, on: dimension, origin: origin)
+				    of: label, on: axis, origin: origin)
 			} catch NodeError.indexNotFound {
 				return try r.offset(
-				    of: label, on: dimension,
-				    origin: origin + mid[keyPath: dimension])
+				    of: label, on: axis,
+				    origin: origin + mid[keyPath: axis])
 			}
 		default:
 			throw NodeError.indexNotFound
