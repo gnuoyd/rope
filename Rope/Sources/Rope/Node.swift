@@ -290,7 +290,7 @@ public extension Rope.Node {
 		case .zone(_, _) where offset < boundary[keyPath: axis]:
 			return Self.index(label: label).appending(self)
 		case .zone((let ctlr, let props), let n)
-		    where offset < (boundary + n.dimensions)[keyPath: axis]:
+		    where offset < (boundary + n.dimensions + boundary)[keyPath: axis]:
 			assert(offset >= boundary[keyPath: axis])
 			return Rope.Node(controller: ctlr, properties: props,
 			    node: n.inserting(label, abutting: side,
