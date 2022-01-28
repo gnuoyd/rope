@@ -48,8 +48,10 @@ extension Rope.RopeAxisView {
 		return rope.node.dimensions[keyPath: axis]
 	}
 	public func attributes(at i: Int) -> (Attributes, Range<Int>) {
-		return rope.node.attributes(at: i, on: axis,
+		let (attrs, range) = rope.node.attributes(at: i, on: axis,
 		    defaults: properties.attributes)
+		Swift.print("(attributes(at: \(i)) -> (..., \(range.lowerBound)...<\(range.upperBound))")
+		return (attrs, range)
 	}
 	public func extract(_ range: Range<Int>,
 	    filling buffer: inout UnsafeMutablePointer<Rope.Content.Unit>) {

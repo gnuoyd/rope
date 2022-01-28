@@ -118,7 +118,9 @@ public class Rope<C : Content> {
 		    with fn: (Attributes) -> Attributes) throws -> Rope.Node {
 			let xformed = try content.transformingAttributes(
 			    after: lowerBound, upTo: upperBound, with: fn)
-			return .zone((self, props), xformed)
+			return .zone((self,
+			              props.transformingAttributes(
+				          on: boundaries, with: fn)), xformed)
 		}
 	}
 	public struct BoundaryUnits {
@@ -129,12 +131,15 @@ public class Rope<C : Content> {
 			self.close = c
 		}
 	}
-	public struct BoundaryAttributes {
+	public struct BoundaryAttributes : Equatable {
 		let open: Attributes
 		let close: Attributes
 		public init(open o: Attributes, close c: Attributes) {
 			self.open = o
 			self.close = c
+		}
+		public static func ==(_ l: Self, _ r: Self) -> Bool {
+			return l.open ~ r.open && l.close ~ r.close
 		}
 	}
 	public struct BoundaryProperties {
@@ -148,10 +153,26 @@ public class Rope<C : Content> {
 	}
 
 	public struct ZoneProperties : Equatable {
+		let attributes: BoundaryAttributes
 		public static func ==(_ l: Self, _ r: Self) -> Bool {
-			return true
+			return l.attributes == r.attributes
+		}
+		func transformingAttributes(on boundaries: BoundarySet,
+		    with fn: (Attributes) -> Attributes) -> Self {
+			if boundaries == .neither {
+				return self
+			}
+			let o = boundaries.contains(.left)
+			    ? fn(attributes.open) : attributes.open
+			let c = boundaries.contains(.right)
+			    ? fn(attributes.close) : attributes.close
+			return ZoneProperties(attributes: BoundaryAttributes(open: o, close: c))
+		}
+		public init(attributes a: BoundaryAttributes) {
+			attributes = a
 		}
 		public init() {
+			attributes = BoundaryAttributes(open: [:], close: [:])
 		}
 	}
 	/* Any number of indices can appear between two character positions,

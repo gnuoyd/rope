@@ -492,12 +492,21 @@ public extension Rope.Node {
 		let boundary = Dimensions(boundaries: 1)
 		let (n, residue, range) = retrieveNode(at: i, on: axis)
 		switch n {
-		case .zone(_, _) where residue < boundary[keyPath: axis]:
-			return (attrs?.open ?? [:],
+		case .zone((_, let props), _)
+		    where residue < boundary[keyPath: axis]:
+			let zoneAttrs = props.attributes.open
+			let openAttrs = zoneAttrs.merging(attrs?.open ?? [:]) {
+			    (z, d) in z
+			}
+			return (openAttrs,
 			        range.lowerBound..<(range.lowerBound +
 				                    boundary[keyPath: axis]))
-		case .zone(_, _):
-			return (attrs?.close ?? [:],
+		case .zone((_, let props), _):
+			let zoneAttrs = props.attributes.close
+			let closeAttrs = zoneAttrs.merging(attrs?.close ?? [:]){
+			    (z, d) in z
+			}
+			return (closeAttrs,
 			        (range.upperBound -
 				 boundary[keyPath: axis])..<range.upperBound)
 		case .leaf(let attrs, _) where
@@ -553,13 +562,12 @@ public extension Rope.Node {
 				        try node.transformingAttributes(
 					    after: left, upTo: right, with: fn)
 				}
-				// TBD Transform the attributes on the
-				// left & right boundaries, too.
 				let newm = try m.withFreshBoundaries {
 				    (left, right, node) in
 				        try ctlr.transformingAttributes(
 					    after: left, upTo: right, in: node,
-					    properties: props, with: fn)
+					    properties: props,
+					    andBoundaries: .both, with: fn)
 				}
 				let newr = try r.withFreshBoundaries {
 				    (left, right, node) in
@@ -577,15 +585,14 @@ public extension Rope.Node {
 			    properties: props, with: fn)
 			return l.appending(newm).appending(r)
 		case (let loExt?, _):
-			// TBD Transform the attributes on loExt's right
-			// boundary.
 			let (l, (ctlr, props, m), r) =
 			    try segmenting(atZone: loExt)
 			let newm = try m.withFreshRightBoundary {
 			    (upper, node) in
 				try ctlr.transformingAttributes(
 				    after: lowerBound, upTo: upper, in: node,
-				    properties: props, with: fn)
+				    properties: props, andBoundaries: .right,
+				    with: fn)
 			}
 			let newr = try r.withFreshLeftBoundary {
 			    (lower, node) in
@@ -594,8 +601,6 @@ public extension Rope.Node {
 			}
 			return l.appending(newm).appending(newr)
 		case (nil, let hiExt?):
-			// TBD Transform the attributes on hiExt's left
-			// boundary.
 			let (l, (ctlr, props, m), r) =
 			    try segmenting(atZone: hiExt)
 			let newl = try l.withFreshRightBoundary {
@@ -607,7 +612,8 @@ public extension Rope.Node {
 			    (lower, node) in
 			        try ctlr.transformingAttributes(
 				    after: lower, upTo: upperBound, in: node,
-				    properties: props, with: fn)
+				    properties: props, andBoundaries: .left,
+				    with: fn)
 			}
 			return newl.appending(newm).appending(r)
 		}
