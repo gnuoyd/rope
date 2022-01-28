@@ -27,7 +27,7 @@ public class GenericRopeTextStorage<P : BackingViewPath> : NSTextStorage {
 	}
 	public override init() {
 		self.backing = Rope()
-		self.backing.boundaryProperties = Backing.BoundaryProperties(attributes: Backing.BoundaryAttributes(open: [:], close: [:]), units: Backing.BoundaryUnits(open: "⟨".utf16.only!, close: "⟩".utf16.only!))
+		self.backing.boundaryProperties = Backing.BoundaryProperties(attributes: Backing.BoundaryAttributes(open: [:], close: [:]), units: Backing.BoundaryUnits(open: "❮".utf16.only!, close: "❯".utf16.only!))
 		_string = GenericRopeString<P>(with: backing)
 		super.init()
 		backing.axisDelegates[P.path] = AnyRopeDelegate<Content>(
