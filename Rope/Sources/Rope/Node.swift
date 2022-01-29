@@ -487,23 +487,23 @@ public extension Rope.Node {
 	case indicesOutOfOrder
 	}
 	func attributes(at i: Int, on axis: KeyPath<Dimensions, Int>,
-	    defaults attrs: Rope.BoundaryAttributes? = nil)
+	    defaults: Rope.BoundaryAttributes? = nil)
 	    -> (Attributes, Range<Int>) {
 		let boundary = Dimensions(boundaries: 1)
 		let (n, residue, range) = retrieveNode(at: i, on: axis)
 		switch n {
 		case .zone((_, let props), _)
 		    where residue < boundary[keyPath: axis]:
-			let zoneAttrs = props.attributes.open
-			let openAttrs = zoneAttrs.merging(attrs?.open ?? [:]) {
+			let zattrs = props.attributes.open
+			let openAttrs = zattrs.merging(defaults?.open ?? [:]) {
 			    (z, d) in z
 			}
 			return (openAttrs,
 			        range.lowerBound..<(range.lowerBound +
 				                    boundary[keyPath: axis]))
 		case .zone((_, let props), _):
-			let zoneAttrs = props.attributes.close
-			let closeAttrs = zoneAttrs.merging(attrs?.close ?? [:]){
+			let zattrs = props.attributes.close
+			let closeAttrs = zattrs.merging(defaults?.close ?? [:]){
 			    (z, d) in z
 			}
 			return (closeAttrs,
