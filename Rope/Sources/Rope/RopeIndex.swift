@@ -2,7 +2,7 @@
 // Copyright (c) 2019, 2020, 2021 David Young.  All rights reserved.
 //
 extension Rope.Index {
-	init(abutting offset: Int, on side: Rope.Node.Side,
+	public init(abutting offset: Int, on side: Rope.Node.Side,
 	     within view: Rope.RopeAxisView) {
 		let h = Label()
 		let rope = view.rope
