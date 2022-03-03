@@ -10,7 +10,7 @@ let package = Package(
 	products: [
 		.library(name: "RopeTextStorage", targets: ["RopeTextStorage"]),
 	],
-	dependencies: [.package(path: "../Rope")],
+	dependencies: [.package(path: "/Users/dyoung/rope/Rope")],
 	targets: [
 		.target(name: "RopeTextStorage", dependencies: ["Rope"]),
 		.testTarget(name: "RopeTextStorageTests",
