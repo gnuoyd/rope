@@ -1489,70 +1489,6 @@ public extension Rope.Node {
 		    after: lowerBound.label, upTo: upperBound.label,
 		    with: .text(replacement), undoList: undoList)
 	}
-	/* A naive version of `setController(_:after:upTo:)` tries
-	 * to establish a zone that crosses zones.  This
-	 * implementation makes sure that the boundaries of the new
-	 * zone are both located in the same existing zone, in
-	 * which case it forwards to that existing zone, or else that
-	 * neither boundary is inside a zone.
-	 */
-	func setController(_ z: (Rope.ZoneController, Rope.ZoneProperties),
-	    after lowerBound: Label, upTo upperBound: Label,
-	    undoList: ChangeList<Self>?) throws -> Self {
-		switch (try zonesEnclosing(lowerBound).first,
-			try zonesEnclosing(upperBound).first) {
-		case (nil, nil):
-			/* Catch a faulty range where the upperBound
-			 * precedes the lowerBound.
-			 */
-			if try label(upperBound, precedes: lowerBound,
-			    by: .jot) {
-				throw NodeError.indicesOutOfOrder
-			}
-			/* Important: don't discard any embedded indices at
-			 * `range` boundaries!  Instead, use
-			 * splitting(after:) and splitting(before:) to
-			 * preserve embedded indices for reuse.
-			 */
-			let (head, rest) = try splitting(after: lowerBound)
-			/* Empty ranges where the same label is used
-			 * for the lower and upper bound require special
-			 * treatment:
-			 */
-			if (lowerBound == upperBound) {
-				return try rest.withFreshLeftBoundary {
-				    (upper, node) in
-				        return try Self.nodes(head,
-					    node).setController(z,
-					        after: lowerBound,
-						upTo: upper,
-						undoList: undoList)
-				}
-			}
-			let (middle, tail) =
-			    try rest.splitting(before: upperBound)
-			/* Important: zones in the range do not get an
-			 * opportunity to cancel.  They will move to the
-			 * interior of the zone, always.
-			 */
-			undoList?.record { (node, undoList) in
-				try node.replacing(
-				    after: lowerBound, upTo: upperBound,
-				    with: middle,
-				    undoList: undoList)
-			}
-			return .nodes(head, .zone(z, middle), tail)
-		case (let loExt?, let hiExt?) where loExt == hiExt:
-			let (l, (ctlr, props, m), r) =
-			    try segmenting(atZone: loExt)
-			let mControlled = try ctlr.setController(z,
-			    after: lowerBound, upTo: upperBound, in: m,
-			    properties: props, undoList: undoList)
-			return l.appending(mControlled).appending(r)
-		default:
-			throw NodeError.indicesCrossZones
-		}
-	}
 	/* A naive version of `replacing(after:upTo:with:)` splits zones.
 	 * This version finds affected zones, splits before and after each
 	 * zone, and performs replacement/deletion on each affected zone.
@@ -1682,6 +1618,70 @@ public extension Rope.Node {
 				    with: .empty, undoList: undoList)
 			}
 			return lReplaced.appending(mTrimmed).appending(r)
+		}
+	}
+	/* A naive version of `setController(_:after:upTo:)` tries
+	 * to establish a zone that crosses zones.  This
+	 * implementation makes sure that the boundaries of the new
+	 * zone are both located in the same existing zone, in
+	 * which case it forwards to that existing zone, or else that
+	 * neither boundary is inside a zone.
+	 */
+	func setController(_ z: (Rope.ZoneController, Rope.ZoneProperties),
+	    after lowerBound: Label, upTo upperBound: Label,
+	    undoList: ChangeList<Self>?) throws -> Self {
+		switch (try zonesEnclosing(lowerBound).first,
+			try zonesEnclosing(upperBound).first) {
+		case (nil, nil):
+			/* Catch a faulty range where the upperBound
+			 * precedes the lowerBound.
+			 */
+			if try label(upperBound, precedes: lowerBound,
+			    by: .jot) {
+				throw NodeError.indicesOutOfOrder
+			}
+			/* Important: don't discard any embedded indices at
+			 * `range` boundaries!  Instead, use
+			 * splitting(after:) and splitting(before:) to
+			 * preserve embedded indices for reuse.
+			 */
+			let (head, rest) = try splitting(after: lowerBound)
+			/* Empty ranges where the same label is used
+			 * for the lower and upper bound require special
+			 * treatment:
+			 */
+			if (lowerBound == upperBound) {
+				return try rest.withFreshLeftBoundary {
+				    (upper, node) in
+				        return try Self.nodes(head,
+					    node).setController(z,
+					        after: lowerBound,
+						upTo: upper,
+						undoList: undoList)
+				}
+			}
+			let (middle, tail) =
+			    try rest.splitting(before: upperBound)
+			/* Important: zones in the range do not get an
+			 * opportunity to cancel.  They will move to the
+			 * interior of the zone, always.
+			 */
+			undoList?.record { (node, undoList) in
+				try node.replacing(
+				    after: lowerBound, upTo: upperBound,
+				    with: middle,
+				    undoList: undoList)
+			}
+			return .nodes(head, .zone(z, middle), tail)
+		case (let loExt?, let hiExt?) where loExt == hiExt:
+			let (l, (ctlr, props, m), r) =
+			    try segmenting(atZone: loExt)
+			let mControlled = try ctlr.setController(z,
+			    after: lowerBound, upTo: upperBound, in: m,
+			    properties: props, undoList: undoList)
+			return l.appending(mControlled).appending(r)
+		default:
+			throw NodeError.indicesCrossZones
 		}
 	}
 	func segmenting(atZone target: Rope.ZoneController,
